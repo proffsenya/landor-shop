@@ -3,9 +3,9 @@ package com.example.backend.Infrastructure.Exceptions;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ResponseStatus;
 
-@ResponseStatus(HttpStatus.NOT_FOUND)
-public class ResourseNotFoundException extends RuntimeException {
-    public ResourseNotFoundException(String message) {
+@ResponseStatus(HttpStatus.BAD_REQUEST)
+public class InvalidResourseException extends RuntimeException {
+    public InvalidResourseException(String message) {
         super(message);
     }
 }
