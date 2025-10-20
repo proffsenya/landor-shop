@@ -11,4 +11,5 @@ public interface UserRepository extends Repository<User, Long> {
     User findByEmail(String email);
     List<User> findAll();
     List<User> byIsActive(Boolean isActive);
+    User save(User user);
 }
