@@ -1,5 +1,6 @@
 package com.example.backend.Infrastructure.Services;
 
+import com.example.backend.Domain.DTOs.AuthResponseDTO;
 import com.example.backend.Domain.DTOs.LoginRequestDTO;
 import com.example.backend.Domain.Models.User;
 import com.example.backend.Infrastructure.Repos.UserRepository;
