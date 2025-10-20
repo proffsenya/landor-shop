@@ -4,11 +4,14 @@ import com.example.backend.Domain.DTOs.AuthResponseDTO;
 import com.example.backend.Domain.DTOs.LoginRequestDTO;
 import com.example.backend.Domain.DTOs.RegisterRequestDTO;
 import com.example.backend.Domain.Models.User;
+import com.example.backend.Infrastructure.Exceptions.AccountNotActiveException;
+import com.example.backend.Infrastructure.Exceptions.InvalidRequestException;
 import com.example.backend.Infrastructure.Exceptions.InvalidResourseException;
 import com.example.backend.Infrastructure.Exceptions.ResourseNotFoundException;
 import com.example.backend.Infrastructure.Repos.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -17,16 +20,18 @@ import java.time.LocalDateTime;
 @Service
 class AuthService {
     private UserRepository userRepository;
-    private AuthService(UserRepository userRepository) {
+    private PasswordEncoder passwordEncoder;
+    private AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
     public AuthResponseDTO Login(LoginRequestDTO loginRequestDTO)
     {
-        if (loginRequestDTO.email().isEmpty() || loginRequestDTO.passwordHash().isEmpty()) { throw new ResourseNotFoundException("Email or password hash is required"); }
+        if (loginRequestDTO.email().isEmpty() || loginRequestDTO.passwordHash().isEmpty()) { throw new InvalidRequestException("Email or password hash is required"); }
         User user = userRepository.findByEmail(loginRequestDTO.email());
-        if (user == null || !loginRequestDTO.passwordHash().equals(user.getPasswordHash())) {throw new InvalidResourseException("Email or password hash is empty");}
-        if (user.getIsActive().equals(false)) {throw new ResourseNotFoundException("Account is deactivated. Please contact support.");}
+        if (user == null || !passwordEncoder.matches(loginRequestDTO.passwordHash(), user.getPasswordHash())) {throw new InvalidResourseException("Email or password hash is empty");}
+        if (user.getIsActive().equals(false)) {throw new AccountNotActiveException("Account is deactivated. Please contact support.");}
 
         return new AuthResponseDTO(
                 "token",
@@ -38,12 +43,12 @@ class AuthService {
 
     public AuthResponseDTO Register(RegisterRequestDTO registerRequestDTO)
     {
-        if(registerRequestDTO.email().isEmpty() || registerRequestDTO.passwordHash().isEmpty()) { throw new ResourseNotFoundException("Email or password hash is required"); }
+        if(registerRequestDTO.email().isEmpty() || registerRequestDTO.passwordHash().isEmpty()) { throw new InvalidRequestException("Email or password hash is required"); }
         if(userRepository.findByEmail(registerRequestDTO.email()) != null) {throw new InvalidResourseException("User with this email already exists");}
 
         User newuser = new User();
         newuser.setEmail(registerRequestDTO.email());
-        newuser.setPasswordHash(registerRequestDTO.passwordHash());
+        newuser.setPasswordHash(passwordEncoder.encode(registerRequestDTO.passwordHash()));
         newuser.setFirstName(registerRequestDTO.firstName());
         newuser.setLastName(registerRequestDTO.lastName());
         newuser.setCreatedAt(Instant.now());
