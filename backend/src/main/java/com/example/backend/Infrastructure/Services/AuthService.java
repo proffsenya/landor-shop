@@ -21,9 +21,11 @@ import java.time.LocalDateTime;
 class AuthService {
     private UserRepository userRepository;
     private PasswordEncoder passwordEncoder;
-    private AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
+    private JWTService  jwtService;
+    private AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder,  JWTService jwtService) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+        this.jwtService = jwtService;
     }
 
     public AuthResponseDTO Login(LoginRequestDTO loginRequestDTO)
@@ -33,8 +35,10 @@ class AuthService {
         if (user == null || !passwordEncoder.matches(loginRequestDTO.passwordHash(), user.getPasswordHash())) {throw new InvalidResourseException("Email or password hash is empty");}
         if (user.getIsActive().equals(false)) {throw new AccountNotActiveException("Account is deactivated. Please contact support.");}
 
+        String jwtToken = jwtService.generateToken(user);
+
         return new AuthResponseDTO(
-                "token",
+                jwtToken,
                 user.getEmail(),
                 user.getIsStaff(),
                 user.getIsSuperuser()
@@ -56,9 +60,11 @@ class AuthService {
         newuser.setIsSuperuser(false);
         newuser.setIsActive(true);
 
+        String jwtToken = jwtService.generateToken(newuser);
+
         User saveuser = userRepository.save(newuser);
         return new AuthResponseDTO(
-                "token",
+                jwtToken,
                 newuser.getEmail(),
                 newuser.getIsStaff(),
                 newuser.getIsSuperuser()
