@@ -18,7 +18,7 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 
 @Service
-class AuthService {
+public class AuthService {
     private UserRepository userRepository;
     private PasswordEncoder passwordEncoder;
     private JWTService  jwtService;
