@@ -20,7 +20,7 @@ public class Country {
     @Column(name = "name", nullable = false, length = 100)
     private String name;
 
-    @ManyToMany
+    @ManyToMany(mappedBy = "countries")
     private Set<Product> products = new LinkedHashSet<>();
 
     public Integer getId() {

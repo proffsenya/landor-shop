@@ -20,7 +20,7 @@ public class Typeoffood {
     @Column(name = "name", nullable = false, length = 100)
     private String name;
 
-    @ManyToMany
+    @ManyToMany(mappedBy = "typeoffoods")
     private Set<Product> products = new LinkedHashSet<>();
 
     public Integer getId() {

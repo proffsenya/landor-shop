@@ -55,10 +55,10 @@ public class User {
     @Column(name = "updated_at")
     private Instant updatedAt;
 
-    @OneToOne(mappedBy = "user")
+    @OneToOne(mappedBy = "user", fetch = FetchType.LAZY)
     private Cart cart;
 
-    @OneToMany(mappedBy = "user")
+    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
     private Set<Order> orders = new LinkedHashSet<>();
 
     public Long getId() {

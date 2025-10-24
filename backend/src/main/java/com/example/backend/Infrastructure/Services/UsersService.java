@@ -5,6 +5,7 @@ import com.example.backend.Infrastructure.Repos.UserRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 class UsersService {
@@ -22,9 +23,10 @@ class UsersService {
     }
 
     public List<User> findByIsActive(Boolean isActive) {
-        return userRepository.byIsActive(isActive);
+        return userRepository.findByIsActive(isActive);
     }
-    public User findById(Long id) {
+
+    public Optional<User> findById(Long id) {
         return userRepository.findById(id);
     }
 

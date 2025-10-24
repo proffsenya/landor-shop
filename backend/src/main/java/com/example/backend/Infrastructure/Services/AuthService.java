@@ -22,7 +22,7 @@ public class AuthService {
     private UserRepository userRepository;
     private PasswordEncoder passwordEncoder;
     private JWTService  jwtService;
-    private AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder,  JWTService jwtService) {
+    public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder,  JWTService jwtService) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;

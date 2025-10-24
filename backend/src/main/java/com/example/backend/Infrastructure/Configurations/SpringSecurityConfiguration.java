@@ -27,8 +27,9 @@ public class SpringSecurityConfiguration {
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**").permitAll()
-                        .requestMatchers("/api/admin/**").hasRole("ROLE_SUPERUSER")
-                        .requestMatchers("/api/staff/**").hasRole("ROLE_STAFF")
+                        .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
+                        .requestMatchers("/api/admin/**").hasRole("SUPERUSER")
+                        .requestMatchers("/api/staff/**").hasRole("STAFF")
                         .anyRequest().authenticated())
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();

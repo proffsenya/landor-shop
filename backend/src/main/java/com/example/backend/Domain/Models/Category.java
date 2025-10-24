@@ -44,7 +44,7 @@ public class Category {
     @OneToMany(mappedBy = "parent")
     private Set<Category> categories = new LinkedHashSet<>();
 
-    @ManyToMany
+    @ManyToMany(mappedBy = "categories")
     private Set<Product> products = new LinkedHashSet<>();
 
     public Long getId() {
