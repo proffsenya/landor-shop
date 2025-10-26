@@ -64,6 +64,9 @@ public class Product {
     @OneToMany(mappedBy = "product")
     private Set<OrderItem> orderItems = new LinkedHashSet<>();
 
+    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<ProductImage> images = new LinkedHashSet<>();
+
     @ManyToMany
     @JoinTable(
             name = "product_breeds",
@@ -230,6 +233,21 @@ public class Product {
 
     public void setTypeoffoods(Set<Typeoffood> typeoffoods) {
         this.typeoffoods = typeoffoods;
+    }
+
+    public Set<ProductImage> getImages() {
+        return images;
+    }
+    public void setImages(Set<ProductImage> images) {
+        this.images = images;
+    }
+    public void addImage(ProductImage img) {
+        images.add(img);
+        img.setProduct(this);
+    }
+    public void removeImage(ProductImage img) {
+        images.remove(img);
+        img.setProduct(null);
     }
 
 }
