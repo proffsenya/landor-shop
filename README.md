@@ -1,6 +1,4 @@
-# Landor Shop - JavaScript Version
-
-Простой React интернет-магазин кормов для животных, переписанный с TypeScript на JavaScript.
+# Landor Shop
 
 ## Технологии
 
@@ -44,18 +42,8 @@ npm run preview          # Предварительный просмотр пр�
 
 ## Особенности
 
-- ✅ Полностью на JavaScript (без TypeScript)
 - ✅ Простой запуск через `npm run dev`
 - ✅ Современный UI с TailwindCSS
 - ✅ Адаптивный дизайн
 - ✅ Готовые UI компоненты
 - ✅ React Router для навигации
-
-## Изменения по сравнению с TypeScript версией
-
-- Удален TypeScript и все связанные зависимости
-- Удален Express сервер
-- Удалены серверные API endpoints
-- Все `.tsx/.ts` файлы конвертированы в `.jsx/.js`
-- Упрощена конфигурация Vite
-- Обновлен `package.json` для простого запуска
