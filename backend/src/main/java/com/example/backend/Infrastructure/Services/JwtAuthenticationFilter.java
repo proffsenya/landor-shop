@@ -25,17 +25,36 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     }
 
     @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        String path = request.getServletPath();
+        String method = request.getMethod();
+
+        return
+                (path.startsWith("/api/products") && "GET".equalsIgnoreCase(method)) ||
+                        (path.equals("/api/products") && "POST".equalsIgnoreCase(method)) ||
+                        path.startsWith("/api/auth/") ||
+                        path.startsWith("/swagger") || path.startsWith("/v3/api-docs") ||
+                        path.startsWith("/error");
+    }
+
+    @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
+        if (shouldNotFilter(request)) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
         String authHeader = request.getHeader("Authorization");
 
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            filterChain.doFilter(request, response);
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.getWriter().write("Missing or invalid Authorization header");
             return;
         }
 
 
         String token = authHeader.substring(7);
-        String userEmail = jwtService.extractEmail(authHeader);
+        String userEmail = jwtService.extractEmail(token);
 
         if(userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
 

@@ -24,7 +24,7 @@ public class ProductImage {
     @Lob
     @Basic(fetch = FetchType.LAZY)
     @NotNull
-    @Column(name = "data", nullable = false)
+    @Column(name = "data", nullable = false, columnDefinition = "BYTEA")
     private byte[] data;
 
     @ColumnDefault("false")
@@ -34,6 +34,41 @@ public class ProductImage {
     @Size(max = 255)
     @Column(name = "alt_text")
     private String altText;
+
+    @Size(max = 255)
+    @Column(name = "file_name")
+    private String fileName;
+
+    @Size(max = 100)
+    @Column(name = "content_type", length = 100)
+    private String contentType;
+
+    @Column(name = "size")
+    private Long size;
+
+    public Long getSize() {
+        return size;
+    }
+
+    public void setSize(Long size) {
+        this.size = size;
+    }
+
+    public String getContentType() {
+        return contentType;
+    }
+
+    public void setContentType(String contentType) {
+        this.contentType = contentType;
+    }
+
+    public String getFileName() {
+        return fileName;
+    }
+
+    public void setFileName(String fileName) {
+        this.fileName = fileName;
+    }
 
     public Long getId() {
         return id;
@@ -74,5 +109,6 @@ public class ProductImage {
     public void setAltText(String altText) {
         this.altText = altText;
     }
+
 
 }

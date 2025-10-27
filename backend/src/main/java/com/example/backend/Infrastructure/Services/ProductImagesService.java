@@ -1,0 +1,88 @@
+package com.example.backend.Infrastructure.Services;
+
+import com.example.backend.Domain.DTOs.ProductImageDTO;
+import com.example.backend.Domain.Models.Product;
+import com.example.backend.Domain.Models.ProductImage;
+import com.example.backend.Infrastructure.Exceptions.InvalidRequestException;
+import com.example.backend.Infrastructure.Repos.ProductImageRepository;
+import com.example.backend.Infrastructure.Repos.ProductRepository;
+import org.springframework.data.crossstore.ChangeSetPersister;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+
+@Service
+public class ProductImagesService {
+    private final ProductRepository productRepository;
+    private final ProductImageRepository productImageRepository;
+    public ProductImagesService(ProductRepository productRepository, ProductImageRepository productImageRepository) {
+        this.productRepository = productRepository;
+        this.productImageRepository = productImageRepository;
+    }
+
+    @Transactional
+    public List<ProductImage> getProductImagesById(Long productId) {
+        if (productRepository.findById(productId).isPresent()) {
+            List<ProductImage> productImages = productRepository.findById(productId).get().getImages().stream().toList();
+            return productImages;
+        }
+        else  {
+            throw new InvalidRequestException("Product not found");
+        }
+    }
+
+//    @Transactional
+//    public List<ProductImage> addImagesToProduct(Long productId, List<ProductImage> productImages) {
+//        Optional<Product> product = productRepository.findById(productId);
+//        if (!product.isPresent()) {
+//            throw new InvalidRequestException("Product not found");
+//        }
+//        for (ProductImage productImage : productImages) {
+//            productImage.setProduct(productRepository.findById(productId).get());
+//            product.get().getImages().add(productImage);
+//        }
+//        productRepository.save(product.get());
+//        return productImages;
+//    }
+
+    @Transactional
+    public void addImagesToProduct(Product product, List<MultipartFile> files) throws IOException {
+        if (product == null) {throw new InvalidRequestException("Product is empty");}
+        boolean hasMain = product.getImages().stream().anyMatch(img -> Boolean.TRUE.equals(img.getIsMain()));
+
+        boolean first = true;
+        if (files != null) {
+            for (MultipartFile file : files) {
+                if (file == null || file.isEmpty()) continue;
+
+                String ct = file.getContentType();
+                if (ct == null || (!ct.equals("image/jpeg") && !ct.equals("image/png") && !ct.equals("image/webp"))) {
+                    throw new InvalidRequestException("Unsupported file type: " + ct);
+                }
+                long maxBytes = 2 * 1024 * 1024; // 2MB limit
+                if (file.getSize() > maxBytes) {
+                    throw new InvalidRequestException("File too large: " + file.getOriginalFilename());
+                }
+
+                ProductImage img = new ProductImage();
+                img.setFileName(file.getOriginalFilename());
+                img.setContentType(ct);
+                img.setSize(file.getSize());
+                img.setIsMain(!hasMain && first);
+                img.setAltText(product.getName());
+                img.setProduct(product);
+                img.setData(file.getBytes());
+
+                product.addImage(img);
+                first = false;
+            }
+        }
+    }
+
+
+}

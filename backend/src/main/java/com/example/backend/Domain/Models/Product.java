@@ -64,7 +64,7 @@ public class Product {
     @OneToMany(mappedBy = "product")
     private Set<OrderItem> orderItems = new LinkedHashSet<>();
 
-    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private Set<ProductImage> images = new LinkedHashSet<>();
 
     @ManyToMany

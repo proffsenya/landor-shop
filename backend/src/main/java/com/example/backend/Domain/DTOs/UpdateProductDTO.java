@@ -10,13 +10,13 @@ import java.util.List;
 /**
  * DTO for {@link com.example.backend.Domain.Models.Product}
  */
-public record CreateProductDTO(@Size(max = 100) String name, @Size(max = 1000) String description,
+public record UpdateProductDTO(@Size(max = 100) String name, @Size(max = 1000) String description,
                                @Size(max = 100) String slug, @NotNull Integer quantityInStock,
-                               @NotNull @Size(max = 255) String sku,
-                               @NotNull BigDecimal price,
+                               @NotNull @Size(max = 255) String sku, @NotNull BigDecimal price, BigDecimal oldPrice,
+                               Boolean isActive, Boolean isFeatured, BigDecimal rating,
                                List<Integer> breedIds,
                                List<Integer> categoryIds,
                                List<Integer> countryIds,
                                List<Integer> typeoffoodIds
-                               ) implements Serializable {
+                         ) implements Serializable {
 }
