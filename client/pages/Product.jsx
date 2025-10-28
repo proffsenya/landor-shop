@@ -37,7 +37,7 @@ function CardSection({ title, defaultOpen = false, children }) {
         className="flex w-full items-center justify-between px-5 py-4 text-[16px] font-medium text-[#1E1E1E]"
       >
         {title}
-        <span className="inline-flex h-6 w-6 items-center justify-center rounded border border-[#D2D2D2] text-[#6F2A2B] text-[18px]">
+        <span className="inline-flex h-6 w-6 items-center justify-center text-[#6F2A2B] text-[18px]">
           {open ? "–" : "+"}
         </span>
       </button>
