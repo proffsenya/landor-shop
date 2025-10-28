@@ -1,101 +1,54 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ChevronDown, ChevronUp, Search } from "lucide-react";
-import ProductCard from "@/components/ProductCard"; // ← твоя карточка
+import ProductCard from "@/components/ProductCard";
 
-// Моковые данные товаров
+// -------- Mock data ----------
 const mockProducts = [
-  {
-    id: 1,
-    name: "LANDOR полнорационный сухой корм для взрослых собак всех пород",
-    price: 3000,
-    image: "/korm1.svg",
-    isFavorite: false
-  },
-  {
-    id: 2,
-    name: "LANDOR полнорационный сухой корм для взрослых собак всех пород",
-    price: 3000,
-    image: "/korm1.svg",
-    isFavorite: true
-  },
-  {
-    id: 3,
-    name: "LANDOR полнорационный сухой корм для взрослых собак всех пород",
-    price: 3000,
-    image: "/korm1.svg",
-    isFavorite: false
-  },
-  {
-    id: 4,
-    name: "LANDOR полнорационный сухой корм для взрослых собак всех пород",
-    price: 3000,
-    image: "/korm1.svg",
-    isFavorite: false
-  },
-  {
-    id: 5,
-    name: "LANDOR полнорационный сухой корм для взрослых собак всех пород",
-    price: 3000,
-    image: "/korm1.svg",
-    isFavorite: false
-  },
-  {
-    id: 6,
-    name: "LANDOR полнорационный сухой корм для взрослых собак всех пород",
-    price: 3000,
-    image: "/korm1.svg",
-    isFavorite: false
-  },
-  {
-    id: 7,
-    name: "LANDOR полнорационный сухой корм для взрослых собак всех пород",
-    price: 3000,
-    image: "/korm1.svg",
-    isFavorite: false
-  },
-  {
-    id: 8,
-    name: "LANDOR полнорационный сухой корм для взрослых собак всех пород",
-    price: 3000,
-    image: "/korm1.svg",
-    isFavorite: false
-  },
-  {
-    id: 9,
-    name: "LANDOR полнорационный сухой корм для взрослых собак всех пород",
-    price: 3000,
-    image: "/korm1.svg",
-    isFavorite: false
-  },
-  {
-    id: 10,
-    name: "LANDOR полнорационный сухой корм для взрослых собак всех пород",
-    price: 3000,
-    image: "/korm1.svg",
-    isFavorite: false
-  },
-  {
-    id: 11,
-    name: "LANDOR полнорационный сухой корм для взрослых собак всех пород",
-    price: 3000,
-    image: "/korm1.svg",
-    isFavorite: false
-  },
-  {
-    id: 12,
-    name: "LANDOR полнорационный сухой корм для взрослых собак всех пород",
-    price: 3000,
-    image: "/korm1.svg",
-    isFavorite: false
-  }
+  { id: 1,  name: "LANDOR полнорационный сухой корм для взрослых собак всех пород", price: 1, image: "/korm1.svg", isFavorite: false },
+  { id: 2,  name: "LANDOR полнорационный сухой корм для взрослых собак всех пород", price: 2, image: "/korm1.svg", isFavorite: true  },
+  { id: 3,  name: "LANDOR полнорационный сухой корм для взрослых собак всех пород", price: 3, image: "/korm1.svg", isFavorite: false },
+  { id: 4,  name: "LANDOR полнорационный сухой корм для взрослых собак всех пород", price: 4, image: "/korm1.svg", isFavorite: false },
+  { id: 5,  name: "LANDOR полнорационный сухой корм для взрослых собак всех пород", price: 5, image: "/korm1.svg", isFavorite: false },
+  { id: 6,  name: "LANDOR полнорационный сухой корм для взрослых собак всех пород", price: 6, image: "/korm1.svg", isFavorite: false },
+  { id: 7,  name: "LANDOR полнорационный сухой корм для взрослых собак всех пород", price: 7, image: "/korm1.svg", isFavorite: false },
+  { id: 8,  name: "LANDOR полнорационный сухой корм для взрослых собак всех пород", price: 8, image: "/korm1.svg", isFavorite: false },
+  { id: 9,  name: "LANDOR полнорационный сухой корм для взрослых собак всех пород", price: 9, image: "/korm1.svg", isFavorite: false },
+  { id: 10, name: "LANDOR полнорационный сухой корм для взрослых собак всех пород", price: 10, image: "/korm1.svg", isFavorite: false },
+  { id: 11, name: "LANDOR полнорационный сухой корм для взрослых собак всех пород", price: 11, image: "/korm1.svg", isFavorite: false },
+  { id: 12, name: "LANDOR полнорационный сухой корм для взрослых собак всех пород", price: 12, image: "/korm1.svg", isFavorite: false },
+  { id: 1,  name: "LANDOR полнорационный сухой корм для взрослых собак всех пород", price: 13, image: "/korm1.svg", isFavorite: false },
+  { id: 2,  name: "LANDOR полнорационный сухой корм для взрослых собак всех пород", price: 14, image: "/korm1.svg", isFavorite: true  },
+  { id: 3,  name: "LANDOR полнорационный сухой корм для взрослых собак всех пород", price: 15, image: "/korm1.svg", isFavorite: false },
+  { id: 4,  name: "LANDOR полнорационный сухой корм для взрослых собак всех пород", price: 16, image: "/korm1.svg", isFavorite: false },
+  { id: 5,  name: "LANDOR полнорационный сухой корм для взрослых собак всех пород", price: 17, image: "/korm1.svg", isFavorite: false },
+  { id: 6,  name: "LANDOR полнорационный сухой корм для взрослых собак всех пород", price: 18, image: "/korm1.svg", isFavorite: false },
+  { id: 7,  name: "LANDOR полнорационный сухой корм для взрослых собак всех пород", price: 19, image: "/korm1.svg", isFavorite: false },
+  { id: 8,  name: "LANDOR полнорационный сухой корм для взрослых собак всех пород", price: 20, image: "/korm1.svg", isFavorite: false },
+  { id: 9,  name: "LANDOR полнорационный сухой корм для взрослых собак всех пород", price: 21, image: "/korm1.svg", isFavorite: false },
+  { id: 10, name: "LANDOR полнорационный сухой корм для взрослых собак всех пород", price: 22, image: "/korm1.svg", isFavorite: false },
+  { id: 11, name: "LANDOR полнорационный сухой корм для взрослых собак всех пород", price: 23, image: "/korm1.svg", isFavorite: false },
+  { id: 12, name: "LANDOR полнорационный сухой корм для взрослых собак всех пород", price: 24, image: "/korm1.svg", isFavorite: false },
+  { id: 13,  name: "LANDOR полнорационный сухой корм для взрослых собак всех пород", price: 25, image: "/korm1.svg", isFavorite: false },
+  { id: 14,  name: "LANDOR полнорационный сухой корм для взрослых собак всех пород", price: 26, image: "/korm1.svg", isFavorite: true  },
+  { id: 15,  name: "LANDOR полнорационный сухой корм для взрослых собак всех пород", price: 27, image: "/korm1.svg", isFavorite: false },
+  { id: 16,  name: "LANDOR полнорационный сухой корм для взрослых собак всех пород", price: 28, image: "/korm1.svg", isFavorite: false },
+  { id: 17,  name: "LANDOR полнорационный сухой корм для взрослых собак всех пород", price: 29, image: "/korm1.svg", isFavorite: false },
+  { id: 18,  name: "LANDOR полнорационный сухой корм для взрослых собак всех пород", price: 30, image: "/korm1.svg", isFavorite: false },
+  { id: 19,  name: "LANDOR полнорационный сухой корм для взрослых собак всех пород", price: 31, image: "/korm1.svg", isFavorite: false },
+  { id: 20,  name: "LANDOR полнорационный сухой корм для взрослых собак всех пород", price: 32, image: "/korm1.svg", isFavorite: false },
+  { id: 21,  name: "LANDOR полнорационный сухой корм для взрослых собак всех пород", price: 33, image: "/korm1.svg", isFavorite: false },
+  { id: 22, name: "LANDOR полнорационный сухой корм для взрослых собак всех пород", price: 34, image: "/korm1.svg", isFavorite: false },
+  { id: 23, name: "LANDOR полнорационный сухой корм для взрослых собак всех пород", price: 35, image: "/korm1.svg", isFavorite: false },
+  { id: 24, name: "LANDOR полнорационный сухой корм для взрослых собак всех пород", price: 36, image: "/korm1.svg", isFavorite: false },
+  { id: 25, name: "LANDOR полнорационный сухой корм для взрослых собак всех пород", price: 37, image: "/korm1.svg", isFavorite: false },
 ];
 
-// Компонент фильтра
+// -------- Вспомогательные блоки ----------
 const FilterSection = ({ title, children, isExpanded = true }) => {
   const [expanded, setExpanded] = useState(isExpanded);
   return (
@@ -114,79 +67,63 @@ const FilterSection = ({ title, children, isExpanded = true }) => {
 
 export default function Catalog() {
   const [products, setProducts] = useState(mockProducts);
+  const [searchQuery, setSearchQuery] = useState("");
   const [priceFrom, setPriceFrom] = useState("");
   const [priceTo, setPriceTo] = useState("");
 
-  // Состояния фильтров
-  const [categoryFilters, setCategoryFilters] = useState({
-    all: true,
-    dry: false,
-    wet: false,
-    litter: false
-  });
+  // фильтры (как были)
+  const [categoryFilters, setCategoryFilters] = useState({ all: true, dry: false, wet: false, litter: false });
+  const [catFilters, setCatFilters] = useState({ sterilized: false, skin: false, digestion: false, picky: false, indoor: false });
+  const [dogFilters, setDogFilters] = useState({ small: false, medium: false, large: false });
+  const [countryFilters, setCountryFilters] = useState({ spain: false, germany: false, russia: false, belarus: false });
+  const [tasteFilters, setTasteFilters] = useState({ rabbit: false, chicken: false, partridge: false, salmon: false, quail: false, fish: false, veal: false, duck: false, lamb: false });
+  const [brandFilters, setBrandFilters] = useState({ landor: false, landy: false, fresh: false, clean: false });
 
-  const [catFilters, setCatFilters] = useState({
-    sterilized: false,
-    skin: false,
-    digestion: false,
-    picky: false,
-    indoor: false
-  });
+  // ----- ПАГИНАЦИЯ -----
+  const ITEMS_PER_PAGE = 12; // Сколько карточек показывать на странице
+  const [page, setPage] = useState(1);
 
-  const [dogFilters, setDogFilters] = useState({
-    small: false,
-    medium: false,
-    large: false
-  });
+  // Базовый фильтр по поиску и цене (чтобы пагинация работала по отфильтрованному списку)
+  const filtered = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    const from = priceFrom ? Number(priceFrom) : null;
+    const to = priceTo ? Number(priceTo) : null;
 
-  const [countryFilters, setCountryFilters] = useState({
-    spain: false,
-    germany: false,
-    russia: false,
-    belarus: false
-  });
+    return products.filter(p => {
+      const byQuery = q ? p.name.toLowerCase().includes(q) : true;
+      const byFrom = from !== null ? p.price >= from : true;
+      const byTo = to !== null ? p.price <= to : true;
+      return byQuery && byFrom && byTo;
+    });
+  }, [products, searchQuery, priceFrom, priceTo]);
 
-  const [tasteFilters, setTasteFilters] = useState({
-    rabbit: false,
-    chicken: false,
-    partridge: false,
-    salmon: false,
-    quail: false,
-    fish: false,
-    veal: false,
-    duck: false,
-    lamb: false
-  });
+  const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE));
 
-  const [brandFilters, setBrandFilters] = useState({
-    landor: false,
-    landy: false,
-    fresh: false,
-    clean: false
-  });
+  // Корректируем текущую страницу, если меняется число товаров/фильтры
+  useEffect(() => {
+    if (page > totalPages) setPage(totalPages);
+  }, [page, totalPages]);
+
+  const paged = useMemo(() => {
+    const start = (page - 1) * ITEMS_PER_PAGE;
+    return filtered.slice(start, start + ITEMS_PER_PAGE);
+  }, [filtered, page]);
+
+  const goto = (p) => setPage(Math.min(Math.max(1, p), totalPages));
 
   const toggleFavorite = (productId) => {
-    setProducts(products.map(product =>
-      product.id === productId
-        ? { ...product, isFavorite: !product.isFavorite }
-        : product
-    ));
+    setProducts(prev =>
+      prev.map(product =>
+        product.id === productId ? { ...product, isFavorite: !product.isFavorite } : product
+      )
+    );
   };
 
   const handleCategoryChange = (category) => {
-    if (category === 'all') {
-      setCategoryFilters({
-        all: true,
-        dry: false,
-        wet: false,
-        litter: false
-      });
+    if (category === "all") {
+      setCategoryFilters({ all: true, dry: false, wet: false, litter: false });
     } else {
-      setCategoryFilters(prev => ({
-        ...prev,
-        all: false,
-        [category]: !prev[category]
-      }));
+      setCategoryFilters(prev => ({ ...prev, all: false, [category]: !prev[category] }));
     }
   };
 
@@ -196,285 +133,154 @@ export default function Catalog() {
 
       <div className="container px-4 py-8 mx-auto">
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-4">
-          {/* Левая колонка - Фильтры */}
+          {/* Левая колонка - Фильтры (без изменений визуально) */}
           <div className="lg:col-span-1">
             <div className="p-6 bg-white border border-gray-200 rounded-lg">
-              <h2 className="mb-6 text-xl text-[#6F2A2B]">Фильтры</h2>
+              <h2 className="mb-6 text-xl font-bold text-gray-900">Фильтры</h2>
 
-              {/* По категории */}
               <FilterSection title="По категории">
                 <div className="space-y-2">
                   <label className="flex items-center space-x-2">
-                    <Checkbox
-                      checked={categoryFilters.all}
-                      onCheckedChange={() => handleCategoryChange('all')}
-                    />
+                    <Checkbox checked={categoryFilters.all} onCheckedChange={() => handleCategoryChange("all")} />
                     <span className="text-sm">Все корма</span>
                   </label>
                   <label className="flex items-center space-x-2">
-                    <Checkbox
-                      checked={categoryFilters.dry}
-                      onCheckedChange={() => handleCategoryChange('dry')}
-                    />
+                    <Checkbox checked={categoryFilters.dry} onCheckedChange={() => handleCategoryChange("dry")} />
                     <span className="text-sm">Сухие корма</span>
                   </label>
                   <label className="flex items-center space-x-2">
-                    <Checkbox
-                      checked={categoryFilters.wet}
-                      onCheckedChange={() => handleCategoryChange('wet')}
-                    />
+                    <Checkbox checked={categoryFilters.wet} onCheckedChange={() => handleCategoryChange("wet")} />
                     <span className="text-sm">Влажные корма</span>
                   </label>
                   <label className="flex items-center space-x-2">
-                    <Checkbox
-                      checked={categoryFilters.litter}
-                      onCheckedChange={() => handleCategoryChange('litter')}
-                    />
+                    <Checkbox checked={categoryFilters.litter} onCheckedChange={() => handleCategoryChange("litter")} />
                     <span className="text-sm">Наполнители</span>
                   </label>
                 </div>
               </FilterSection>
 
-              {/* По стоимости */}
               <FilterSection title="По стоимости">
                 <div className="flex space-x-2">
-                  <Input
-                    placeholder="от"
-                    value={priceFrom}
-                    onChange={(e) => setPriceFrom(e.target.value)}
-                    className="flex-1"
-                  />
-                  <Input
-                    placeholder="до"
-                    value={priceTo}
-                    onChange={(e) => setPriceTo(e.target.value)}
-                    className="flex-1"
-                  />
+                  <Input placeholder="от" value={priceFrom} onChange={(e) => setPriceFrom(e.target.value)} className="flex-1" />
+                  <Input placeholder="до" value={priceTo} onChange={(e) => setPriceTo(e.target.value)} className="flex-1" />
                 </div>
               </FilterSection>
 
-              {/* Котенок */}
               <FilterSection title="Котенок" isExpanded={false}>
-                <div className="space-y-2">
-                  {/* Здесь будут чекбоксы для котят */}
-                </div>
+                <div className="space-y-2">{/* чекбоксы для котят */}</div>
               </FilterSection>
 
-              {/* Кошка */}
               <FilterSection title="Кошка">
                 <div className="space-y-2">
                   <label className="flex items-center space-x-2">
-                    <Checkbox
-                      checked={catFilters.sterilized}
-                      onCheckedChange={(checked) => setCatFilters(prev => ({ ...prev, sterilized: checked }))}
-                    />
+                    <Checkbox checked={catFilters.sterilized} onCheckedChange={(c) => setCatFilters(prev => ({ ...prev, sterilized: c }))} />
                     <span className="text-sm">Для стерилизованных</span>
                   </label>
                   <label className="flex items-center space-x-2">
-                    <Checkbox
-                      checked={catFilters.skin}
-                      onCheckedChange={(checked) => setCatFilters(prev => ({ ...prev, skin: checked }))}
-                    />
+                    <Checkbox checked={catFilters.skin} onCheckedChange={(c) => setCatFilters(prev => ({ ...prev, skin: c }))} />
                     <span className="text-sm">Для здоровья кожи и блеска шерсти</span>
                   </label>
                   <label className="flex items-center space-x-2">
-                    <Checkbox
-                      checked={catFilters.digestion}
-                      onCheckedChange={(checked) => setCatFilters(prev => ({ ...prev, digestion: checked }))}
-                    />
+                    <Checkbox checked={catFilters.digestion} onCheckedChange={(c) => setCatFilters(prev => ({ ...prev, digestion: c }))} />
                     <span className="text-sm">Для чувствительного пищеварения</span>
                   </label>
                   <label className="flex items-center space-x-2">
-                    <Checkbox
-                      checked={catFilters.picky}
-                      onCheckedChange={(checked) => setCatFilters(prev => ({ ...prev, picky: checked }))}
-                    />
+                    <Checkbox checked={catFilters.picky} onCheckedChange={(c) => setCatFilters(prev => ({ ...prev, picky: c }))} />
                     <span className="text-sm">Для привередливых</span>
                   </label>
                   <label className="flex items-center space-x-2">
-                    <Checkbox
-                      checked={catFilters.indoor}
-                      onCheckedChange={(checked) => setCatFilters(prev => ({ ...prev, indoor: checked }))}
-                    />
+                    <Checkbox checked={catFilters.indoor} onCheckedChange={(c) => setCatFilters(prev => ({ ...prev, indoor: c }))} />
                     <span className="text-sm">Для домашних</span>
                   </label>
                 </div>
               </FilterSection>
 
-              {/* Щенок */}
               <FilterSection title="Щенок" isExpanded={false}>
-                <div className="space-y-2">
-                  {/* Здесь будут чекбоксы для щенков */}
-                </div>
+                <div className="space-y-2">{/* чекбоксы для щенков */}</div>
               </FilterSection>
 
-              {/* Собака */}
               <FilterSection title="Собака">
                 <div className="space-y-2">
                   <label className="flex items-center space-x-2">
-                    <Checkbox
-                      checked={dogFilters.small}
-                      onCheckedChange={(checked) => setDogFilters(prev => ({ ...prev, small: checked }))}
-                    />
+                    <Checkbox checked={dogFilters.small} onCheckedChange={(c) => setDogFilters(prev => ({ ...prev, small: c }))} />
                     <span className="text-sm">Для мелких пород</span>
                   </label>
                   <label className="flex items-center space-x-2">
-                    <Checkbox
-                      checked={dogFilters.medium}
-                      onCheckedChange={(checked) => setDogFilters(prev => ({ ...prev, medium: checked }))}
-                    />
+                    <Checkbox checked={dogFilters.medium} onCheckedChange={(c) => setDogFilters(prev => ({ ...prev, medium: c }))} />
                     <span className="text-sm">Для средних пород</span>
                   </label>
                   <label className="flex items-center space-x-2">
-                    <Checkbox
-                      checked={dogFilters.large}
-                      onCheckedChange={(checked) => setDogFilters(prev => ({ ...prev, large: checked }))}
-                    />
+                    <Checkbox checked={dogFilters.large} onCheckedChange={(c) => setDogFilters(prev => ({ ...prev, large: c }))} />
                     <span className="text-sm">Для крупных пород</span>
                   </label>
                 </div>
               </FilterSection>
 
-              {/* Страна производства */}
               <FilterSection title="Страна производства">
                 <div className="space-y-2">
                   <label className="flex items-center space-x-2">
-                    <Checkbox
-                      checked={countryFilters.spain}
-                      onCheckedChange={(checked) => setCountryFilters(prev => ({ ...prev, spain: checked }))}
-                    />
+                    <Checkbox checked={countryFilters.spain} onCheckedChange={(c) => setCountryFilters(prev => ({ ...prev, spain: c }))} />
                     <span className="text-sm">Испания</span>
                   </label>
                   <label className="flex items-center space-x-2">
-                    <Checkbox
-                      checked={countryFilters.germany}
-                      onCheckedChange={(checked) => setCountryFilters(prev => ({ ...prev, germany: checked }))}
-                    />
+                    <Checkbox checked={countryFilters.germany} onCheckedChange={(c) => setCountryFilters(prev => ({ ...prev, germany: c }))} />
                     <span className="text-sm">Германия</span>
                   </label>
                   <label className="flex items-center space-x-2">
-                    <Checkbox
-                      checked={countryFilters.russia}
-                      onCheckedChange={(checked) => setCountryFilters(prev => ({ ...prev, russia: checked }))}
-                    />
+                    <Checkbox checked={countryFilters.russia} onCheckedChange={(c) => setCountryFilters(prev => ({ ...prev, russia: c }))} />
                     <span className="text-sm">Россия</span>
                   </label>
                   <label className="flex items-center space-x-2">
-                    <Checkbox
-                      checked={countryFilters.belarus}
-                      onCheckedChange={(checked) => setCountryFilters(prev => ({ ...prev, belarus: checked }))}
-                    />
+                    <Checkbox checked={countryFilters.belarus} onCheckedChange={(c) => setCountryFilters(prev => ({ ...prev, belarus: c }))} />
                     <span className="text-sm">Беларусь</span>
                   </label>
                 </div>
               </FilterSection>
 
-              {/* Вкус */}
               <FilterSection title="Вкус">
                 <div className="grid grid-cols-2 gap-2">
-                  <label className="flex items-center space-x-2">
-                    <Checkbox
-                      checked={tasteFilters.rabbit}
-                      onCheckedChange={(checked) => setTasteFilters(prev => ({ ...prev, rabbit: checked }))}
-                    />
-                    <span className="text-sm">Кролик</span>
-                  </label>
-                  <label className="flex items-center space-x-2">
-                    <Checkbox
-                      checked={tasteFilters.chicken}
-                      onCheckedChange={(checked) => setTasteFilters(prev => ({ ...prev, chicken: checked }))}
-                    />
-                    <span className="text-sm">Курица</span>
-                  </label>
-                  <label className="flex items-center space-x-2">
-                    <Checkbox
-                      checked={tasteFilters.partridge}
-                      onCheckedChange={(checked) => setTasteFilters(prev => ({ ...prev, partridge: checked }))}
-                    />
-                    <span className="text-sm">Куропатка</span>
-                  </label>
-                  <label className="flex items-center space-x-2">
-                    <Checkbox
-                      checked={tasteFilters.salmon}
-                      onCheckedChange={(checked) => setTasteFilters(prev => ({ ...prev, salmon: checked }))}
-                    />
-                    <span className="text-sm">Лосось</span>
-                  </label>
-                  <label className="flex items-center space-x-2">
-                    <Checkbox
-                      checked={tasteFilters.quail}
-                      onCheckedChange={(checked) => setTasteFilters(prev => ({ ...prev, quail: checked }))}
-                    />
-                    <span className="text-sm">Перепелка</span>
-                  </label>
-                  <label className="flex items-center space-x-2">
-                    <Checkbox
-                      checked={tasteFilters.fish}
-                      onCheckedChange={(checked) => setTasteFilters(prev => ({ ...prev, fish: checked }))}
-                    />
-                    <span className="text-sm">Рыба</span>
-                  </label>
-                  <label className="flex items-center space-x-2">
-                    <Checkbox
-                      checked={tasteFilters.veal}
-                      onCheckedChange={(checked) => setTasteFilters(prev => ({ ...prev, veal: checked }))}
-                    />
-                    <span className="text-sm">Телятина</span>
-                  </label>
-                  <label className="flex items-center space-x-2">
-                    <Checkbox
-                      checked={tasteFilters.duck}
-                      onCheckedChange={(checked) => setTasteFilters(prev => ({ ...prev, duck: checked }))}
-                    />
-                    <span className="text-sm">Утка</span>
-                  </label>
-                  <label className="flex items-center space-x-2">
-                    <Checkbox
-                      checked={tasteFilters.lamb}
-                      onCheckedChange={(checked) => setTasteFilters(prev => ({ ...prev, lamb: checked }))}
-                    />
-                    <span className="text-sm">Ягненок</span>
-                  </label>
+                  {[
+                    ["rabbit", "Кролик"],
+                    ["chicken", "Курица"],
+                    ["partridge", "Куропатка"],
+                    ["salmon", "Лосось"],
+                    ["quail", "Перепелка"],
+                    ["fish", "Рыба"],
+                    ["veal", "Телятина"],
+                    ["duck", "Утка"],
+                    ["lamb", "Ягненок"],
+                  ].map(([key, label]) => (
+                    <label key={key} className="flex items-center space-x-2">
+                      <Checkbox
+                        checked={tasteFilters[key]}
+                        onCheckedChange={(c) => setTasteFilters(prev => ({ ...prev, [key]: c }))}
+                      />
+                      <span className="text-sm">{label}</span>
+                    </label>
+                  ))}
                 </div>
               </FilterSection>
 
-              {/* Бренд */}
               <FilterSection title="Бренд">
                 <div className="space-y-2">
-                  <label className="flex items-center space-x-2">
-                    <Checkbox
-                      checked={brandFilters.landor}
-                      onCheckedChange={(checked) => setBrandFilters(prev => ({ ...prev, landor: checked }))}
-                    />
-                    <span className="text-sm">LANDOR</span>
-                  </label>
-                  <label className="flex items-center space-x-2">
-                    <Checkbox
-                      checked={brandFilters.landy}
-                      onCheckedChange={(checked) => setBrandFilters(prev => ({ ...prev, landy: checked }))}
-                    />
-                    <span className="text-sm">LANDY</span>
-                  </label>
-                  <label className="flex items-center space-x-2">
-                    <Checkbox
-                      checked={brandFilters.fresh}
-                      onCheckedChange={(checked) => setBrandFilters(prev => ({ ...prev, fresh: checked }))}
-                    />
-                    <span className="text-sm">FRESH PET PROFBALANCE</span>
-                  </label>
-                  <label className="flex items-center space-x-2">
-                    <Checkbox
-                      checked={brandFilters.clean}
-                      onCheckedChange={(checked) => setBrandFilters(prev => ({ ...prev, clean: checked }))}
-                    />
-                    <span className="text-sm">ЧИСТЫЕ ПУШИСТЫЕ</span>
-                  </label>
+                  {[
+                    ["landor", "LANDOR"],
+                    ["landy", "LANDY"],
+                    ["fresh", "FRESH PET PROFBALANCE"],
+                    ["clean", "ЧИСТЫЕ ПУШИСТЫЕ"],
+                  ].map(([key, label]) => (
+                    <label key={key} className="flex items-center space-x-2">
+                      <Checkbox
+                        checked={brandFilters[key]}
+                        onCheckedChange={(c) => setBrandFilters(prev => ({ ...prev, [key]: c }))}
+                      />
+                      <span className="text-sm">{label}</span>
+                    </label>
+                  ))}
                 </div>
               </FilterSection>
 
-              <Button
-                className="w-full bg-[hsl(var(--landor-primary))] hover:bg-[hsl(var(--landor-primary))]/90 text-white mt-6"
-              >
+              <Button className="w-full bg-[hsl(var(--landor-primary))] hover:bg-[hsl(var(--landor-primary))]/90 text-white mt-6">
                 Применить
               </Button>
             </div>
@@ -483,12 +289,32 @@ export default function Catalog() {
           {/* Правая колонка - Товары */}
           <div className="lg:col-span-3">
             <div className="mb-6">
-              <h1 className="mb-4 text-3xl text-[#6F2A2B]">Каталог</h1>
+              <h1 className="mb-4 text-2xl font-bold text-gray-900">Каталог</h1>
+
+              {/* Поиск */}
+              <div className="flex mb-6 space-x-2">
+                <div className="relative flex-1">
+                  <Search className="absolute w-4 h-4 text-gray-400 transform -translate-y-1/2 left-3 top-1/2" />
+                  <Input
+                    placeholder="Искать здесь..."
+                    value={searchQuery}
+                    onChange={(e) => {
+                      setSearchQuery(e.target.value);
+                      setPage(1); // при поиске возвращаемся на стр. 1
+                    }}
+                    className="pl-10"
+                  />
+                </div>
+                <Button variant="outline">
+                  <Search className="w-4 h-4 mr-2" />
+                  Поиск
+                </Button>
+              </div>
             </div>
 
-            {/* Сетка товаров (используем твою карточку) */}
+            {/* Сетка товаров — используем ТВОЮ карточку */}
             <div className="grid grid-cols-1 gap-4 mb-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {products.map((product) => (
+              {paged.map((product) => (
                 <ProductCard
                   key={product.id}
                   image={product.image}
@@ -499,22 +325,34 @@ export default function Catalog() {
             </div>
 
             {/* Пагинация */}
-            <div className="flex justify-center">
-              <div className="flex items-center space-x-2">
-                <Button variant="outline" size="sm">
-                  &lt;
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="bg-[hsl(var(--landor-primary))] text-white border-[hsl(var(--landor-primary))]"
-                >
-                  02
-                </Button>
-                <Button variant="outline" size="sm">
-                  &gt;
-                </Button>
-              </div>
+            <div className="flex items-center justify-center space-x-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => goto(page - 1)}
+                disabled={page === 1}
+              >
+                &lt;
+              </Button>
+
+              <span className="text-sm font-medium text-gray-700">
+                {String(page).padStart(2, "0")}
+              </span>
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => goto(page + 1)}
+                disabled={page === totalPages}
+              >
+                &gt;
+              </Button>
+            </div>
+
+
+            {/* Информация о количестве */}
+            <div className="mt-4 text-sm text-center text-gray-500">
+              Показано {paged.length} из {filtered.length} товаров · Страница {page} из {totalPages}
             </div>
           </div>
         </div>
