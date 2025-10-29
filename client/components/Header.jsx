@@ -8,24 +8,43 @@ export default function Header() {
     <header className="w-full">
       {/* Top bar */}
       <div className="bg-[#6F2A2B] text-white">
-        <div className="container mx-auto px-4 py-2 text-[13px]">
-          {/* mobile/tablet: stacked; desktop: row with spacing */}
-          <div className="flex flex-col items-start gap-2 lg:flex-row lg:items-center lg:justify-between">
-            <div>Москва</div>
+  <div className="container mx-auto px-4 py-2 text-[13px]">
+    {/* ПК-вариант */}
+    <div className="items-center justify-between hidden lg:flex">
+      <div>Москва</div>
 
-            {/* Время и телефон */}
-            <div className="flex flex-col gap-1 sm:flex-row sm:items-center">
-              <div>Звоните нам с 9:00 до 22:00 мск</div>
-              <div className="sm:ml-4 lg:ml-[71px]">+7(999)999-99-99</div>
-            </div>
+      <div className="flex items-center">
+        <div>Звоните нам с 9:00 до 22:00 мск</div>
+        <div className="ml-[71px]">+7(999)999-99-99</div>
+      </div>
 
-            <div className="flex gap-4">
-              <a href="/login" className="hover:opacity-80">Войти</a>
-              <a href="/register" className="hover:opacity-80">Регистрация</a>
-            </div>
-          </div>
+      <div className="flex gap-4">
+        <a href="/login" className="hover:opacity-80">Войти</a>
+        <a href="/register" className="hover:opacity-80">Регистрация</a>
+      </div>
+    </div>
+
+    {/* Мобильный / планшет */}
+    <div className="relative flex flex-col gap-2 lg:hidden">
+      {/* Верхняя строка */}
+      <div className="flex items-center justify-between">
+        <div>Москва</div>
+        <div className="flex gap-3">
+          <a href="/login" className="hover:opacity-80">Войти</a>
+          <a href="/register" className="hover:opacity-80">Регистрация</a>
         </div>
       </div>
+
+      {/* Контактная зона снизу */}
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center text-[13px] border-t border-white/20 pt-2">
+        <div>Звоните нам с 9:00 до 22:00 мск</div>
+        <div className="mt-1 sm:mt-0">+7(999)999-99-99</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
 
       {/* Main navigation */}
       {/* Desktop (lg+) — исходный вид */}
@@ -79,9 +98,9 @@ export default function Header() {
               <input
                 type="text"
                 placeholder="Искать здесь..."
-                className="w-96 pl-4 pr-20 py-3 rounded-full border border-[#A9A9A9] text-sm bg-gray-50"
+                className="w-96 h-11 pl-4 pr-20 py-3 rounded-full border border-[#A9A9A9] text-sm bg-gray-50"
               />
-              <button className="absolute right-0 top-0 bg-[#6F2A2B] text-white px-6 py-3 rounded-r-full hover:bg-[#5a2223]">
+              <button className="absolute  right-0 top-0 bg-[#6F2A2B] text-white px-6 py-3 rounded-r-full hover:bg-[#5a2223]">
                 <Search className="w-5 h-5" />
               </button>
             </div>

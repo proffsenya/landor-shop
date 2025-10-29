@@ -34,7 +34,7 @@ export default function ProductsSection({ title, linkText = "Все товары
       <div className="container px-3 mx-auto sm:px-4 md:px-6">
         {/* Заголовок + ссылка */}
         <div className="flex flex-col gap-3 mb-8 sm:flex-row sm:items-center sm:justify-between sm:mb-10 md:mb-12">
-          <h2 className="text-xl sm:text-2xl text-[#6F2A2B] font-semibold text-center sm:text-left">
+          <h2 className="text-xl sm:text-2xl text-[#6F2A2B] text-center sm:text-left">
             {title}
           </h2>
           <a
