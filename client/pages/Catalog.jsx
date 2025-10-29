@@ -72,11 +72,11 @@ export default function Catalog() {
   const [priceTo, setPriceTo] = useState("");
 
   // фильтры (как были)
-  const [categoryFilters, setCategoryFilters] = useState({ all: true, dry: false, wet: false, litter: false });
+  const [categoryFilters, setCategoryFilters] = useState({ all: true, dry: false, wet: false, litter: false, goodies: false });
   const [catFilters, setCatFilters] = useState({ sterilized: false, skin: false, digestion: false, picky: false, indoor: false });
   const [dogFilters, setDogFilters] = useState({ small: false, medium: false, large: false });
-  const [countryFilters, setCountryFilters] = useState({ spain: false, germany: false, russia: false, belarus: false });
-  const [tasteFilters, setTasteFilters] = useState({ rabbit: false, chicken: false, partridge: false, salmon: false, quail: false, fish: false, veal: false, duck: false, lamb: false });
+  const [countryFilters, setCountryFilters] = useState({ spain: false, germany: false, russia: false, belarus: false, china: false });
+  const [tasteFilters, setTasteFilters] = useState({ rabbit: false, chicken: false, partridge: false, salmon: false, quail: false, fish: false, veal: false, duck: false, lamb: false, beef: false, goose: false });
   const [brandFilters, setBrandFilters] = useState({ landor: false, landy: false, fresh: false, clean: false });
 
   // ----- ПАГИНАЦИЯ -----
@@ -156,6 +156,10 @@ export default function Catalog() {
                     <Checkbox checked={categoryFilters.litter} onCheckedChange={() => handleCategoryChange("litter")} />
                     <span className="text-sm">Наполнители</span>
                   </label>
+                  <label className="flex items-center space-x-2">
+                    <Checkbox checked={categoryFilters.goodies} onCheckedChange={() => handleCategoryChange("goodies")} />
+                    <span className="text-sm">Лакомства</span>
+                  </label>
                 </div>
               </FilterSection>
 
@@ -234,6 +238,10 @@ export default function Catalog() {
                     <Checkbox checked={countryFilters.belarus} onCheckedChange={(c) => setCountryFilters(prev => ({ ...prev, belarus: c }))} />
                     <span className="text-sm">Беларусь</span>
                   </label>
+                  <label className="flex items-center space-x-2">
+                    <Checkbox checked={countryFilters.china} onCheckedChange={(c) => setCountryFilters(prev => ({ ...prev, china: c }))} />
+                    <span className="text-sm">Китай</span>
+                  </label>
                 </div>
               </FilterSection>
 
@@ -249,6 +257,8 @@ export default function Catalog() {
                     ["veal", "Телятина"],
                     ["duck", "Утка"],
                     ["lamb", "Ягненок"],
+                    ["Goose", "Гусь"],
+                    ["Beef", "Говядина"],
                   ].map(([key, label]) => (
                     <label key={key} className="flex items-center space-x-2">
                       <Checkbox
