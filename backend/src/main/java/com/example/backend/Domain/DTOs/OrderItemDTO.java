@@ -1,0 +1,18 @@
+package com.example.backend.Domain.DTOs;
+
+import com.example.backend.Domain.Models.OrderItem;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
+
+import java.io.Serializable;
+import java.math.BigDecimal;
+
+/**
+ * DTO for {@link com.example.backend.Domain.Models.OrderItem}
+ */
+public record OrderItemDTO(Long id, Long productId, @NotNull @Size(max = 250) String productName, @NotNull Integer quantity,
+                           @NotNull BigDecimal totalPrice) implements Serializable {
+    public static OrderItemDTO from(OrderItem oi) {
+        return new OrderItemDTO(oi.getId(), oi.getProduct().getId(), oi.getProductName(), oi.getQuantity(), oi.getTotalPrice());
+    }
+}

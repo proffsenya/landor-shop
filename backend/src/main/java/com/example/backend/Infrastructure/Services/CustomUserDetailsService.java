@@ -1,7 +1,10 @@
 package com.example.backend.Infrastructure.Services;
 
 import com.example.backend.Domain.Models.User;
+import com.example.backend.Infrastructure.Configurations.CustomUserDetails;
 import com.example.backend.Infrastructure.Repos.UserRepository;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -15,7 +18,7 @@ class CustomUserDetailsService implements UserDetailsService {
 
     private final UserRepository userRepository;
 
-    CustomUserDetailsService(UserRepository userRepository) {
+    public CustomUserDetailsService(UserRepository userRepository) {
         this.userRepository = userRepository;
     }
 
@@ -25,12 +28,15 @@ class CustomUserDetailsService implements UserDetailsService {
         if (user == null) {
             throw new UsernameNotFoundException("User not found:" + email);
         }
-        return org.springframework.security.core.userdetails.User.builder()
-                .username(email)
-                .password(user.getPasswordHash())
-                .roles(getRoles(user))
-                .build();
 
+        var authorities = getAuthorities(user);
+        return new CustomUserDetails(
+                user.getId(),
+                user.getEmail(),
+                user.getPasswordHash(),
+                authorities,
+                true
+        );
     }
 
     private String[] getRoles(User user){
@@ -40,4 +46,12 @@ class CustomUserDetailsService implements UserDetailsService {
         roles.add("USER");
         return roles.toArray(new String[0]);
     };
+
+    private List<SimpleGrantedAuthority> getAuthorities(User user){
+        var roles = new java.util.ArrayList<SimpleGrantedAuthority>();
+        if (Boolean.TRUE.equals(user.getIsSuperuser())) roles.add(new SimpleGrantedAuthority("ROLE_SUPERUSER"));
+        if (Boolean.TRUE.equals(user.getIsStaff())) roles.add(new SimpleGrantedAuthority("ROLE_STAFF"));
+        roles.add(new SimpleGrantedAuthority("ROLE_USER"));
+        return roles;
+    }
 }

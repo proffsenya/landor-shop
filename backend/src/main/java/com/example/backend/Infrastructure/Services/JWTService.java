@@ -47,6 +47,11 @@ class JWTService {
         return claimsResolver.apply(claims);
     }
 
+    public Long extractUserId(String token) {
+        Number idNumber = exctractClaim(token, claims -> claims.get("userId", Number.class));
+        return idNumber == null ? null : idNumber.longValue();
+    }
+
     public boolean isTokenValid(String token, UserDetails user) {
         final String email = extractEmail(token);
         return (email.equals(user.getUsername())) && !isTokenExpired(token);
