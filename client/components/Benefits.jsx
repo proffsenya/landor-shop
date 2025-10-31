@@ -4,11 +4,7 @@ export default function Benefits() {
       title: "Конкурентные цены",
       description: "Стоимость нашей продукции дешевле чем у конкурентов",
       icon: (
-        <svg className="w-14 h-14 sm:w-16 sm:h-16" viewBox="0 0 90 91" fill="none">
-          <path d="M38.1822 89.4438L59.3822 41.0688L49.7822 20.8188L44.9822 19.3188L23.3822 27.1938L2.58218 74.4438L4.98218 77.4438L38.1822 89.4438Z" fill="#FB4E7B"/>
-          <path d="M46.9822 55.3188L45.7822 51.1938L42.9822 47.4438L39.7822 44.8188L36.1822 43.3188L29.7822 42.5688L24.9822 44.8188L20.5822 48.5688L18.5822 53.0688V57.1938L20.1822 61.6938L21.7822 64.3188L23.7822 66.5688L27.3822 68.0688L31.7822 68.4438H34.9822L38.5822 68.0688L41.3822 66.5688L42.9822 64.3188L45.7822 61.6938L46.9822 55.3188Z" fill="#FEDC63"/>
-          <path d="M52.5822 21.5688L65.3822 25.6938L88.5822 71.4438L87.7822 75.1938L56.9822 89.0688L51.3822 87.1938L45.7822 76.3188V74.0688L60.5822 41.0688L51.3822 22.3188L52.5822 21.5688Z" fill="#00C3FF"/>
-        </svg>
+        <img src="/benefits/prices.svg" className="w-14 h-14 sm:w-16 sm:h-16" viewBox="0 0 90 91" fill="none"></img>
       ),
     },
     {
@@ -16,7 +12,7 @@ export default function Benefits() {
       description: "Доставка в нашем интернет магазине всего 1 день",
       icon: (
         <img 
-          src="https://api.builder.io/api/v1/image/assets/TEMP/cfbd17c7ee437e7d5ccb3dedd7328f63eb68e3d6?width=216" 
+          src="/benefits/delivery-truck.svg" 
           alt="Delivery" 
           className="object-contain w-16 h-16 sm:w-20 sm:h-20"
         />
@@ -27,7 +23,7 @@ export default function Benefits() {
       description: "Наш интернет магазин сотрудничает с магазинами и питомниками",
       icon: (
         <img 
-          src="https://api.builder.io/api/v1/image/assets/TEMP/ef912ad25fa33bc40d7477313f18cd98ff56fa88?width=178" 
+          src="/benefits/support.svg"  
           alt="Partnership" 
           className="object-contain w-14 h-18 sm:w-16 sm:h-20"
         />
@@ -38,7 +34,29 @@ export default function Benefits() {
       description: "У нашего магазина есть гарантия качества от производителя",
       icon: (
         <img 
-          src="https://api.builder.io/api/v1/image/assets/TEMP/1d36e8fd9d4121cb3449fa325d6b1abdd260676e?width=216" 
+          src="/benefits/factory.svg"  
+          alt="Quality" 
+          className="object-contain w-16 h-16 sm:w-20 sm:h-20"
+        />
+      ),
+    },
+    {
+      title: "Гарантия качества",
+      description: "У нашего магазина есть гарантия качества от производителя",
+      icon: (
+        <img 
+          src="/benefits/factory.svg"  
+          alt="Quality" 
+          className="object-contain w-16 h-16 sm:w-20 sm:h-20"
+        />
+      ),
+    },
+    {
+      title: "Гарантия качества",
+      description: "У нашего магазина есть гарантия качества от производителя",
+      icon: (
+        <img 
+          src="/benefits/factory.svg"  
           alt="Quality" 
           className="object-contain w-16 h-16 sm:w-20 sm:h-20"
         />

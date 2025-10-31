@@ -302,24 +302,6 @@ export default function Catalog() {
               <h1 className="mb-4 text-2xl font-bold text-gray-900">Каталог</h1>
 
               {/* Поиск */}
-              <div className="flex mb-6 space-x-2">
-                <div className="relative flex-1">
-                  <Search className="absolute w-4 h-4 text-gray-400 transform -translate-y-1/2 left-3 top-1/2" />
-                  <Input
-                    placeholder="Искать здесь..."
-                    value={searchQuery}
-                    onChange={(e) => {
-                      setSearchQuery(e.target.value);
-                      setPage(1); // при поиске возвращаемся на стр. 1
-                    }}
-                    className="pl-10"
-                  />
-                </div>
-                <Button variant="outline">
-                  <Search className="w-4 h-4 mr-2" />
-                  Поиск
-                </Button>
-              </div>
             </div>
 
             {/* Сетка товаров — используем ТВОЮ карточку */}

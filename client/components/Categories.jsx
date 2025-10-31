@@ -5,35 +5,35 @@ export default function Categories() {
       count: "1 товар",
       bgColor: "#FFF4D8",
       image:
-        "https://api.builder.io/api/v1/image/assets/TEMP/0ddcc2c1a63c32f5e694f39256b745f1b6af9ffe?width=343",
+        "/categories/cat1.svg",
     },
     {
       name: "Котенок",
       count: "1 товар",
       bgColor: "#E7F4D8",
       image:
-        "https://api.builder.io/api/v1/image/assets/TEMP/2cc8cbd5209689107e660e79c129778627baa667?width=337",
-    },
+        "/categories/minicat.svg",
+      },
     {
       name: "Наполнители",
       count: "1 товар",
       bgColor: "#E4EEF7",
       image:
-        "https://api.builder.io/api/v1/image/assets/TEMP/03e972a1f6d66458bef3cb7a0c2b785f7f8ef30b?width=332",
+        "/categories/napolnitel.svg",
     },
     {
       name: "Собака",
       count: "1 товар",
       bgColor: "#FCE4FA",
       image:
-        "https://api.builder.io/api/v1/image/assets/TEMP/438f710fd4b37c2916755eba0f8aeaceaeb44c58?width=338",
+        "/categories/dog1.svg",
     },
     {
       name: "Щенок",
       count: "1 товар",
       bgColor: "#EFE2E0",
       image:
-        "https://api.builder.io/api/v1/image/assets/TEMP/d0eec7ae862ea4b3a171e984607a35b9be6b33c5?width=367",
+        "/categories/minidog1.svg",
     },
   ];
 
