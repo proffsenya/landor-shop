@@ -5,14 +5,12 @@ import jakarta.validation.constraints.Size;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
+import java.util.List;
 
 /**
  * DTO for {@link com.example.backend.Domain.Models.Product}
  */
-public record ProductCardDTO(Long id, @Size(max = 100) String name,
-                             @NotNull BigDecimal price,
-                             BigDecimal rating,
-                             String mainImageUrl,
-                             Boolean isFeatured
+public record ProductCardDTO(Long id, @Size(max = 100) String productName,
+                             List<VariantCardDTO> variants
                              ) implements Serializable {
 }

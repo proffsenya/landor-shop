@@ -12,6 +12,5 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     List<Product> findAll();
     Product save(Product product);
     List<Product> findByIsActive(Boolean isActive);
-    Optional<Product> findBySku(String sku);
     void deleteById(Long id);
 }

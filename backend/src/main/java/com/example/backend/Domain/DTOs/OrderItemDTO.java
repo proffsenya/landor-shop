@@ -13,6 +13,10 @@ import java.math.BigDecimal;
 public record OrderItemDTO(Long id, Long productId, @NotNull @Size(max = 250) String productName, @NotNull Integer quantity,
                            @NotNull BigDecimal totalPrice) implements Serializable {
     public static OrderItemDTO from(OrderItem oi) {
-        return new OrderItemDTO(oi.getId(), oi.getProduct().getId(), oi.getProductName(), oi.getQuantity(), oi.getTotalPrice());
+        Long variantId = null;
+        if (oi.getProductVariant() != null){
+            variantId = oi.getProductVariant().getId();
+        }
+        return new OrderItemDTO(oi.getId(), variantId, oi.getProductName(), oi.getQuantity(), oi.getTotalPrice());
     }
 }

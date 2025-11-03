@@ -25,12 +25,12 @@ public class CartController {
         this.cartService = cartService;
     }
 
-    public static record AddToCartRequest(Long productId, Integer quantity) {}
+    public static record AddToCartRequest(Long variantId, Integer quantity) {}
 
     @PostMapping
     public ResponseEntity<CartResponseDTO> createCart(@PathVariable Long userId,
                                                       @RequestBody AddToCartRequest request) throws InvalidRequestException {
-        Cart cart = cartService.addProductToCart(userId, request.productId(), request.quantity());
+        Cart cart = cartService.addProductVariantToCart(userId, request.variantId(), request.quantity());
         CartResponseDTO dto = toCartResponseDTO(cart);
         return ResponseEntity.ok(dto);
     }
@@ -69,9 +69,9 @@ public class CartController {
                 cartItem.getQuantity(),
                 cartItem.getPriceAtAdded(),
                 cartItem.getCreatedAt(),
-                cartItem.getProduct().getId(),
-                cartItem.getProduct().getName(),
-                cartItem.getProduct().getPrice()
+                cartItem.getProductVariant().getId(),
+                cartItem.getDisplayNameAtAdded(),
+                cartItem.getPriceAtAdded()
         );
     }
 }

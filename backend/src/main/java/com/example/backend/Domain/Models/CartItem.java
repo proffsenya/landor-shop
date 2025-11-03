@@ -2,6 +2,7 @@ package com.example.backend.Domain.Models;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import org.hibernate.annotations.ColumnDefault;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
@@ -24,12 +25,6 @@ public class CartItem {
     private Cart cart;
 
     @NotNull
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @OnDelete(action = OnDeleteAction.CASCADE)
-    @JoinColumn(name = "product_id", nullable = false)
-    private Product product;
-
-    @NotNull
     @Column(name = "quantity", nullable = false)
     private Integer quantity;
 
@@ -45,6 +40,38 @@ public class CartItem {
     @Column(name = "updated_at")
     private Instant updatedAt;
 
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @OnDelete(action = OnDeleteAction.CASCADE)
+    @JoinColumn(name = "product_variant_id", nullable = false)
+    private ProductVariant productVariant;
+
+    @Size(max = 500)
+    @Column(name = "display_name_at_added", length = 500)
+    private String displayNameAtAdded;
+
+    @Size(max = 500)
+    @Column(name = "image_url_at_added", length = 500)
+    private String imageUrlAtAdded;
+
+    public String getImageUrlAtAdded() {
+        return imageUrlAtAdded;
+    }
+
+    public void setImageUrlAtAdded(String imageUrlAtAdded) {
+        this.imageUrlAtAdded = imageUrlAtAdded;
+    }
+
+    public String getDisplayNameAtAdded() {
+        return displayNameAtAdded;
+    }
+
+    public void setDisplayNameAtAdded(String displayNameAtAdded) {
+        this.displayNameAtAdded = displayNameAtAdded;
+    }
+    public ProductVariant getProductVariant() { return productVariant; }
+
+    public void setProductVariant(ProductVariant productVariant) { this.productVariant = productVariant; }
+
     public Long getId() {
         return id;
     }
@@ -59,14 +86,6 @@ public class CartItem {
 
     public void setCart(Cart cart) {
         this.cart = cart;
-    }
-
-    public Product getProduct() {
-        return product;
-    }
-
-    public void setProduct(Product product) {
-        this.product = product;
     }
 
     public Integer getQuantity() {

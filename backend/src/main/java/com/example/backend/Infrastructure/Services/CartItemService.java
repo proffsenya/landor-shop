@@ -3,6 +3,7 @@ package com.example.backend.Infrastructure.Services;
 import com.example.backend.Domain.Models.Cart;
 import com.example.backend.Domain.Models.CartItem;
 import com.example.backend.Domain.Models.Product;
+import com.example.backend.Domain.Models.ProductVariant;
 import com.example.backend.Infrastructure.Exceptions.InvalidRequestException;
 import com.example.backend.Infrastructure.Repos.CartItemRepository;
 import com.example.backend.Infrastructure.Repos.CartRepository;
@@ -30,24 +31,36 @@ public class CartItemService {
     }
 
     @Transactional
-    public CartItem addItemToCart(Cart cart, Product product, Integer quantity) throws InvalidRequestException {
+    public CartItem addItemToCart(Cart cart, ProductVariant variant, Integer quantity) throws InvalidRequestException {
         if (quantity == null || quantity <= 0) {
             throw new InvalidRequestException("Quantity must be positive");
+        }
+
+        if (variant == null) {
+            throw new InvalidRequestException("Variant not found");
+        }
+
+        if (variant.getStock() != null && variant.getStock() < quantity) {
+            throw new InvalidRequestException("Not enough stock for variant");
         }
 
         if (cart.getId() == null) {
             cart = cartRepository.save(cart);
         }
-        CartItem existingItem = cartItemRepository.findByCartAndProduct(cart, product);
+        CartItem existingItem = cartItemRepository.findByCartAndProductVariant(cart, variant);
 
         if (existingItem != null) {
-            existingItem.setQuantity(existingItem.getQuantity() + quantity);
+            int newQty = existingItem.getQuantity() + quantity;
+            if (variant.getStock() != null && newQty > variant.getStock()) {
+                throw new InvalidRequestException("Not enough stock");
+            }
+            existingItem.setQuantity(newQty);
             CartItem saved = cartItemRepository.save(existingItem);
 
             boolean present = cart.getCartItems().stream()
                     .anyMatch(ci -> ci.getId() != null && ci.getId().equals(saved.getId()));
             if (!present) {
-                cart.getCartItems().removeIf(ci -> ci.getProduct() != null && ci.getProduct().getId().equals(product.getId()));
+                cart.getCartItems().removeIf(ci -> ci.getProductVariant() != null && ci.getProductVariant().getId().equals(variant.getId()));
                 cart.getCartItems().add(saved);
             } else {
                 cart.getCartItems().stream()
@@ -62,17 +75,26 @@ public class CartItemService {
             return saved;
         }
         else{
+            String disp = variant.getDisplayName();
+            if (disp == null || disp.isBlank()) {
+                disp = variant.getProduct() != null ? (variant.getProduct().getName() + (variant.getWeight() != null ? ", " + variant.getWeight() + " кг" : "")) : null;
+            }
+            String mainImageUrl = variant.getProduct().getImages().stream()
+                    .filter(img -> Boolean.TRUE.equals(img.getIsMain())).findFirst()
+                    .map(img-> "/api/images/" + img.getId()).orElse(null);
             CartItem cartItem = new CartItem();
             cartItem.setCart(cart);
-            cartItem.setProduct(product);
+            cartItem.setProductVariant(variant);
             cartItem.setQuantity(quantity);
-            cartItem.setPriceAtAdded(product.getPrice());
+            cartItem.setPriceAtAdded(variant.getPrice());
+            cartItem.setImageUrlAtAdded(mainImageUrl);
+            cartItem.setDisplayNameAtAdded(disp);
 
             CartItem saved;
             try {
                 saved = cartItemRepository.save(cartItem);
             } catch (DataIntegrityViolationException ex) {
-                CartItem raceItem = cartItemRepository.findByCartAndProduct(cart, product);
+                CartItem raceItem = cartItemRepository.findByCartAndProductVariant(cart, variant);
                 if (raceItem != null) {
                     raceItem.setQuantity(raceItem.getQuantity() + quantity);
                     saved = cartItemRepository.save(raceItem);
@@ -81,14 +103,14 @@ public class CartItemService {
                 }
             }
 
-            cart.getCartItems().removeIf(ci -> ci.getProduct() != null && ci.getProduct().getId().equals(product.getId()));
+            cart.getCartItems().removeIf(ci -> ci.getProductVariant() != null && ci.getProductVariant().getId().equals(variant.getId()));
             cart.getCartItems().add(saved);
 
             return saved;
         }
     }
 
-    public CartItem removeItemFromCart(Cart cart, Product product, Integer quantity) throws InvalidRequestException {
+    public CartItem removeItemFromCart(Cart cart, ProductVariant variant, Integer quantity) throws InvalidRequestException {
         if (quantity == null || quantity <= 0) {
             throw new InvalidRequestException("Quantity to remove must be positive");
         }
@@ -97,7 +119,7 @@ public class CartItemService {
             throw new InvalidRequestException("Cart not persisted");
         }
 
-        CartItem existingItem = cartItemRepository.findByCartAndProduct(cart, product);
+        CartItem existingItem = cartItemRepository.findByCartAndProductVariant(cart, variant);
         if (existingItem == null) {
             throw new InvalidRequestException("Item not found in cart");
         }

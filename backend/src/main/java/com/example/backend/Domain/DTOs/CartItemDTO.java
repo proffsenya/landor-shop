@@ -14,6 +14,6 @@ public record CartItemDTO(Long id,
                           @NotNull BigDecimal priceAtAdded,
                           Instant createdAt,
                           Long productId,
-                          String productName,
+                          String displayName,
                           BigDecimal currentPrice) implements Serializable {
 }

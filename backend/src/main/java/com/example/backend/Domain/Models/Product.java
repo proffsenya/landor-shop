@@ -34,18 +34,6 @@ public class Product {
     @Column(name = "quantity_in_stock", nullable = false)
     private Integer quantityInStock;
 
-    @Size(max = 255)
-    @NotNull
-    @Column(name = "sku", nullable = false)
-    private String sku;
-
-    @NotNull
-    @Column(name = "price", nullable = false, precision = 10, scale = 2)
-    private BigDecimal price;
-
-    @Column(name = "old_price", precision = 10, scale = 2)
-    private BigDecimal oldPrice;
-
     @ColumnDefault("true")
     @Column(name = "is_active")
     private Boolean isActive;
@@ -57,12 +45,6 @@ public class Product {
     @ColumnDefault("0.00")
     @Column(name = "rating", precision = 3, scale = 2)
     private BigDecimal rating;
-
-    @OneToMany(mappedBy = "product")
-    private Set<CartItem> cartItems = new LinkedHashSet<>();
-
-    @OneToMany(mappedBy = "product")
-    private Set<OrderItem> orderItems = new LinkedHashSet<>();
 
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private Set<ProductImage> images = new LinkedHashSet<>();
@@ -98,6 +80,23 @@ public class Product {
             inverseJoinColumns = @JoinColumn(name = "typeoffood_id")
     )
     private Set<Typeoffood> typeoffoods = new LinkedHashSet<>();
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "brand_id")
+    private Brand brand;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "product_type_id")
+    private ProductType productType;
+
+    @ManyToMany
+    @JoinTable(name = "product_flavors",
+            joinColumns = @JoinColumn(name = "product_id"),
+            inverseJoinColumns = @JoinColumn(name = "flavor_id"))
+    private Set<Flavor> flavors = new LinkedHashSet<>();
+
+    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    private Set<ProductVariant> productVariants = new LinkedHashSet<>();
 
     public Long getId() {
         return id;
@@ -139,30 +138,6 @@ public class Product {
         this.quantityInStock = quantityInStock;
     }
 
-    public String getSku() {
-        return sku;
-    }
-
-    public void setSku(String sku) {
-        this.sku = sku;
-    }
-
-    public BigDecimal getPrice() {
-        return price;
-    }
-
-    public void setPrice(BigDecimal price) {
-        this.price = price;
-    }
-
-    public BigDecimal getOldPrice() {
-        return oldPrice;
-    }
-
-    public void setOldPrice(BigDecimal oldPrice) {
-        this.oldPrice = oldPrice;
-    }
-
     public Boolean getIsActive() {
         return isActive;
     }
@@ -185,22 +160,6 @@ public class Product {
 
     public void setRating(BigDecimal rating) {
         this.rating = rating;
-    }
-
-    public Set<CartItem> getCartItems() {
-        return cartItems;
-    }
-
-    public void setCartItems(Set<CartItem> cartItems) {
-        this.cartItems = cartItems;
-    }
-
-    public Set<OrderItem> getOrderItems() {
-        return orderItems;
-    }
-
-    public void setOrderItems(Set<OrderItem> orderItems) {
-        this.orderItems = orderItems;
     }
 
     public Set<Breed> getBreeds() {
@@ -249,5 +208,37 @@ public class Product {
         images.remove(img);
         img.setProduct(null);
     }
+    public Brand getBrand() {
+        return brand;
+    }
+
+    public void setBrand(Brand brand) {
+        this.brand = brand;
+    }
+
+    public ProductType getProductType() {
+        return productType;
+    }
+
+    public void setProductType(ProductType productType) {
+        this.productType = productType;
+    }
+
+    public Set<Flavor> getFlavors() {
+        return flavors;
+    }
+
+    public void setFlavors(Set<Flavor> flavors) {
+        this.flavors = flavors;
+    }
+
+    public Set<ProductVariant> getProductVariants() {
+        return productVariants;
+    }
+
+    public void setProductVariants(Set<ProductVariant> productVariants) {
+        this.productVariants = productVariants;
+    }
+
 
 }

@@ -90,18 +90,29 @@ class ProductController {
 
     private ProductCardDTO toProductCardDTO(Product product) {
         String mainImageUrl = product.getImages().stream()
-                .filter(ProductImage::getIsMain)
+                .filter(img -> Boolean.TRUE.equals(img.getIsMain()))
                 .findFirst()
                 .map(img -> "/api/images/" + img.getId())
-                .orElse(null);
+                .orElseGet(() -> product.getImages().stream()
+                        .findFirst()
+                        .map(img -> "/api/images/" + img.getId())
+                        .orElse(null));
+
+        List<VariantCardDTO> variantCards = product.getProductVariants().stream()
+                .map(v -> new VariantCardDTO(
+                        v.getId(),
+                        v.getDisplayName() != null && !v.getDisplayName().isBlank()
+                                ? v.getDisplayName()
+                                : (product.getName() + (v.getWeight() != null ? (", " + v.getWeight() + " кг") : "")),
+                        v.getPrice(),
+                        mainImageUrl
+                ))
+                .toList();
 
         return new ProductCardDTO(
                 product.getId(),
                 product.getName(),
-                product.getPrice(),
-                product.getRating(),
-                mainImageUrl,
-                product.getIsFeatured()
+                variantCards
         );
     }
 
@@ -111,13 +122,10 @@ class ProductController {
                 product.getName(),
                 product.getDescription(),
                 product.getSlug(),
-                product.getQuantityInStock(),
-                product.getSku(),
-                product.getPrice(),
-                product.getOldPrice(),
                 product.getIsActive(),
                 product.getIsFeatured(),
                 product.getRating(),
+
 
                 product.getBreeds().stream().map(b -> new BreedDTO(b.getId(), b.getName())).toList(),
                 product.getCategories().stream().map(c -> new CategoryDTO(c.getId(), c.getName())).toList(),
@@ -130,7 +138,21 @@ class ProductController {
                                 img.getIsMain(),    // Boolean isMain - второй параметр
                                 img.getAltText()    // String altText - третий параметр
                         ))
-                        .toList()
+                        .toList(),
+                product.getFlavors().stream().map(f ->
+                        new FlavorDTO(f.getId(), f.getName(), f.getCanonicalName())).toList(),
+                product.getProductVariants().stream().map(v ->new VariantDTO(
+                                    v.getId(),
+                                    product.getId(),
+                                    v.getSku(),
+                                    v.getPrice(),
+                                    v.getOldPrice(),
+                                    v.getStock(),
+                                    v.getWeight(),
+                                    v.getDisplayName()
+                        )).toList(),
+                product.getBrand() != null ? product.getBrand().getId() : null,
+                product.getProductType() != null ? product.getProductType().getId() : null
         );
     }
 

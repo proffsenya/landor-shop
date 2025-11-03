@@ -19,16 +19,19 @@ public class OrderService {
     private final CartRepository cartRepository;
     private final CartService cartService;
     private final ProductRepository productRepository;
+    private final ProductVariantRepository productVariantRepository;
 
     OrderService(OrderRepository orderRepository, OrderItemRepository orderItemRepository,
                  UserRepository userRepository, CartRepository cartRepository,
-                 CartService cartService, ProductRepository productRepository) {
+                 CartService cartService, ProductRepository productRepository,
+                 ProductVariantRepository productVariantRepository) {
         this.orderRepository = orderRepository;
         this.orderItemRepository = orderItemRepository;
         this.userRepository = userRepository;
         this.cartRepository = cartRepository;
         this.cartService = cartService;
         this.productRepository = productRepository;
+        this.productVariantRepository = productVariantRepository;
     }
 
     @Transactional
@@ -51,43 +54,42 @@ public class OrderService {
 
         BigDecimal totalPrice = BigDecimal.ZERO;
         for (CartItem cartItem : cart.getCartItems()){
-            Product product = productRepository.findById(cartItem.getProduct().getId())
-                    .orElseThrow(() -> new InvalidRequestException("Product not found" + cartItem.getProduct().getId()));
+            ProductVariant productVariant = productVariantRepository.findById(cartItem.getProductVariant().getId())
+                    .orElseThrow(() -> new InvalidRequestException("Product not found" + cartItem.getProductVariant().getId()));
 
             int qty = cartItem.getQuantity();
             BigDecimal unitPrice = cartItem.getPriceAtAdded();
             if(unitPrice == null){
-                unitPrice = product.getPrice();
+                unitPrice = productVariant.getPrice();
             }
 
             try {
-                Integer stock = product.getQuantityInStock();
+                Integer stock = productVariant.getStock();
                 if (stock != null && stock < qty){
                     throw new  InvalidRequestException("Product quantity exceeds stock");
                 }
             }
             catch (ResourseNotFoundException exception) {
-                throw new  InvalidRequestException("Stock of product is null" + cartItem.getProduct().getId());
+                throw new  InvalidRequestException("Stock of product is null" + cartItem.getProductVariant().getId());
             }
 
             OrderItem  orderItem = new OrderItem();
             orderItem.setOrder(order);
-            orderItem.setProduct(product);
+            orderItem.setProductVariant(productVariant);
             orderItem.setQuantity(qty);
-            orderItem.setProductName(cartItem.getProduct().getName());
-            orderItem.setProductSku(cartItem.getProduct().getSku());
+            orderItem.setProductName(cartItem.getDisplayNameAtAdded());
+            orderItem.setProductSku(cartItem.getProductVariant().getSku());
             orderItem.setPrice(unitPrice);
             order.getOrderItems().add(orderItem);
             BigDecimal itemTotal = unitPrice.multiply(BigDecimal.valueOf(qty));
             orderItem.setTotalPrice(itemTotal);
-            orderItem = orderItemRepository.save(orderItem);
+            orderItemRepository.save(orderItem);
 
-            order.getOrderItems().add(orderItem);
             totalPrice = totalPrice.add(itemTotal);
 
-            if (product.getQuantityInStock() != null) {
-                product.setQuantityInStock(product.getQuantityInStock() - qty);
-                productRepository.save(product);
+            if (productVariant.getStock() != null) {
+                productVariant.setStock(productVariant.getStock() - qty);
+                productVariantRepository.save(productVariant);
             }
         }
 
