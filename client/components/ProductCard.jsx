@@ -58,10 +58,10 @@ export default function ProductCard({ image, title, price }) {
                 <button
                   onClick={() => setInCart(!inCart)}
                   className={`
-                    flex items-center justify-center gap-2
+                    flex items-center justify-center
                     rounded-md text-sm sm:text-[15px]
                     transition-colors
-                    px-3 py-2 sm:px-4
+                    px-4 py-3 sm:px-3
                     ${
                       inCart
                         ? "bg-white border border-[#6F2A2B] text-[#6F2A2B]"
@@ -71,15 +71,20 @@ export default function ProductCard({ image, title, price }) {
                   `}
                 >
                   <FadeSwitch active={inCart}>
-                    {inCart ? (
-                      <>
-                        <Check className="w-4 h-4" /> В корзине
-                      </>
-                    ) : (
-                      "В корзину"
-                    )}
+                    <span className="flex items-center justify-center gap-2 leading-none">
+                      {inCart ? (
+                        <>
+                          <Check className="w-4 h-4" />
+                          <span>В корзине</span>
+                        </>
+                      ) : (
+                        <span>В корзину</span>
+                      )}
+                    </span>
                   </FadeSwitch>
                 </button>
+
+
             </div>
           </div>
         </div>

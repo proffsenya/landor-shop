@@ -38,7 +38,7 @@ export default function ProductsSection({ title, linkText = "Все товары
             {title}
           </h2>
           <a
-            href="/products"
+            href="/catalog"
             className="text-sm sm:text-base text-[#6F2A2B] hover:opacity-70 text-center sm:text-right"
           >
             {linkText}

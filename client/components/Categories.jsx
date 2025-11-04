@@ -1,3 +1,4 @@
+import { HoverLift, StaggerItem } from "../utils/CatalogAnimations";
 export default function Categories() {
   const categories = [
     {
@@ -46,7 +47,7 @@ export default function Categories() {
             Популярные категории
           </h2>
           <a
-            href="/categories"
+            href="/catalog"
             className="text-sm sm:text-base text-[#6F2A2B] hover:opacity-70"
           >
             Все категории
@@ -54,8 +55,14 @@ export default function Categories() {
         </div>
 
         {/* Сетка */}
+        
+
+        
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5 sm:gap-6 justify-items-center">
+          
           {categories.map((category, index) => (
+            <StaggerItem key= {index}>
+            <HoverLift>
             <div
               key={index}
               className="relative w-[160px] sm:w-[200px] lg:w-[220px] flex flex-col items-center"
@@ -85,8 +92,11 @@ export default function Categories() {
                 </p>
               </div>
             </div>
+            </HoverLift>
+          </StaggerItem>
           ))}
         </div>
+        
       </div>
     </section>
   );
