@@ -4,7 +4,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Heart } from "lucide-react";
-import ScrollReveal from "@/utils/ScrollAnimations";
+import { PageFade } from "@/utils/PageAnimations";
 
 // Моковые данные: два производителя
 const mockProduct = {
@@ -40,6 +40,7 @@ const mockProduct = {
 function CardSection({ title, defaultOpen = false, children }) {
   const [open, setOpen] = useState(defaultOpen);
   return (
+    <PageFade>
     <div className="rounded-lg border border-[#E6E6E6]">
       <button
         onClick={() => setOpen((v) => !v)}
@@ -56,6 +57,7 @@ function CardSection({ title, defaultOpen = false, children }) {
         </div>
       )}
     </div>
+    </PageFade>
   );
 }
 
@@ -75,7 +77,6 @@ export default function Product() {
   return (
     <div className="min-h-screen bg-white">
       <Header />
-      <ScrollReveal>
       <div className="container mx-auto px-4 py-6 md:px-10 lg:px-[84px] md:py-8">
         <Link
           to="/catalog"
@@ -254,7 +255,6 @@ export default function Product() {
           </CardSection>
         </div>
       </div>
-      </ScrollReveal>
       <Footer />
     </div>
   );

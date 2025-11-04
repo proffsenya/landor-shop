@@ -2,7 +2,7 @@ import { useState } from "react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
-import ScrollReveal from "@/utils/ScrollAnimations";
+import { PageFade } from "@/utils/PageAnimations";
 
 // Моки
 const mockUser = {
@@ -38,6 +38,7 @@ function RowWithButton({
   type = "text",
 }) {
   return (
+    <PageFade>
     <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
       <input
         type={type}
@@ -59,6 +60,7 @@ function RowWithButton({
         {isEditing ? "Сохранить" : "Изменить"}
       </Button>
     </div>
+    </PageFade>
   );
 }
 
@@ -81,7 +83,6 @@ export default function Profile() {
   return (
     <div className="min-h-screen bg-white">
       <Header />
-      <ScrollReveal>
       <div className="container mx-auto px-4 sm:px-6 lg:px-[64px] py-6 sm:py-8">
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-[0.9fr_1.1fr]">
           {/* Профиль — уменьшенный */}
@@ -273,7 +274,6 @@ export default function Profile() {
           </div>
         </div>
       </div>
-      </ScrollReveal>
       <Footer />
     </div>
   );

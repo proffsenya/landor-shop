@@ -5,22 +5,22 @@ import Categories from "@/components/Categories";
 import ProductsSection from "@/components/ProductsSection";
 import FAQ from "@/components/FAQ";
 import Footer from "@/components/Footer";
-import ScrollReveal from "@/utils/ScrollAnimations";
+import { PageFade } from "@/utils/PageAnimations";
 
 export default function Index() {
   return (
     <div className="min-h-screen bg-white">
       <Header />
-      <main>
-        <HeroBanner />
-        <ScrollReveal>
-        <Benefits />
-        <Categories />
-        <ProductsSection title="Рекомендовано для Вас" />
-        <ProductsSection title="Популярные товары" />
-        <FAQ />
-        </ScrollReveal>
-      </main>
+        <PageFade>
+          <main>
+            <HeroBanner />
+            <Benefits />
+            <Categories />
+            <ProductsSection title="Рекомендовано для Вас" />
+            <ProductsSection title="Популярные товары" />
+            <FAQ />
+          </main>
+        </PageFade>
       <Footer />
     </div>
   );

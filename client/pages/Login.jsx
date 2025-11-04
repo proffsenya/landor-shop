@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import ScrollReveal from "@/utils/ScrollAnimations";
+import { PageFade } from "@/utils/PageAnimations";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -69,7 +69,7 @@ export default function Login() {
   return (
     <div className="min-h-screen bg-white">
       <Header />
-      <ScrollReveal>
+      <PageFade>
       {/* Основной контент с фоном лап */}
       <main className="relative flex items-center justify-center py-20 overflow-hidden bg-white">
         {/* Левая картинка */}
@@ -147,7 +147,7 @@ export default function Login() {
           </div>
         </div>
       </main>
-      </ScrollReveal>
+      </PageFade>
       <Footer />
     </div>
   );

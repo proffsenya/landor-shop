@@ -6,7 +6,16 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ChevronDown, ChevronUp, Search } from "lucide-react";
 import ProductCard from "@/components/ProductCard";
-import ScrollReveal from "@/utils/ScrollAnimations";
+import AccordionMotion from "@/utils/AccordionMotion";
+import { motion } from "framer-motion";  
+import {
+  ScrollFade,
+  SlideFade,
+  StaggerParent,
+  StaggerItem,
+  HoverLift,
+} from "@/utils/CatalogAnimations";
+
 
 // -------- Mock data ----------
 const mockProducts = [
@@ -52,16 +61,30 @@ const mockProducts = [
 // -------- Вспомогательные блоки ----------
 const FilterSection = ({ title, children, isExpanded = true }) => {
   const [expanded, setExpanded] = useState(isExpanded);
+
   return (
     <div className="pb-4 mb-4 border-b border-gray-200">
       <button
         onClick={() => setExpanded(!expanded)}
-        className="flex items-center justify-between w-full mb-3 font-medium text-left text-gray-900"
+        className="flex items-center justify-between w-full mb-3 font-medium text-left text-gray-900 select-none"
       >
         <span>{title}</span>
-        {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+        <motion.div
+          animate={{ rotate: expanded ? 180 : 0 }}
+          transition={{ duration: 0.25 }}
+        >
+          {expanded ? (
+            <ChevronUp className="w-4 h-4" />
+          ) : (
+            <ChevronDown className="w-4 h-4" />
+          )}
+        </motion.div>
       </button>
-      {expanded && children}
+
+      {/* Оборачиваем контент в плавный контейнер */}
+      <AccordionMotion isOpen={expanded}>
+        <div className="mt-2">{children}</div>
+      </AccordionMotion>
     </div>
   );
 };
@@ -129,195 +152,198 @@ export default function Catalog() {
   };
 
   return (
-    <div className="min-h-screen bg-white">
-      <Header />
-      <ScrollReveal>
-      <div className="container px-4 py-8 mx-auto">
-        <div className="grid grid-cols-1 gap-8 lg:grid-cols-4">
-          {/* Левая колонка - Фильтры (без изменений визуально) */}
-          <div className="lg:col-span-1">
-            <div className="p-6 bg-white border border-gray-200 rounded-lg">
-              <h2 className="mb-6 text-xl font-bold text-gray-900">Фильтры</h2>
+  <div className="min-h-screen bg-white">
+    <Header />
+    <div className="container px-4 py-8 mx-auto">
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-4">
+        {/* Левая колонка — фильтры (выезд слева) */}
+        <SlideFade direction="left" distance={36} delay={0.05} className="lg:col-span-1">
+          <div className="p-6 bg-white border border-gray-200 rounded-lg">
+            <h2 className="mb-6 text-xl font-bold text-gray-900">Фильтры</h2>
 
-              <FilterSection title="По категории">
-                <div className="space-y-2">
-                  <label className="flex items-center space-x-2">
-                    <Checkbox checked={categoryFilters.all} onCheckedChange={() => handleCategoryChange("all")} />
-                    <span className="text-sm">Все корма</span>
-                  </label>
-                  <label className="flex items-center space-x-2">
-                    <Checkbox checked={categoryFilters.dry} onCheckedChange={() => handleCategoryChange("dry")} />
-                    <span className="text-sm">Сухие корма</span>
-                  </label>
-                  <label className="flex items-center space-x-2">
-                    <Checkbox checked={categoryFilters.wet} onCheckedChange={() => handleCategoryChange("wet")} />
-                    <span className="text-sm">Влажные корма</span>
-                  </label>
-                  <label className="flex items-center space-x-2">
-                    <Checkbox checked={categoryFilters.litter} onCheckedChange={() => handleCategoryChange("litter")} />
-                    <span className="text-sm">Наполнители</span>
-                  </label>
-                  <label className="flex items-center space-x-2">
-                    <Checkbox checked={categoryFilters.goodies} onCheckedChange={() => handleCategoryChange("goodies")} />
-                    <span className="text-sm">Лакомства</span>
-                  </label>
-                </div>
-              </FilterSection>
+            <FilterSection title="По категории">
+              <div className="space-y-2">
+                <label className="flex items-center space-x-2">
+                  <Checkbox checked={categoryFilters.all} onCheckedChange={() => handleCategoryChange("all")} />
+                  <span className="text-sm">Все корма</span>
+                </label>
+                <label className="flex items-center space-x-2">
+                  <Checkbox checked={categoryFilters.dry} onCheckedChange={() => handleCategoryChange("dry")} />
+                  <span className="text-sm">Сухие корма</span>
+                </label>
+                <label className="flex items-center space-x-2">
+                  <Checkbox checked={categoryFilters.wet} onCheckedChange={() => handleCategoryChange("wet")} />
+                  <span className="text-sm">Влажные корма</span>
+                </label>
+                <label className="flex items-center space-x-2">
+                  <Checkbox checked={categoryFilters.litter} onCheckedChange={() => handleCategoryChange("litter")} />
+                  <span className="text-sm">Наполнители</span>
+                </label>
+                <label className="flex items-center space-x-2">
+                  <Checkbox checked={categoryFilters.goodies} onCheckedChange={() => handleCategoryChange("goodies")} />
+                  <span className="text-sm">Лакомства</span>
+                </label>
+              </div>
+            </FilterSection>
 
-              <FilterSection title="По стоимости">
-                <div className="flex space-x-2">
-                  <Input placeholder="от" value={priceFrom} onChange={(e) => setPriceFrom(e.target.value)} className="flex-1" />
-                  <Input placeholder="до" value={priceTo} onChange={(e) => setPriceTo(e.target.value)} className="flex-1" />
-                </div>
-              </FilterSection>
+            <FilterSection title="По стоимости">
+              <div className="flex space-x-2">
+                <Input placeholder="от" value={priceFrom} onChange={(e) => setPriceFrom(e.target.value)} className="flex-1" />
+                <Input placeholder="до" value={priceTo} onChange={(e) => setPriceTo(e.target.value)} className="flex-1" />
+              </div>
+            </FilterSection>
 
-              <FilterSection title="Котенок" isExpanded={false}>
-                <div className="space-y-2">{/* чекбоксы для котят */}</div>
-              </FilterSection>
+            <FilterSection title="Котенок" isExpanded={false}>
+              <div className="space-y-2">{/* чекбоксы для котят */}</div>
+            </FilterSection>
 
-              <FilterSection title="Кошка">
-                <div className="space-y-2">
-                  <label className="flex items-center space-x-2">
-                    <Checkbox checked={catFilters.sterilized} onCheckedChange={(c) => setCatFilters(prev => ({ ...prev, sterilized: c }))} />
-                    <span className="text-sm">Для стерилизованных</span>
-                  </label>
-                  <label className="flex items-center space-x-2">
-                    <Checkbox checked={catFilters.skin} onCheckedChange={(c) => setCatFilters(prev => ({ ...prev, skin: c }))} />
-                    <span className="text-sm">Для здоровья кожи и блеска шерсти</span>
-                  </label>
-                  <label className="flex items-center space-x-2">
-                    <Checkbox checked={catFilters.digestion} onCheckedChange={(c) => setCatFilters(prev => ({ ...prev, digestion: c }))} />
-                    <span className="text-sm">Для чувствительного пищеварения</span>
-                  </label>
-                  <label className="flex items-center space-x-2">
-                    <Checkbox checked={catFilters.picky} onCheckedChange={(c) => setCatFilters(prev => ({ ...prev, picky: c }))} />
-                    <span className="text-sm">Для привередливых</span>
-                  </label>
-                  <label className="flex items-center space-x-2">
-                    <Checkbox checked={catFilters.indoor} onCheckedChange={(c) => setCatFilters(prev => ({ ...prev, indoor: c }))} />
-                    <span className="text-sm">Для домашних</span>
-                  </label>
-                </div>
-              </FilterSection>
+            <FilterSection title="Кошка">
+              <div className="space-y-2">
+                <label className="flex items-center space-x-2">
+                  <Checkbox checked={catFilters.sterilized} onCheckedChange={(c) => setCatFilters(prev => ({ ...prev, sterilized: c }))} />
+                  <span className="text-sm">Для стерилизованных</span>
+                </label>
+                <label className="flex items-center space-x-2">
+                  <Checkbox checked={catFilters.skin} onCheckedChange={(c) => setCatFilters(prev => ({ ...prev, skin: c }))} />
+                  <span className="text-sm">Для здоровья кожи и блеска шерсти</span>
+                </label>
+                <label className="flex items-center space-x-2">
+                  <Checkbox checked={catFilters.digestion} onCheckedChange={(c) => setCatFilters(prev => ({ ...prev, digestion: c }))} />
+                  <span className="text-sm">Для чувствительного пищеварения</span>
+                </label>
+                <label className="flex items-center space-x-2">
+                  <Checkbox checked={catFilters.picky} onCheckedChange={(c) => setCatFilters(prev => ({ ...prev, picky: c }))} />
+                  <span className="text-sm">Для привередливых</span>
+                </label>
+                <label className="flex items-center space-x-2">
+                  <Checkbox checked={catFilters.indoor} onCheckedChange={(c) => setCatFilters(prev => ({ ...prev, indoor: c }))} />
+                  <span className="text-sm">Для домашних</span>
+                </label>
+              </div>
+            </FilterSection>
 
-              <FilterSection title="Щенок" isExpanded={false}>
-                <div className="space-y-2">{/* чекбоксы для щенков */}</div>
-              </FilterSection>
+            <FilterSection title="Щенок" isExpanded={false}>
+              <div className="space-y-2">{/* чекбоксы для щенков */}</div>
+            </FilterSection>
 
-              <FilterSection title="Собака">
-                <div className="space-y-2">
-                  <label className="flex items-center space-x-2">
-                    <Checkbox checked={dogFilters.small} onCheckedChange={(c) => setDogFilters(prev => ({ ...prev, small: c }))} />
-                    <span className="text-sm">Для мелких пород</span>
-                  </label>
-                  <label className="flex items-center space-x-2">
-                    <Checkbox checked={dogFilters.medium} onCheckedChange={(c) => setDogFilters(prev => ({ ...prev, medium: c }))} />
-                    <span className="text-sm">Для средних пород</span>
-                  </label>
-                  <label className="flex items-center space-x-2">
-                    <Checkbox checked={dogFilters.large} onCheckedChange={(c) => setDogFilters(prev => ({ ...prev, large: c }))} />
-                    <span className="text-sm">Для крупных пород</span>
-                  </label>
-                </div>
-              </FilterSection>
+            <FilterSection title="Собака">
+              <div className="space-y-2">
+                <label className="flex items-center space-x-2">
+                  <Checkbox checked={dogFilters.small} onCheckedChange={(c) => setDogFilters(prev => ({ ...prev, small: c }))} />
+                  <span className="text-sm">Для мелких пород</span>
+                </label>
+                <label className="flex items-center space-x-2">
+                  <Checkbox checked={dogFilters.medium} onCheckedChange={(c) => setDogFilters(prev => ({ ...prev, medium: c }))} />
+                  <span className="text-sm">Для средних пород</span>
+                </label>
+                <label className="flex items-center space-x-2">
+                  <Checkbox checked={dogFilters.large} onCheckedChange={(c) => setDogFilters(prev => ({ ...prev, large: c }))} />
+                  <span className="text-sm">Для крупных пород</span>
+                </label>
+              </div>
+            </FilterSection>
 
-              <FilterSection title="Страна производства">
-                <div className="space-y-2">
-                  <label className="flex items-center space-x-2">
-                    <Checkbox checked={countryFilters.spain} onCheckedChange={(c) => setCountryFilters(prev => ({ ...prev, spain: c }))} />
-                    <span className="text-sm">Испания</span>
-                  </label>
-                  <label className="flex items-center space-x-2">
-                    <Checkbox checked={countryFilters.germany} onCheckedChange={(c) => setCountryFilters(prev => ({ ...prev, germany: c }))} />
-                    <span className="text-sm">Германия</span>
-                  </label>
-                  <label className="flex items-center space-x-2">
-                    <Checkbox checked={countryFilters.russia} onCheckedChange={(c) => setCountryFilters(prev => ({ ...prev, russia: c }))} />
-                    <span className="text-sm">Россия</span>
-                  </label>
-                  <label className="flex items-center space-x-2">
-                    <Checkbox checked={countryFilters.belarus} onCheckedChange={(c) => setCountryFilters(prev => ({ ...prev, belarus: c }))} />
-                    <span className="text-sm">Беларусь</span>
-                  </label>
-                  <label className="flex items-center space-x-2">
-                    <Checkbox checked={countryFilters.china} onCheckedChange={(c) => setCountryFilters(prev => ({ ...prev, china: c }))} />
-                    <span className="text-sm">Китай</span>
-                  </label>
-                </div>
-              </FilterSection>
+            <FilterSection title="Страна производства">
+              <div className="space-y-2">
+                <label className="flex items-center space-x-2">
+                  <Checkbox checked={countryFilters.spain} onCheckedChange={(c) => setCountryFilters(prev => ({ ...prev, spain: c }))} />
+                  <span className="text-sm">Испания</span>
+                </label>
+                <label className="flex items-center space-x-2">
+                  <Checkbox checked={countryFilters.germany} onCheckedChange={(c) => setCountryFilters(prev => ({ ...prev, germany: c }))} />
+                  <span className="text-sm">Германия</span>
+                </label>
+                <label className="flex items-center space-x-2">
+                  <Checkbox checked={countryFilters.russia} onCheckedChange={(c) => setCountryFilters(prev => ({ ...prev, russia: c }))} />
+                  <span className="text-sm">Россия</span>
+                </label>
+                <label className="flex items-center space-x-2">
+                  <Checkbox checked={countryFilters.belarus} onCheckedChange={(c) => setCountryFilters(prev => ({ ...prev, belarus: c }))} />
+                  <span className="text-sm">Беларусь</span>
+                </label>
+                <label className="flex items-center space-x-2">
+                  <Checkbox checked={countryFilters.china} onCheckedChange={(c) => setCountryFilters(prev => ({ ...prev, china: c }))} />
+                  <span className="text-sm">Китай</span>
+                </label>
+              </div>
+            </FilterSection>
 
-              <FilterSection title="Вкус">
-                <div className="grid grid-cols-2 gap-2">
-                  {[
-                    ["rabbit", "Кролик"],
-                    ["chicken", "Курица"],
-                    ["partridge", "Куропатка"],
-                    ["salmon", "Лосось"],
-                    ["quail", "Перепелка"],
-                    ["fish", "Рыба"],
-                    ["veal", "Телятина"],
-                    ["duck", "Утка"],
-                    ["lamb", "Ягненок"],
-                    ["Goose", "Гусь"],
-                    ["Beef", "Говядина"],
-                  ].map(([key, label]) => (
-                    <label key={key} className="flex items-center space-x-2">
-                      <Checkbox
-                        checked={tasteFilters[key]}
-                        onCheckedChange={(c) => setTasteFilters(prev => ({ ...prev, [key]: c }))}
-                      />
-                      <span className="text-sm">{label}</span>
-                    </label>
-                  ))}
-                </div>
-              </FilterSection>
+            <FilterSection title="Вкус">
+              <div className="grid grid-cols-2 gap-2">
+                {[
+                  ["rabbit", "Кролик"],
+                  ["chicken", "Курица"],
+                  ["partridge", "Куропатка"],
+                  ["salmon", "Лосось"],
+                  ["quail", "Перепелка"],
+                  ["fish", "Рыба"],
+                  ["veal", "Телятина"],
+                  ["duck", "Утка"],
+                  ["lamb", "Ягненок"],
+                  ["Goose", "Гусь"],
+                  ["Beef", "Говядина"],
+                ].map(([key, label]) => (
+                  <label key={key} className="flex items-center space-x-2">
+                    <Checkbox
+                      checked={tasteFilters[key]}
+                      onCheckedChange={(c) => setTasteFilters(prev => ({ ...prev, [key]: c }))}
+                    />
+                    <span className="text-sm">{label}</span>
+                  </label>
+                ))}
+              </div>
+            </FilterSection>
 
-              <FilterSection title="Бренд">
-                <div className="space-y-2">
-                  {[
-                    ["landor", "LANDOR"],
-                    ["landy", "LANDY"],
-                    ["fresh", "FRESH PET PROFBALANCE"],
-                    ["clean", "ЧИСТЫЕ ПУШИСТЫЕ"],
-                  ].map(([key, label]) => (
-                    <label key={key} className="flex items-center space-x-2">
-                      <Checkbox
-                        checked={brandFilters[key]}
-                        onCheckedChange={(c) => setBrandFilters(prev => ({ ...prev, [key]: c }))}
-                      />
-                      <span className="text-sm">{label}</span>
-                    </label>
-                  ))}
-                </div>
-              </FilterSection>
+            <FilterSection title="Бренд">
+              <div className="space-y-2">
+                {[
+                  ["landor", "LANDOR"],
+                  ["landy", "LANDY"],
+                  ["fresh", "FRESH PET PROFBALANCE"],
+                  ["clean", "ЧИСТЫЕ ПУШИСТЫЕ"],
+                ].map(([key, label]) => (
+                  <label key={key} className="flex items-center space-x-2">
+                    <Checkbox
+                      checked={brandFilters[key]}
+                      onCheckedChange={(c) => setBrandFilters(prev => ({ ...prev, [key]: c }))}
+                    />
+                    <span className="text-sm">{label}</span>
+                  </label>
+                ))}
+              </div>
+            </FilterSection>
 
-              <Button className="w-full bg-[hsl(var(--landor-primary))] hover:bg-[hsl(var(--landor-primary))]/90 text-white mt-6">
-                Применить
-              </Button>
-            </div>
+            <Button className="w-full bg-[hsl(var(--landor-primary))] hover:bg-[hsl(var(--landor-primary))]/90 text-white mt-6">
+              Применить
+            </Button>
           </div>
+        </SlideFade>
 
-          {/* Правая колонка - Товары */}
-          <div className="lg:col-span-3">
+        {/* Правая колонка — товары */}
+        <div className="lg:col-span-3">
+          {/* Заголовок блока */}
+          <ScrollFade>
             <div className="mb-6">
               <h1 className="mb-4 text-2xl font-bold text-gray-900">Каталог</h1>
-
-              {/* Поиск */}
+              {/* Поиск (удалён по твоей задаче) */}
             </div>
+          </ScrollFade>
 
-            {/* Сетка товаров — используем ТВОЮ карточку */}
+          {/* Сетка карточек c поочерёдным появлением + hover-lift */}
+          <StaggerParent delayChildren={0.05} stagger={0.05}>
             <div className="grid grid-cols-1 gap-4 mb-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {paged.map((product) => (
                 <ProductCard
-                  key={product.id}
                   image={product.image}
                   title={product.name}
                   price={`${product.price.toLocaleString()} ₽`}
                 />
               ))}
             </div>
+          </StaggerParent>
 
-            {/* Пагинация */}
+          {/* Пагинация + инфо — мягкий подъём */}
+          <SlideFade direction="up" distance={20}>
             <div className="flex items-center justify-center space-x-2">
               <Button
                 variant="outline"
@@ -342,16 +368,14 @@ export default function Catalog() {
               </Button>
             </div>
 
-
-            {/* Информация о количестве */}
             <div className="mt-4 text-sm text-center text-gray-500">
               Показано {paged.length} из {filtered.length} товаров · Страница {page} из {totalPages}
             </div>
-          </div>
+          </SlideFade>
         </div>
       </div>
-      </ScrollReveal>
-      <Footer />
     </div>
-  );
+    <Footer />
+  </div>
+);
 }
