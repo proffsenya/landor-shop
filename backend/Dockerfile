@@ -1,20 +1,15 @@
-FROM openjdk:17-slim
+# backend/Dockerfile
+FROM gradle:7.6-jdk17 AS builder
+WORKDIR /home/gradle/project
 
+COPY --chown=gradle:gradle . .
+
+RUN gradle clean bootJar --no-daemon -x test
+
+FROM eclipse-temurin:17-jre-jammy
 WORKDIR /app
 
-# Копируем Gradle файлы
-COPY build.gradle .
-COPY gradlew .
-COPY gradle/ gradle/
+COPY --from=builder /home/gradle/project/build/libs/*.jar /app/app.jar
 
-# Копируем исходный код
-COPY src/ src/
-
-# Даем права на выполнение gradlew
-RUN chmod +x ./gradlew
-
-# Собираем приложение
-RUN ./gradlew build -x test
-
-# Запускаем приложение
-ENTRYPOINT ["java", "-jar", "build/libs/*.jar"]
+EXPOSE 8080
+ENTRYPOINT ["java", "-jar", "/app/app.jar"]
