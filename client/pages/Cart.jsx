@@ -4,6 +4,8 @@ import Footer from "@/components/Footer";
 import { Trash2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import ProductSection from "../components/ProductsSection";
+import ScrollReveal from "@/utils/ScrollAnimations";
+
 
 const mockCartItems = [
   { id: 1, name: "LANDOR полнорационный сухой корм для взрослых собак всех пород", price: 3000, quantity: 1, image: "/korm1.svg", weight: "1 кг" },
@@ -65,7 +67,7 @@ export default function Cart() {
   return (
     <div className="min-h-screen bg-white">
       <Header />
-
+      <ScrollReveal>
       <div className="container mx-auto px-4 sm:px-6 lg:px-[80px] py-8 lg:py-10">
         <h1 className="text-[#6F2A2B] text-2xl sm:text-3xl mb-8 lg:mb-20">
           Ваша корзина
@@ -349,7 +351,7 @@ export default function Cart() {
       </div>
 
       <ProductSection title="Рекомендовано для Вас" />
-
+      </ScrollReveal>
       <Footer />
     </div>
   );

@@ -4,6 +4,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { ShoppingCart, ArrowLeft } from "lucide-react";
 import ProductsSection from "../components/ProductsSection";
+import ScrollReveal from "@/utils/ScrollAnimations";
 
 const mockFavorites = [
   {
@@ -79,7 +80,7 @@ export default function Favorites() {
   return (
     <div className="min-h-screen bg-white">
       <Header />
-
+      <ScrollReveal>
       <div className="container mx-auto px-4 sm:px-6 lg:px-[80px] py-6 sm:py-8 lg:py-10">
         <h1 className="text-[#6F2A2B] text-2xl sm:text-[28px] lg:text-3xl leading-none mb-6 sm:mb-10 lg:mb-20">
           Избранное
@@ -290,7 +291,7 @@ export default function Favorites() {
       <div className="mt-8 sm:mt-10 lg:mt-12">
         <ProductsSection title="Рекомендовано для Вас" />
       </div>
-
+      </ScrollReveal>
       <Footer />
     </div>
   );

@@ -5,6 +5,7 @@ import Categories from "@/components/Categories";
 import ProductsSection from "@/components/ProductsSection";
 import FAQ from "@/components/FAQ";
 import Footer from "@/components/Footer";
+import ScrollReveal from "@/utils/ScrollAnimations";
 
 export default function Index() {
   return (
@@ -12,11 +13,13 @@ export default function Index() {
       <Header />
       <main>
         <HeroBanner />
+        <ScrollReveal>
         <Benefits />
         <Categories />
         <ProductsSection title="Рекомендовано для Вас" />
         <ProductsSection title="Популярные товары" />
         <FAQ />
+        </ScrollReveal>
       </main>
       <Footer />
     </div>

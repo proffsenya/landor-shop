@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ChevronDown, ChevronUp, Search } from "lucide-react";
 import ProductCard from "@/components/ProductCard";
+import ScrollReveal from "@/utils/ScrollAnimations";
 
 // -------- Mock data ----------
 const mockProducts = [
@@ -130,7 +131,7 @@ export default function Catalog() {
   return (
     <div className="min-h-screen bg-white">
       <Header />
-
+      <ScrollReveal>
       <div className="container px-4 py-8 mx-auto">
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-4">
           {/* Левая колонка - Фильтры (без изменений визуально) */}
@@ -349,7 +350,7 @@ export default function Catalog() {
           </div>
         </div>
       </div>
-
+      </ScrollReveal>
       <Footer />
     </div>
   );

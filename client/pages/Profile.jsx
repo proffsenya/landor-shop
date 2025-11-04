@@ -2,6 +2,7 @@ import { useState } from "react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
+import ScrollReveal from "@/utils/ScrollAnimations";
 
 // Моки
 const mockUser = {
@@ -80,7 +81,7 @@ export default function Profile() {
   return (
     <div className="min-h-screen bg-white">
       <Header />
-
+      <ScrollReveal>
       <div className="container mx-auto px-4 sm:px-6 lg:px-[64px] py-6 sm:py-8">
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-[0.9fr_1.1fr]">
           {/* Профиль — уменьшенный */}
@@ -272,7 +273,7 @@ export default function Profile() {
           </div>
         </div>
       </div>
-
+      </ScrollReveal>
       <Footer />
     </div>
   );
