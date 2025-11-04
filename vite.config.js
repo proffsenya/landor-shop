@@ -6,7 +6,16 @@ import path from "path";
 export default defineConfig({
   server: {
     host: "::",
-    port: 8080,
+    port: 8081,
+    proxy: {
+      "/api": {
+        target: "http://localhost:8080", // твой бэкенд
+        changeOrigin: true,
+        secure: false,
+        // если бэк отдает 301/302 без /api — можно раскомментить
+        // rewrite: (p) => p.replace(/^\/api/, ""),
+      },
+    },
     fs: {
       allow: ["./client", "./index.html"],
     },
