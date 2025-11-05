@@ -27,9 +27,9 @@ export default function Header() {
             <div className="flex items-center">
               <div>Звоните нам с 9:00 до 22:00 мск</div>
               <div className="ml-[71px]">+7(999)999-99-99</div>
-              <img className="ml-[5px]" src="/ws.svg" alt="ws" />
-              <img className="ml-[5px]" src="/tg.svg" alt="tg" />
-              <img className="ml-[5px]" src="/call.svg" alt="call" />
+              <img className="ml-[5px]" src="/socialmedia-icons/ws.svg" alt="ws" />
+              <img className="ml-[5px]" src="/socialmedia-icons/tg.svg" alt="tg" />
+              <img className="ml-[5px]" src="/socialmedia-icons/call.svg" alt="call" />
             </div>
 
             <div className="flex gap-4">
