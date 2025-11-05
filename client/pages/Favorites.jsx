@@ -229,8 +229,10 @@ export default function Favorites() {
                         </tr>
                       </thead>
 
-                      <tbody>
-                        <AnimatePresence mode="popLayout">
+                      <motion.tbody
+                        initial={false}
+                      >
+                        <AnimatePresence mode="sync">
                           {favorites.map((item) => (
                             <motion.tr
                               key={item.id}
@@ -238,8 +240,11 @@ export default function Favorites() {
                               animate={{ opacity: 1, y: 0 }}
                               exit={{ opacity: 0, y: -10 }}
                               transition={{ duration: 0.25, ease: "easeOut" }}
-                              layout
-                              className="border-b border-[#F0F0F0]"
+                              style={{ position: "relative", translateX: 0 }}
+                              transformTemplate={({ y, scale, rotate }) =>
+                                `translateY(${y || 0}) ${scale ? `scale(${scale})` : ""} ${rotate ? `rotate(${rotate})` : ""}`
+                              }
+                              className="border-b border-[#E2E2E2]"
                             >
                               <td className="px-5 py-6 text-center align-middle">
                                 <input
@@ -278,9 +283,7 @@ export default function Favorites() {
                               </td>
 
                               <td className="px-5 py-6 text-[15px] whitespace-nowrap">
-                                <span
-                                  className={item.isInStock ? "text-green-600" : "text-red-600"}
-                                >
+                                <span className={item.isInStock ? "text-green-600" : "text-red-600"}>
                                   {item.isInStock ? "В наличии" : "Нет в наличии"}
                                 </span>
                               </td>
@@ -295,7 +298,7 @@ export default function Favorites() {
                             </motion.tr>
                           ))}
                         </AnimatePresence>
-                      </tbody>
+                      </motion.tbody>
                     </table>
                   </div>
                 </div>

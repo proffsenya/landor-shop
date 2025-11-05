@@ -5,7 +5,6 @@ import { Trash2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import ProductSection from "../components/ProductsSection";
 
-// ✅ анимации страницы/списков/тостов
 import { PageFade, ListMotion, ToastMotion } from "@/utils/PageAnimations";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -148,14 +147,21 @@ export default function Cart() {
                   {/* Список товаров: mobile карточки — анимируем списком; desktop строки — AnimatePresence */}
                   {/* Desktop версии */}
                   <div className="hidden lg:block">
-                    <AnimatePresence mode="popLayout">
-                      {items.map(i => (
+                  <motion.div initial={false}>
+                    <AnimatePresence mode="sync">
+                      {items.map((i) => (
                         <motion.div
                           key={i.id}
                           initial={{ opacity: 0, y: 10 }}
                           animate={{ opacity: 1, y: 0 }}
                           exit={{ opacity: 0, y: -10 }}
                           transition={{ duration: 0.25, ease: "easeOut" }}
+                          style={{ position: "relative", translateX: 0 }}
+                          transformTemplate={({ y, scale, rotate }) =>
+                            `translateY(${y || 0}) ${scale ? `scale(${scale})` : ""} ${
+                              rotate ? `rotate(${rotate})` : ""
+                            }`
+                          }
                           className="border-b border-[#E2E2E2] py-4 lg:py-6"
                         >
                           <div className="grid grid-cols-[50px_110px_1fr_200px_150px_60px] items-center">
@@ -177,9 +183,7 @@ export default function Cart() {
                             </div>
 
                             <div className="pl-2">
-                              <p className="text-[15px] text-[#1E1E1E] leading-tight">
-                                {i.name}
-                              </p>
+                              <p className="text-[15px] text-[#1E1E1E] leading-tight">{i.name}</p>
                               <p className="text-sm text-[#7A7A7A] mt-2">Вес: {i.weight}</p>
                             </div>
 
@@ -220,7 +224,8 @@ export default function Cart() {
                         </motion.div>
                       ))}
                     </AnimatePresence>
-                  </div>
+                  </motion.div>
+                </div>
 
                   {/* Mobile / Tablet версии — карточки списком */}
                   <div className="lg:hidden">
