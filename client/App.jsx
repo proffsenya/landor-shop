@@ -1,5 +1,4 @@
 import "./global.css";
-
 import { createRoot } from "react-dom/client";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -13,13 +12,21 @@ import Product from "./pages/Product";
 import Favorites from "./pages/Favorites";
 import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
+import DeliveryPayment from "./pages/DeliveryPayment";
+import ExchangeReturn from "./pages/ExchangeReturn";
+import HowToOrder from "./pages/HowToOrder";
+import ScrollToTop from "./lib/Scrolltotop";
 
 const queryClient = new QueryClient();
+
+
+
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
               <BrowserRouter>
+              <ScrollToTop />
                 <Routes>
                   <Route path="/" element={<Index />} />
                   <Route path="/login" element={<Login />} />
@@ -28,6 +35,9 @@ const App = () => (
                   <Route path="/catalog" element={<Catalog />} />
                   <Route path="/product/:id" element={<Product />} />
                   <Route path="/favorites" element={<Favorites />} />
+                  <Route path="/deliverypayment" element={<DeliveryPayment />} />
+                  <Route path="/exchangereturn" element={<ExchangeReturn />} />
+                  <Route path="/howtoorder" element={<HowToOrder />} />
                   <Route path="/profile" element={<Profile />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
