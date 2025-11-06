@@ -118,7 +118,7 @@ export default function Header() {
               </Link>
             </div>
 
-            <Link to="/delivery" className="text-sm hover:opacity-70">
+            <Link to="/deliverypayment" className="text-sm hover:opacity-70">
               Доставка и оплата
             </Link>
             <Link to="/cooperation" className="text-sm hover:opacity-70">
@@ -240,7 +240,7 @@ export default function Header() {
                 <Link to="/catalog" className="px-2 py-2 rounded hover:bg-gray-50">
                   Каталог
                 </Link>
-                <Link to="/delivery" className="px-2 py-2 rounded hover:bg-gray-50">
+                <Link to="/deliverypayment" className="px-2 py-2 rounded hover:bg-gray-50">
                   Доставка и оплата
                 </Link>
                 <Link to="/cooperation" className="px-2 py-2 rounded hover:bg-gray-50">

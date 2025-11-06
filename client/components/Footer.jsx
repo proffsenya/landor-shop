@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 export default function Footer() {
   return (
     <footer className="bg-[#6F2A2B] text-white py-6 sm:py-8 lg:py-12">
@@ -47,7 +48,6 @@ export default function Footer() {
               <li><a href="#" className="hover:opacity-70">Лицензия</a></li>
               <li><a href="#" className="hover:opacity-70">Политика конфиденциальности</a></li>
               <li><a href="#" className="hover:opacity-70">Сертификаты</a></li>
-              <li><a href="#" className="hover:opacity-70">Обратная связь</a></li>
             </ul>
           </div>
 
@@ -65,9 +65,9 @@ export default function Footer() {
           <div className="text-center md:text-left">
             <h3 className="mb-2 text-md sm:mb-4 sm:text-lg">Помощь</h3>
             <ul className="space-y-1 text-xs sm:space-y-2 sm:text-sm">
-              <li><a href="#" className="hover:opacity-70">Как сделать заказ</a></li>
-              <li><a href="#" className="hover:opacity-70">Доставка и оплата</a></li>
-              <li><a href="#" className="hover:opacity-70">Обмен и возврат товара</a></li>
+              <li><Link to="/howtoorder" className="hover:opacity-70">Как сделать заказ</Link></li>
+              <li><Link to = "/deliverypayment" className="hover:opacity-70">Доставка и оплата</Link></li>
+              <li><Link to= "/exchangereturn" className="hover:opacity-70">Обмен и возврат товара</Link></li>
             </ul>
           </div>
 
