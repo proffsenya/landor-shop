@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Heart, ShoppingCart, Search } from "lucide-react";
+import AccordionMotion from "@/utils/AccordionMotion";  // Импорт AccordionMotion
 
 export default function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -9,7 +10,6 @@ export default function Header() {
   useEffect(() => {
     const token = localStorage.getItem("authToken");
     setIsAuth(!!token);
-    // Если где-то в приложении меняется токен, можно подписаться на storage:
     const onStorage = () => setIsAuth(!!localStorage.getItem("authToken"));
     window.addEventListener("storage", onStorage);
     return () => window.removeEventListener("storage", onStorage);
@@ -23,7 +23,6 @@ export default function Header() {
           {/* ПК-вариант */}
           <div className="items-center justify-between hidden lg:flex">
             <div>Москва</div>
-
             <div className="flex items-center">
               <div>Звоните нам с 9:00 до 22:00 мск</div>
               <div className="ml-[71px]">+7(999)999-99-99</div>
@@ -31,7 +30,6 @@ export default function Header() {
               <img className="ml-[5px]" src="/socialmedia-icons/tg.svg" alt="tg" />
               <img className="ml-[5px]" src="/socialmedia-icons/call.svg" alt="call" />
             </div>
-
             <div className="flex gap-4">
               {isAuth ? (
                 <Link to="/profile" className="hover:opacity-80">
@@ -172,9 +170,8 @@ export default function Header() {
         <div className="container px-4 py-3 mx-auto">
           {/* Верхняя строка: логотип + иконки + бургер */}
           <div className="flex items-center justify-between">
-            {/* Логотип компактный */}
-            <Link to="/" className="flex items-center gap-2">
-              <div className="leading-none">
+            <div className="leading-none">
+              <Link to="/" className="flex items-center gap-2">
                 <div
                   className="text-[#6F2A2B] text-3xl tracking-tight"
                   style={{ fontFamily: '"Aoboshi One", serif' }}
@@ -183,15 +180,11 @@ export default function Header() {
                   <img src="/logo.svg" className="inline h-6 align-baseline w-7" alt="logo" />
                   r
                 </div>
-                <div className="text-[#6F2A2B] text-[10px] mt-0.5">
-                  Корма Holistic для кошек и собак
-                </div>
-              </div>
-            </Link>
+              </Link>
+            </div>
 
             {/* Иконки + бургер */}
             <div className="flex items-center gap-3">
-              {/* wishlist */}
               <Link to="/favorites" className="relative">
                 <div className="w-10 h-10 bg-[#6F2A2B] rounded-full flex items-center justify-center">
                   <Heart className="w-4 h-4 text-white" />
@@ -201,7 +194,6 @@ export default function Header() {
                 </div>
               </Link>
 
-              {/* cart */}
               <Link to="/cart" className="relative">
                 <div className="w-10 h-10 bg-[#6F2A2B] rounded-full flex items-center justify-center">
                   <ShoppingCart className="w-4 h-4 text-white" />
@@ -211,10 +203,9 @@ export default function Header() {
                 </div>
               </Link>
 
-              {/* burger */}
               <button
                 aria-label="Меню"
-                onClick={() => setMobileOpen(v => !v)}
+                onClick={() => setMobileOpen(!mobileOpen)}
                 className="ml-1 inline-flex flex-col justify-center gap-1.5 w-10 h-10 rounded-full border border-[#A9A9A9]"
               >
                 <span className="mx-auto block w-5 h-0.5 bg-[#1E1E1E]" />
@@ -227,17 +218,19 @@ export default function Header() {
           {/* Выпадающее меню: поиск + навигация */}
           {mobileOpen && (
             <div className="pt-3 pb-4 space-y-4">
-              {/* Поиск mobile */}
-              <div className="relative">
-                <input
-                  type="text"
-                  placeholder="Искать здесь..."
-                  className="w-full pl-4 pr-12 py-3 rounded-full border border-[#A9A9A9] text-sm bg-gray-50"
-                />
-                <button className="absolute right-1 top-1/2 -translate-y-1/2 bg-[#6F2A2B] text-white px-4 py-2 rounded-full hover:bg-[#5a2223]">
-                  <Search className="w-4 h-4" />
-                </button>
-              </div>
+              <AccordionMotion isOpen={mobileOpen}>
+                {/* Поиск mobile */}
+                <div className="relative">
+                  <input
+                    type="text"
+                    placeholder="Искать здесь..."
+                    className="w-full pl-4 pr-12 py-3 rounded-full border border-[#A9A9A9] text-sm bg-gray-50"
+                  />
+                  <button className="absolute right-1 top-1/2 -translate-y-1/2 bg-[#6F2A2B] text-white px-4 py-2 rounded-full hover:bg-[#5a2223]">
+                    <Search className="w-4 h-4" />
+                  </button>
+                </div>
+              </AccordionMotion>
 
               {/* Навигация mobile */}
               <nav className="flex flex-col gap-2 text-[#6F2A2B]">
