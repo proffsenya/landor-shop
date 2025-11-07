@@ -6,12 +6,27 @@ import AccordionMotion from "@/utils/AccordionMotion";  // Импорт Accordio
 export default function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [isAuth, setIsAuth] = useState(false);
+  const [city, setCity] = useState("Москва");
 
   useEffect(() => {
     const token = localStorage.getItem("authToken");
     setIsAuth(!!token);
     const onStorage = () => setIsAuth(!!localStorage.getItem("authToken"));
     window.addEventListener("storage", onStorage);
+
+    const fetchCity = async () => {
+      try {
+        const res = await fetch("https://ipapi.co/json/");
+        if (res.ok) {
+          const data = await res.json();
+          if (data && data.city) setCity(data.city);
+        }
+      } catch {
+        setCity("Москва"); // если ошибка — используем дефолт
+      }
+    };
+    fetchCity();
+    
     return () => window.removeEventListener("storage", onStorage);
   }, []);
 
@@ -22,7 +37,7 @@ export default function Header() {
         <div className="container mx-auto px-4 py-2 text-[13px]">
           {/* ПК-вариант */}
           <div className="items-center justify-between hidden lg:flex">
-            <div>Москва</div>
+            <div>{city}</div>
             <div className="flex items-center">
               <div>Звоните нам с 9:00 до 22:00 мск</div>
               <div className="ml-[71px]">+7(999)999-99-99</div>
