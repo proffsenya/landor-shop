@@ -2,7 +2,6 @@ package com.example.backend.Application.Controllers.Products;
 
 import com.example.backend.Domain.DTOs.*;
 import com.example.backend.Domain.Models.Product;
-import com.example.backend.Domain.Models.ProductImage;
 import com.example.backend.Infrastructure.Exceptions.InvalidRequestException;
 import com.example.backend.Infrastructure.Exceptions.ResourseNotFoundException;
 import com.example.backend.Infrastructure.Services.ProductService;
@@ -11,7 +10,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -141,7 +139,7 @@ class ProductController {
                         .toList(),
                 product.getFlavors().stream().map(f ->
                         new FlavorDTO(f.getId(), f.getName(), f.getCanonicalName())).toList(),
-                product.getProductVariants().stream().map(v ->new VariantDTO(
+                product.getProductVariants().stream().map(v ->new ResponseVariantDTO(
                                     v.getId(),
                                     product.getId(),
                                     v.getSku(),

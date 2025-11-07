@@ -1,8 +1,9 @@
 package com.example.backend.Infrastructure.Services;
 
 import com.example.backend.Domain.DTOs.CreateProductDTO;
+import com.example.backend.Domain.DTOs.ResponseVariantDTO;
 import com.example.backend.Domain.DTOs.UpdateProductDTO;
-import com.example.backend.Domain.DTOs.VariantDTO;
+import com.example.backend.Domain.DTOs.CreateVariantDTO;
 import com.example.backend.Domain.Models.*;
 import com.example.backend.Infrastructure.Exceptions.InvalidRequestException;
 import com.example.backend.Infrastructure.Exceptions.ResourceAlreadyExistsException;
@@ -29,6 +30,8 @@ public class ProductService {
     private final FlavorRepository  flavorRepository;
     private final ProductTypeRepository productTypeRepository;
     private final ProductVariantRepository productVariantRepository;
+    private final ColorRepository  colorRepository;
+    private final ScentRepository scentRepository;
     private static final String FLAVOR_SPLIT_REGEX = "\\s*(?:\\+|,|/|\\band\\b|\\bи\\b|\\bс\\b)\\s*"; // разделители
     @Autowired
     public ProductService(ProductRepository productRepository, ProductImageRepository productImageRepository,
@@ -41,7 +44,9 @@ public class ProductService {
                           BrandRepository  brandRepository,
                           FlavorRepository  flavorRepository,
                           ProductTypeRepository productTypeRepository,
-                          ProductVariantRepository productVariantRepository
+                          ProductVariantRepository productVariantRepository,
+                          ColorRepository colorRepository,
+                          ScentRepository scentRepository
     ) {
         this.productRepository = productRepository;
         this.productImageRepository = productImageRepository;
@@ -55,6 +60,8 @@ public class ProductService {
         this.flavorRepository = flavorRepository;
         this.productTypeRepository = productTypeRepository;
         this.productVariantRepository = productVariantRepository;
+        this.colorRepository = colorRepository;
+        this.scentRepository = scentRepository;
     }
 
     public List<Product> findAll() {
@@ -85,7 +92,7 @@ public class ProductService {
         Set<ProductVariant> updatedVariants = new LinkedHashSet<>();
 
         if (updatedproduct.variants() != null) {
-            for (VariantDTO vDto : updatedproduct.variants()) {
+            for (ResponseVariantDTO vDto : updatedproduct.variants()) {
                 ProductVariant variant = null;
 
                 if (vDto.id() != null) {
@@ -138,7 +145,6 @@ public class ProductService {
         currentproduct.setSlug(updatedproduct.slug());
         currentproduct.setIsActive(updatedproduct.isActive());
         currentproduct.setRating(updatedproduct.rating());
-        currentproduct.setQuantityInStock(updatedproduct.quantityInStock());
         currentproduct.setIsFeatured(updatedproduct.isFeatured());
         currentproduct.setBrand(brandRepository.findById(updatedproduct.brandId()).orElse(null));
         currentproduct.setProductType(productTypeRepository.findById(updatedproduct.productTypeId()).orElse(null));
@@ -157,7 +163,6 @@ public class ProductService {
         product.setName(createProductDTO.name());
         product.setDescription(createProductDTO.description());
         product.setSlug(createProductDTO.slug());
-        product.setQuantityInStock(createProductDTO.quantityInStock());
         product.setIsActive(true);
         product.setIsFeatured(false);
         product.setBrand(brandRepository.findById(createProductDTO.brandId()).orElse(null));
@@ -230,13 +235,23 @@ public class ProductService {
 
     private void setProductVariants(Product product, CreateProductDTO dto) {
         Set<ProductVariant> productVariants = new LinkedHashSet<>();
-        for (VariantDTO v : dto.variants()){
+        for (CreateVariantDTO v : dto.variants()){
             ProductVariant variant = new ProductVariant();
             variant.setProduct(product);
             variant.setSku(v.sku());
             variant.setPrice(v.price());
             variant.setStock(v.stock());
             variant.setWeight(v.weight());
+            if (v.colorIds() != null && !v.colorIds().isEmpty()) {
+                Set<Color> colors = new LinkedHashSet<>(colorRepository.findAllById(v.colorIds()));
+                variant.setColors(colors);
+            }
+
+            if (v.scentIds() != null && !v.scentIds().isEmpty()) {
+                Set<Scent> scents = new LinkedHashSet<>(scentRepository.findAllById(v.scentIds()));
+                variant.setScents(scents);
+            }
+
             variant.setDisplayName(buildDisplayName(product, variant));
 
             productVariants.add(variant);

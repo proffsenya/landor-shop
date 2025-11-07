@@ -18,7 +18,7 @@ public record UpdateProductDTO(@Size(max = 100) String name, @Size(max = 1000) S
                                List<Integer> countryIds,
                                List<Integer> typeoffoodIds,
                                List<Long> flavorIds,
-                               List<VariantDTO> variants,
+                               List<ResponseVariantDTO> variants,
                                Long brandId,
                                Long productTypeId
                          ) implements Serializable {

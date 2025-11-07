@@ -29,11 +29,6 @@ public class Product {
     @Column(name = "slug", length = 100)
     private String slug;
 
-    @NotNull
-    @ColumnDefault("0")
-    @Column(name = "quantity_in_stock", nullable = false)
-    private Integer quantityInStock;
-
     @ColumnDefault("true")
     @Column(name = "is_active")
     private Boolean isActive;
@@ -128,14 +123,6 @@ public class Product {
 
     public void setSlug(String slug) {
         this.slug = slug;
-    }
-
-    public Integer getQuantityInStock() {
-        return quantityInStock;
-    }
-
-    public void setQuantityInStock(Integer quantityInStock) {
-        this.quantityInStock = quantityInStock;
     }
 
     public Boolean getIsActive() {

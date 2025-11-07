@@ -1,6 +1,5 @@
 package com.example.backend.Domain.DTOs;
 
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
 import java.io.Serializable;
@@ -19,7 +18,7 @@ public record ProductResponseDTO(Long id, @Size(max = 100) String name, @Size(ma
                                  List<TypeOfFoodDTO> typeOfFoodDTOs,
                                  List<ProductImageDTO> productImageDTOs,
                                  List<FlavorDTO> flavorIds,
-                                 List<VariantDTO> variants,
+                                 List<ResponseVariantDTO> variants,
                                  Long brandId,
                                  Long productTypeId
 
