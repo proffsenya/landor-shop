@@ -15,6 +15,7 @@ export default defineConfig({
         // если бэк отдает 301/302 без /api — можно раскомментить
         // rewrite: (p) => p.replace(/^\/api/, ""),
       },
+      
     },
     fs: {
       allow: ["./client", "./index.html"],
