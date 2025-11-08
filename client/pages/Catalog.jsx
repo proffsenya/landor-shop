@@ -577,70 +577,70 @@ export default function Catalog() {
 
           {/* Правая колонка — товары */}
           {/* Правая колонка — товары */}
-<div className="lg:col-span-3">
-  <ScrollFade>
-    <div className="mb-6">
-      <h1 className="mb-4 text-2xl font-bold text-gray-900">Каталог</h1>
-    </div>
-  </ScrollFade>
+          <div className="lg:col-span-3">
+            <ScrollFade>
+              <div className="mb-6">
+                <h1 className="mb-4 text-2xl font-bold text-gray-900">Каталог</h1>
+              </div>
+            </ScrollFade>
 
-  {loading && <div className="py-12 text-center text-gray-500">Загрузка…</div>}
-  {!loading && error && <div className="py-12 text-center text-red-600">Ошибка: {error}</div>}
-  {!loading && !error && products.length === 0 && (
-    <div className="py-12 text-center text-gray-500">Нет товаров</div>
-  )}
+            {loading && <div className="py-12 text-center text-gray-500">Загрузка…</div>}
+            {!loading && error && <div className="py-12 text-center text-red-600">Ошибка: {error}</div>}
+            {!loading && !error && products.length === 0 && (
+              <div className="py-12 text-center text-gray-500">Нет товаров</div>
+            )}
 
-  {!loading && !error && products.length > 0 && (
-    <>
-      <StaggerParent delayChildren={0.05} stagger={0.05}>
-        <div className="grid grid-cols-1 gap-4 mb-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {paged.map((product) => {
-            // Если карточка — вариант: открываем родительский товар с ?variant=<id варианта>
-            const isVariantCard = !!product.parentId && product.parentId !== product.id;
-            const to = isVariantCard
-              ? `/product/${encodeURIComponent(product.parentId)}?variant=${encodeURIComponent(product.id)}`
-              // Если у товара нет вариантов — открываем просто по его id
-              : `/product/${encodeURIComponent(product.id)}`;
+            {!loading && !error && products.length > 0 && (
+              <>
+                <StaggerParent delayChildren={0.05} stagger={0.05}>
+                  <div className="grid grid-cols-1 gap-4 mb-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                    {paged.map((product) => {
+                      // Если карточка — вариант: открываем родительский товар с ?variant=<id варианта>
+                      const isVariantCard = !!product.parentId && product.parentId !== product.id;
+                      const to = isVariantCard
+                        ? `/product/${encodeURIComponent(product.parentId)}?variant=${encodeURIComponent(product.id)}`
+                        // Если у товара нет вариантов — открываем просто по его id
+                        : `/product/${encodeURIComponent(product.id)}`;
 
-            return (
-              <ProductCard
-                key={product.cardId}
-                to={to}
-                productId={product.id}
-                image={product.image}
-                title={product.title ?? product.name ?? "Товар"}
-                price={`${Number(product.price ?? 0).toLocaleString()} ₽`}
-              />
-            );
-          })}
-        </div>
-      </StaggerParent>
+                      return (
+                        <ProductCard
+                          key={product.cardId}
+                          to={to}
+                          productId={product.id}
+                          image={product.image}
+                          title={product.title ?? product.name ?? "Товар"}
+                          price={`${Number(product.price ?? 0).toLocaleString()} ₽`}
+                        />
+                      );
+                    })}
+                  </div>
+                </StaggerParent>
 
-      <SlideFade direction="up" distance={20}>
-        <div className="flex items-center justify-center space-x-2">
-          <Button variant="outline" size="sm" onClick={() => goto(page - 1)} disabled={page === 1}>
-            &lt;
-          </Button>
-          <span className="text-sm font-medium text-gray-700">
-            {String(page).padStart(2, "0")}
-          </span>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => goto(page + 1)}
-            disabled={page === Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE))}
-          >
-            &gt;
-          </Button>
-        </div>
+                <SlideFade direction="up" distance={20}>
+                  <div className="flex items-center justify-center space-x-2">
+                    <Button variant="outline" size="sm" onClick={() => goto(page - 1)} disabled={page === 1}>
+                      &lt;
+                    </Button>
+                    <span className="text-sm font-medium text-gray-700">
+                      {String(page).padStart(2, "0")}
+                    </span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => goto(page + 1)}
+                      disabled={page === Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE))}
+                    >
+                      &gt;
+                    </Button>
+                  </div>
 
-        <div className="mt-4 text-sm text-center text-gray-500">
-          Показано {paged.length} из {filtered.length} товаров · Страница {page} из {Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE))}
-        </div>
-      </SlideFade>
-    </>
-  )}
-</div>
+                  <div className="mt-4 text-sm text-center text-gray-500">
+                    Показано {paged.length} из {filtered.length} товаров · Страница {page} из {Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE))}
+                  </div>
+                </SlideFade>
+              </>
+            )}
+          </div>
 
         </div>
       </div>

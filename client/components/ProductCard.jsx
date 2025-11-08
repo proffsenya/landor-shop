@@ -94,11 +94,12 @@ export default function ProductCard({ productId, variantId, image, title, price,
                 aria-label={inCart ? "Убрать из корзины" : "Добавить в корзину"}
               >
                 <FadeSwitch active={inCart}>
-                  <span className="flex items-center justify-center gap-2 leading-none">
+                  <span className="flex items-center justify-center gap-1 leading-none">
                     {inCart ? (
                       <>
                         <Check className="w-4 h-4" />
                         <span>В корзине</span>
+                        
                       </>
                     ) : (
                       <span>В корзину</span>
