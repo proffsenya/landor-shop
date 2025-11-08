@@ -1,3 +1,4 @@
+// client/pages/Catalog.jsx
 import { useEffect, useMemo, useState } from "react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -8,43 +9,7 @@ import { ChevronDown, ChevronUp } from "lucide-react";
 import ProductCard from "@/components/ProductCard";
 import AccordionMotion from "@/utils/AccordionMotion";
 import { motion } from "framer-motion";
-import {
-  ScrollFade,
-  SlideFade,
-  StaggerParent,
-  StaggerItem,
-  HoverLift,
-} from "@/utils/CatalogAnimations";
-
-// -------- Mock data ----------
-const mockProducts = [
-  { id: 1, name: "LANDOR полнорационный сухой корм для взрослых собак всех пород", price: 1, image: "/korm1.svg", isFavorite: false },
-  { id: 2, name: "LANDOR полнорационный сухой корм для взрослых собак всех пород", price: 2, image: "/korm1.svg", isFavorite: true },
-  { id: 3, name: "LANDOR полнорационный сухой корм для взрослых собак всех пород", price: 3, image: "/korm1.svg", isFavorite: false },
-  { id: 4, name: "LANDOR полнорационный сухой корм для взрослых собак всех пород", price: 4, image: "/korm1.svg", isFavorite: false },
-  { id: 5, name: "LANDOR полнорационный сухой корм для взрослых собак всех пород", price: 5, image: "/korm1.svg", isFavorite: false },
-  { id: 6, name: "LANDOR полнорационный сухой корм для взрослых собак всех пород", price: 6, image: "/korm1.svg", isFavorite: false },
-  { id: 7, name: "LANDOR полнорационный сухой корм для взрослых собак всех пород", price: 7, image: "/korm1.svg", isFavorite: false },
-  { id: 8, name: "LANDOR полнорационный сухой корм для взрослых собак всех пород", price: 8, image: "/korm1.svg", isFavorite: false },
-  { id: 9, name: "LANDOR полнорационный сухой корм для взрослых собак всех пород", price: 9, image: "/korm1.svg", isFavorite: false },
-  { id: 10, name: "LANDOR полнорационный сухой корм для взрослых собак всех пород", price: 10, image: "/korm1.svg", isFavorite: false },
-  { id: 11, name: "LANDOR полнорационный сухой корм для взрослых собак всех пород", price: 11, image: "/korm1.svg", isFavorite: false },
-  { id: 12, name: "LANDOR полнорационный сухой корм для взрослых собак всех пород", price: 12, image: "/korm1.svg", isFavorite: false },
-  { id: 13, name: "LANDOR полнорационный сухой корм для взрослых собак всех пород", price: 13, image: "/korm1.svg", isFavorite: false },
-  { id: 14, name: "LANDOR полнорационный сухой корм для взрослых собак всех пород", price: 14, image: "/korm1.svg", isFavorite: true },
-  { id: 15, name: "LANDOR полнорационный сухой корм для взрослых собак всех пород", price: 15, image: "/korm1.svg", isFavorite: false },
-  { id: 16, name: "LANDOR полнорационный сухой корм для взрослых собак всех пород", price: 16, image: "/korm1.svg", isFavorite: false },
-  { id: 17, name: "LANDOR полнорационный сухой корм для взрослых собак всех пород", price: 17, image: "/korm1.svg", isFavorite: false },
-  { id: 18, name: "LANDOR полнорационный сухой корм для взрослых собак всех пород", price: 18, image: "/korm1.svg", isFavorite: false },
-  { id: 19, name: "LANDOR полнорационный сухой корм для взрослых собак всех пород", price: 19, image: "/korm1.svg", isFavorite: false },
-  { id: 20, name: "LANDOR полнорационный сухой корм для взрослых собак всех пород", price: 20, image: "/korm1.svg", isFavorite: false },
-  { id: 21, name: "LANDOR полнорационный сухой корм для взрослых собак всех пород", price: 21, image: "/korm1.svg", isFavorite: false },
-  { id: 22, name: "LANDOR полнорационный сухой корм для взрослых собак всех пород", price: 22, image: "/korm1.svg", isFavorite: false },
-  { id: 23, name: "LANDOR полнорационный сухой корм для взрослых собак всех пород", price: 23, image: "/korm1.svg", isFavorite: false },
-  { id: 24, name: "LANDOR полнорационный сухой корм для взрослых собак всех пород", price: 24, image: "/korm1.svg", isFavorite: false },
-  { id: 25, name: "LANDOR полнорационный сухой корм для взрослых собак всех пород", price: 25, image: "/korm1.svg", isFavorite: false },
-  { id: 26, name: "LANDOR полнорационный сухой корм для взрослых собак всех пород", price: 26, image: "/korm1.svg", isFavorite: true },
-];
+import { ScrollFade, SlideFade, StaggerParent } from "@/utils/CatalogAnimations";
 
 // -------- Вспомогательные блоки ----------
 const FilterSection = ({ title, children, isExpanded = true }) => {
@@ -57,19 +22,11 @@ const FilterSection = ({ title, children, isExpanded = true }) => {
         className="flex items-center justify-between w-full mb-3 font-medium text-left text-gray-900 select-none"
       >
         <span>{title}</span>
-        <motion.div
-          animate={{ rotate: expanded ? 180 : 0 }}
-          transition={{ duration: 0.25 }}
-        >
-          {expanded ? (
-            <ChevronUp className="w-4 h-4" />
-          ) : (
-            <ChevronDown className="w-4 h-4" />
-          )}
+        <motion.div animate={{ rotate: expanded ? 180 : 0 }} transition={{ duration: 0.25 }}>
+          {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
         </motion.div>
       </button>
 
-      {/* Оборачиваем контент в плавный контейнер */}
       <AccordionMotion isOpen={expanded}>
         <div className="mt-2">{children}</div>
       </AccordionMotion>
@@ -77,13 +34,100 @@ const FilterSection = ({ title, children, isExpanded = true }) => {
   );
 };
 
+// ---------- Хелперы названий (фикс undefined) ----------
+const getProductName = (p) =>
+  p?.name ??
+  p?.title ??
+  p?.productName ??
+  p?.display_name ??
+  p?.displayName ??
+  "Товар";
+
+const normalizeWeight = (w) => {
+  if (typeof w === "string") {
+    const n = Number.parseFloat(w.replace(",", "."));
+    return Number.isFinite(n) ? n : null;
+  }
+  return Number.isFinite(w) ? w : null;
+};
+
+const weightLabel = (w) => {
+  const n = normalizeWeight(w);
+  if (n == null) return "";
+  return ` • ${n % 1 === 0 ? `${n} кг` : `${n.toFixed(3)} кг`}`;
+};
+
+const getVariantDisplayName = (p, v) => {
+  const base = getProductName(p);
+  const vName = v?.display_name ?? v?.displayName ?? v?.name ?? v?.sku ?? "";
+  const wLabel = weightLabel(v?.weight);
+  return vName ? `${base} • ${vName}${wLabel}` : `${base}${wLabel}`;
+};
+
+// ---------- Получение первой картинки из разных структур ----------
+const getFirstImage = (product) => {
+  const images =
+    (Array.isArray(product?.images) && product.images) ||
+    (Array.isArray(product?.productImageDTOs) && product.productImageDTOs) ||
+    [];
+
+  const first =
+    images.find((img) => {
+      if (typeof img === "string") return true;
+      return img?.url || img?.path || img?.src;
+    }) || null;
+
+  if (!first) return "/korm1.svg";
+  if (typeof first === "string") return first;
+  return first.url || first.path || first.src || "/korm1.svg";
+};
+
+// ---------- Преобразование продукта в карточки (каждый вариант — отдельная карточка) ----------
+const expandProductToCards = (product) => {
+  const firstImage = getFirstImage(product);
+
+  // Есть variants -> разворачиваем каждый как отдельную карточку с id варианта
+  if (Array.isArray(product?.variants) && product.variants.length > 0) {
+    return product.variants.map((v, idx) => {
+      const price = Number(v?.price ?? 0);
+      const variantId = v?.id ?? v?.sku ?? `${product.id ?? product.slug}-v${idx}`;
+      return {
+        cardId: `p-${product.id ?? product.slug}-v-${variantId}`,
+        id: variantId,                         // <-- ID карточки = ID варианта (роут /product/:id)
+        parentId: product?.id ?? product?.slug ?? null, // при необходимости
+        title: getVariantDisplayName(product, v),
+        image: firstImage,
+        price: Number.isFinite(price) ? price : 0,
+      };
+    });
+  }
+
+  // Без variants -> одна карточка, открываем по ID продукта (совместимость)
+  const price = Number(product?.price ?? 0);
+  const pid = product?.id ?? product?.slug ?? Math.random().toString(36).slice(2);
+  return [
+    {
+      cardId: `p-${pid}`,
+      id: pid,
+      parentId: pid,
+      title: getProductName(product),
+      image: firstImage,
+      price: Number.isFinite(price) ? price : 0,
+    },
+  ];
+};
+
 export default function Catalog() {
-  const [products, setProducts] = useState(mockProducts);
+  // товары для карточек (после экспанда)
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
   const [searchQuery, setSearchQuery] = useState("");
   const [priceFrom, setPriceFrom] = useState("");
   const [priceTo, setPriceTo] = useState("");
 
-  // фильтры (как были)
+  // фильтры
   const [categoryFilters, setCategoryFilters] = useState({
     all: true,
     dry: false,
@@ -142,27 +186,56 @@ export default function Catalog() {
     clean: false,
   });
 
-  // ----- ПАГИНАЦИЯ -----
-  const ITEMS_PER_PAGE = 12; // Сколько карточек показывать на странице
+  // пагинация
+  const ITEMS_PER_PAGE = 12;
   const [page, setPage] = useState(1);
 
-  // Базовый фильтр по поиску и цене (чтобы пагинация работала по отфильтрованному списку)
+  // ---------- API: загрузка карточек ----------
+  const fetchCards = async (searchParams = "") => {
+    setLoading(true);
+    setError("");
+    try {
+      // Если у тебя список по /api/products — поменяй тут на '/api/products'
+      const url = searchParams ? `/api/products/cards?${searchParams}` : `/api/products/cards`;
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json(); // ожидается массив продуктов (каждый с variants)
+      const cards = Array.isArray(data) ? data.flatMap(expandProductToCards) : [];
+      setProducts(cards);
+      setPage(1);
+    } catch (e) {
+      setProducts([]);
+      setPage(1);
+      setError(e?.message || "Ошибка загрузки");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // первая загрузка (учтём query из адресной строки)
+  useEffect(() => {
+    fetchCards(window.location.search?.replace(/^\?/, ""));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // фильтрация на клиенте по поиску/цене
   const filtered = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
     const from = priceFrom ? Number(priceFrom) : null;
     const to = priceTo ? Number(priceTo) : null;
 
     return products.filter((p) => {
-      const byQuery = q ? p.name.toLowerCase().includes(q) : true;
-      const byFrom = from !== null ? p.price >= from : true;
-      const byTo = to !== null ? p.price <= to : true;
+      const title = (p.title ?? p.name ?? "").toString().toLowerCase();
+      const price = Number(p.price ?? 0);
+      const byQuery = q ? title.includes(q) : true;
+      const byFrom = from !== null ? price >= from : true;
+      const byTo = to !== null ? price <= to : true;
       return byQuery && byFrom && byTo;
     });
   }, [products, searchQuery, priceFrom, priceTo]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE));
 
-  // Корректируем текущую страницу, если меняется число товаров/фильтры
   useEffect(() => {
     if (page > totalPages) setPage(totalPages);
   }, [page, totalPages]);
@@ -174,27 +247,18 @@ export default function Catalog() {
 
   const goto = (p) => setPage(Math.min(Math.max(1, p), totalPages));
 
-  const toggleFavorite = (productId) => {
-    setProducts((prev) =>
-      prev.map((product) =>
-        product.id === productId ? { ...product, isFavorite: !product.isFavorite } : product
-      )
-    );
-  };
-
   const handleCategoryChange = (category) => {
     if (category === "all") {
-      setCategoryFilters({ all: true, dry: false, wet: false, litter: false });
+      setCategoryFilters({ all: true, dry: false, wet: false, litter: false, goodies: false });
     } else {
       setCategoryFilters((prev) => ({ ...prev, all: false, [category]: !prev[category] }));
     }
   };
 
-  // Функция для формирования строки query параметров
+  // ---------- Query params генерация ----------
   const generateQueryParams = () => {
     const queryParams = new URLSearchParams();
 
-    // Добавление фильтров в query параметры
     Object.keys(categoryFilters).forEach((key) => {
       if (categoryFilters[key]) queryParams.append("category_" + key, "true");
     });
@@ -220,11 +284,8 @@ export default function Catalog() {
       if (brandFilters[key]) queryParams.append("brand_" + key, "true");
     });
 
-    // Добавление параметров цены
     if (priceFrom) queryParams.append("price_from", priceFrom);
     if (priceTo) queryParams.append("price_to", priceTo);
-
-    // Добавление поискового запроса
     if (searchQuery) queryParams.append("search_query", searchQuery);
 
     return queryParams.toString();
@@ -232,10 +293,8 @@ export default function Catalog() {
 
   const handleApplyFilters = () => {
     const queryParams = generateQueryParams();
-    // Обновляем URL с новыми query параметрами
     window.history.pushState({}, "", "?" + queryParams);
-    console.log("Applied filters:", queryParams);
-    // Можно отправить queryParams на сервер для запроса данных
+    fetchCards(queryParams);
   };
 
   const handleResetFilters = () => {
@@ -296,12 +355,12 @@ export default function Catalog() {
       fresh: false,
       clean: false,
     });
-    // Сброс цены и поиска
     setPriceFrom("");
     setPriceTo("");
     setSearchQuery("");
-    // Сброс URL
+
     window.history.pushState({}, "", window.location.pathname);
+    fetchCards("");
   };
 
   return (
@@ -309,7 +368,7 @@ export default function Catalog() {
       <Header />
       <div className="container px-4 py-8 mx-auto">
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-4">
-          {/* Левая колонка — фильтры (выезд слева) */}
+          {/* Левая колонка — фильтры */}
           <SlideFade direction="left" distance={36} delay={0.05} className="lg:col-span-1">
             <div className="p-6 bg-white border border-gray-200 rounded-lg">
               <h2 className="mb-6 text-xl font-bold text-gray-900">Фильтры</h2>
@@ -326,7 +385,7 @@ export default function Catalog() {
                   </label>
                   <label className="flex items-center space-x-2">
                     <Checkbox checked={categoryFilters.wet} onCheckedChange={() => handleCategoryChange("wet")} />
-                    <span className="text-sm">Влажные корма</span>
+                    <span className="textсм">Влажные корма</span>
                   </label>
                   <label className="flex items-center space-x-2">
                     <Checkbox checked={categoryFilters.litter} onCheckedChange={() => handleCategoryChange("litter")} />
@@ -346,7 +405,7 @@ export default function Catalog() {
                 </div>
               </FilterSection>
 
-              {/* Остальные фильтры */}
+              {/* Котенок */}
               <FilterSection title="Котенок">
                 <div className="space-y-2">
                   <label className="flex items-center space-x-2">
@@ -363,7 +422,7 @@ export default function Catalog() {
                   </label>
                   <label className="flex items-center space-x-2">
                     <Checkbox checked={minicatFilters.picky} onCheckedChange={(c) => setMiniCatFilters(prev => ({ ...prev, picky: c }))} />
-                                          <span className="text-sm">Для привередливых</span>
+                    <span className="text-sm">Для привередливых</span>
                   </label>
                   <label className="flex items-center space-x-2">
                     <Checkbox checked={minicatFilters.indoor} onCheckedChange={(c) => setMiniCatFilters(prev => ({ ...prev, indoor: c }))} />
@@ -507,70 +566,82 @@ export default function Catalog() {
                 </div>
               </FilterSection>
 
-              {/* Кнопка Применить и Сбросить */}
               <Button onClick={handleApplyFilters} className="w-full bg-[hsl(var(--landor-primary))] hover:bg-[hsl(var(--landor-primary))]/90 text-white mt-6">
                 Применить
               </Button>
-              <Button onClick={handleResetFilters} className="w-full bg-[hsl(var(--landor-primary))] hover:bg-[hsl(var(--landor-primary))]/90 text-white mt-6">
+              <Button onClick={handleResetFilters} className="w-full bg-[hsl(var(--landor-primary))] hover:bg-[hsl(var(--landor-primary))]/90 text-white mt-3">
                 Сбросить фильтры
               </Button>
             </div>
           </SlideFade>
 
           {/* Правая колонка — товары */}
-          <div className="lg:col-span-3">
-            {/* Заголовок блока */}
-            <ScrollFade>
-              <div className="mb-6">
-                <h1 className="mb-4 text-2xl font-bold text-gray-900">Каталог</h1>
-              </div>
-            </ScrollFade>
+          {/* Правая колонка — товары */}
+<div className="lg:col-span-3">
+  <ScrollFade>
+    <div className="mb-6">
+      <h1 className="mb-4 text-2xl font-bold text-gray-900">Каталог</h1>
+    </div>
+  </ScrollFade>
 
-            {/* Сетка карточек с поочередным появлением + hover-lift */}
-            <StaggerParent delayChildren={0.05} stagger={0.05}>
-              <div className="grid grid-cols-1 gap-4 mb-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                {paged.map((product) => (
-                  <ProductCard
-                    key={product.id}
-                    image={product.image}
-                    title={product.name}
-                    price={`${product.price.toLocaleString()} ₽`}
-                  />
-                ))}
-              </div>
-            </StaggerParent>
+  {loading && <div className="py-12 text-center text-gray-500">Загрузка…</div>}
+  {!loading && error && <div className="py-12 text-center text-red-600">Ошибка: {error}</div>}
+  {!loading && !error && products.length === 0 && (
+    <div className="py-12 text-center text-gray-500">Нет товаров</div>
+  )}
 
-            {/* Пагинация + инфо — мягкий подъём */}
-            <SlideFade direction="up" distance={20}>
-              <div className="flex items-center justify-center space-x-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => goto(page - 1)}
-                  disabled={page === 1}
-                >
-                  &lt;
-                </Button>
+  {!loading && !error && products.length > 0 && (
+    <>
+      <StaggerParent delayChildren={0.05} stagger={0.05}>
+        <div className="grid grid-cols-1 gap-4 mb-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {paged.map((product) => {
+            // Если карточка — вариант: открываем родительский товар с ?variant=<id варианта>
+            const isVariantCard = !!product.parentId && product.parentId !== product.id;
+            const to = isVariantCard
+              ? `/product/${encodeURIComponent(product.parentId)}?variant=${encodeURIComponent(product.id)}`
+              // Если у товара нет вариантов — открываем просто по его id
+              : `/product/${encodeURIComponent(product.id)}`;
 
-                <span className="text-sm font-medium text-gray-700">
-                  {String(page).padStart(2, "0")}
-                </span>
+            return (
+              <ProductCard
+                key={product.cardId}
+                to={to}
+                productId={product.id}
+                image={product.image}
+                title={product.title ?? product.name ?? "Товар"}
+                price={`${Number(product.price ?? 0).toLocaleString()} ₽`}
+              />
+            );
+          })}
+        </div>
+      </StaggerParent>
 
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => goto(page + 1)}
-                  disabled={page === totalPages}
-                >
-                  &gt;
-                </Button>
-              </div>
+      <SlideFade direction="up" distance={20}>
+        <div className="flex items-center justify-center space-x-2">
+          <Button variant="outline" size="sm" onClick={() => goto(page - 1)} disabled={page === 1}>
+            &lt;
+          </Button>
+          <span className="text-sm font-medium text-gray-700">
+            {String(page).padStart(2, "0")}
+          </span>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => goto(page + 1)}
+            disabled={page === Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE))}
+          >
+            &gt;
+          </Button>
+        </div>
 
-              <div className="mt-4 text-sm text-center text-gray-500">
-                Показано {paged.length} из {filtered.length} товаров · Страница {page} из {totalPages}
-              </div>
-            </SlideFade>
-          </div>
+        <div className="mt-4 text-sm text-center text-gray-500">
+          Показано {paged.length} из {filtered.length} товаров · Страница {page} из {Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE))}
+        </div>
+      </SlideFade>
+    </>
+  )}
+</div>
+
         </div>
       </div>
       <Footer />
