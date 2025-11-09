@@ -189,7 +189,7 @@ export default function Product() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-white">
+      <div className="min-h-screen bg-white flex flex-col">
         <Header />
         <main className="flex-1">
           <div className="container mx-auto px-4 py-10 md:px-10 lg:px-[84px]">
@@ -213,7 +213,7 @@ export default function Product() {
 
   if (failed || !product) {
     return (
-      <div className="min-h-screen bg-white">
+      <div className="min-h-screen bg-white flex flex-col">
         <Header />
         <main className="flex-1">
           <div className="container mx-auto px-4 py-10 md:px-10 lg:px-[84px]">
@@ -230,7 +230,7 @@ export default function Product() {
   }
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white flex flex-col">
       <Header />
       <main className="flex-1">
         <div className="container mx-auto px-4 py-6 md:px-10 lg:px-[84px] md:py-8">
