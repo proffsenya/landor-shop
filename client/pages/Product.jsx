@@ -34,6 +34,9 @@ function CardSection({ title, defaultOpen = false, children }) {
 const pickName = (obj, fall = "") =>
   obj?.name ?? obj?.title ?? obj?.displayName ?? obj?.display_name ?? fall;
 
+
+const pickDisplayName = (obj) => obj?.display_name ?? obj?.displayName ?? null;
+
 const getImageUrl = (img) => {
   if (!img) return null;
   if (typeof img === "string") return img;
@@ -111,7 +114,6 @@ export default function Product() {
     return () => (mounted = false);
   }, [productId]);
 
-  const title = useMemo(() => pickName(product, "Товар"), [product]);
 
   const images = useMemo(() => {
     const imgs = Array.isArray(product?.productImageDTOs) ? product.productImageDTOs : (Array.isArray(product?.images) ? product.images : []);
@@ -133,6 +135,17 @@ export default function Product() {
   }, [location.search, variants]);
 
   const selectedVariant = variants[selectedIdx] || null;
+
+  const title = useMemo(() => {
+  if (!product) return "Товар";
+  // если есть выбранный вариант — берём его displayName
+  const v = variants[selectedIdx]?.raw;
+  const variantName = pickDisplayName(v);
+  if (variantName) return variantName;
+
+  // иначе displayName товара, иначе fallback
+  return pickDisplayName(product) ?? pickName(product, "Товар");
+}, [product, variants, selectedIdx]);
 
   const priceStr = useMemo(() => {
     const p = Number(selectedVariant?.price ?? product?.price ?? 0);

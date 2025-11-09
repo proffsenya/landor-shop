@@ -57,11 +57,8 @@ const weightLabel = (w) => {
   return ` • ${n % 1 === 0 ? `${n} кг` : `${n.toFixed(3)} кг`}`;
 };
 
-const getVariantDisplayName = (p, v) => {
-  const base = getProductName(p);
-  const vName = v?.display_name ?? v?.displayName ?? v?.name ?? v?.sku ?? "";
-  const wLabel = weightLabel(v?.weight);
-  return vName ? `${base} • ${vName}${wLabel}` : `${base}${wLabel}`;
+const getVariantDisplayName = (_, v) => {
+  return v?.display_name ?? v?.displayName ?? v?.name ?? "Товар";
 };
 
 // ---------- Получение первой картинки из разных структур ----------
@@ -241,9 +238,9 @@ export default function Catalog() {
   }, [page, totalPages]);
 
   const paged = useMemo(() => {
-    const start = (page - 1) * ITEMS_PER_PAGE;
-    return filtered.slice(start, start + ITEMS_PER_PAGE);
-  }, [filtered, page]);
+  const start = (page - 1) * ITEMS_PER_PAGE;
+  return filtered.slice(start, start + ITEMS_PER_PAGE);
+}, [filtered, page]);
 
   const goto = (p) => setPage(Math.min(Math.max(1, p), totalPages));
 
@@ -576,7 +573,6 @@ export default function Catalog() {
           </SlideFade>
 
           {/* Правая колонка — товары */}
-          {/* Правая колонка — товары */}
           <div className="lg:col-span-3">
             <ScrollFade>
               <div className="mb-6">
@@ -592,14 +588,14 @@ export default function Catalog() {
 
             {!loading && !error && products.length > 0 && (
               <>
-                <StaggerParent delayChildren={0.05} stagger={0.05}>
-                  <div className="grid grid-cols-1 gap-4 mb-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                <StaggerParent delayChildren={0.05} stagger={0.05} key={page}>
+                  <div
+                    className="grid grid-cols-1 gap-4 mb-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+                  >
                     {paged.map((product) => {
-                      // Если карточка — вариант: открываем родительский товар с ?variant=<id варианта>
                       const isVariantCard = !!product.parentId && product.parentId !== product.id;
                       const to = isVariantCard
                         ? `/product/${encodeURIComponent(product.parentId)}?variant=${encodeURIComponent(product.id)}`
-                        // Если у товара нет вариантов — открываем просто по его id
                         : `/product/${encodeURIComponent(product.id)}`;
 
                       return (
@@ -621,21 +617,22 @@ export default function Catalog() {
                     <Button variant="outline" size="sm" onClick={() => goto(page - 1)} disabled={page === 1}>
                       &lt;
                     </Button>
-                    <span className="text-sm font-medium text-gray-700">
-                      {String(page).padStart(2, "0")}
-                    </span>
+
+                    <span className="text-sm font-medium text-gray-700">{String(page).padStart(2, "0")}</span>
+
+                    {/* используем totalPages */}
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => goto(page + 1)}
-                      disabled={page === Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE))}
+                      disabled={page === totalPages}
                     >
                       &gt;
                     </Button>
                   </div>
 
                   <div className="mt-4 text-sm text-center text-gray-500">
-                    Показано {paged.length} из {filtered.length} товаров · Страница {page} из {Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE))}
+                    Показано {paged.length} из {filtered.length} товаров · Страница {page} из {totalPages}
                   </div>
                 </SlideFade>
               </>
