@@ -597,9 +597,7 @@ export default function Catalog() {
             {!loading && !error && products.length > 0 && (
               <>
                 <StaggerParent delayChildren={0.05} stagger={0.05} key={page}>
-                  <div
-                    className="grid grid-cols-1 gap-4 mb-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
-                  >
+                  <div className="grid grid-cols-1 gap-4 mb-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                     {paged.map((product) => {
                       const isVariantCard = !!product.parentId && product.parentId !== product.id;
                       const to = isVariantCard
@@ -608,17 +606,19 @@ export default function Catalog() {
 
                       return (
                         <ProductCard
-                        key={product.cardId}
-                        to={to}
-                        productId={product.id}
-                        image={product.image}
-                        title={product.title ?? product.name ?? "Товар"}
-                        price={`${Number(product.price ?? 0).toLocaleString()} ₽`}
-                        stock={product.stock}
-                      />
+                          key={product.cardId}
+                          to={to}
+                          productId={isVariantCard ? product.parentId : product.id}  // ✅ основной продукт
+                          variantId={isVariantCard ? product.id : product.variantId || product.id} // ✅ сюда передаём id варианта
+                          image={product.image}
+                          title={product.title ?? product.name ?? "Товар"}
+                          price={`${Number(product.price ?? 0).toLocaleString()} ₽`}
+                          stock={product.stock}
+                        />
                       );
                     })}
                   </div>
+
                 </StaggerParent>
 
                 <SlideFade direction="up" distance={20}>

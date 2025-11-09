@@ -1,8 +1,34 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Heart, Check } from "lucide-react";
 import { HoverLift, StaggerItem } from "../utils/CatalogAnimations";
 import { ScalePulse, FadeSwitch } from "../utils/ActionAnimations";
+
+// ---- helpers: storage by token ------------------------------------------
+const STORAGE_CART = (token) => `cart:variants:${token || "guest"}`;
+const STORAGE_FAVS = (token) => `favs:variants:${token || "guest"}`;
+
+const getToken = () => {
+  if (typeof window === "undefined") return "guest";
+  return localStorage.getItem("token") || "guest";
+};
+
+const loadSet = (key) => {
+  try {
+    const raw = sessionStorage.getItem(key);
+    if (!raw) return new Set();
+    const arr = JSON.parse(raw);
+    return new Set(Array.isArray(arr) ? arr : []);
+  } catch {
+    return new Set();
+  }
+};
+
+const saveSet = (key, set) => {
+  try {
+    sessionStorage.setItem(key, JSON.stringify(Array.from(set)));
+  } catch {}
+};
 
 export default function ProductCard({
   productId,
@@ -22,9 +48,69 @@ export default function ProductCard({
   const [isFavorite, setIsFavorite] = useState(false);
   const [inCart, setInCart] = useState(false);
 
-  // Надёжная проверка наличия: поддерживает number и string
   const numericStock = Number(stock);
   const available = Number.isFinite(numericStock) && numericStock >= 1;
+
+  const token = getToken();
+  const cartKey = STORAGE_CART(token);
+  const favsKey = STORAGE_FAVS(token);
+
+  // ---- Инициализация из sessionStorage ----
+  useEffect(() => {
+    if (!variantId) return;
+    const cartSet = loadSet(cartKey);
+    const favSet = loadSet(favsKey);
+    setInCart(cartSet.has(String(variantId)));
+    setIsFavorite(favSet.has(String(variantId)));
+  }, [variantId, cartKey, favsKey]);
+
+  // ---- Добавить в корзину ----
+  const handleAddToCart = async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (!available || !variantId) return;
+
+    // Если уже "в корзине" — не повторяем запрос
+    if (inCart) return;
+
+    try {
+      const res = await fetch(`/api/cart`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ variantId: Number(variantId), quantity: 1 }),
+      });
+
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+      setInCart(true);
+      const cartSet = loadSet(cartKey);
+      cartSet.add(String(variantId));
+      saveSet(cartKey, cartSet);
+    } catch (err) {
+      console.warn("Ошибка при добавлении в корзину:", err);
+    }
+  };
+
+  // ---- Избранное ----
+  const handleToggleFavorite = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (!variantId) return;
+
+    setIsFavorite((prev) => {
+      const next = !prev;
+      const favSet = loadSet(favsKey);
+      if (next) favSet.add(String(variantId));
+      else favSet.delete(String(variantId));
+      saveSet(favsKey, favSet);
+      return next;
+    });
+  };
 
   return (
     <StaggerItem>
@@ -32,14 +118,10 @@ export default function ProductCard({
         <div className="overflow-hidden transition-shadow bg-white border border-gray-200 rounded-xl hover:shadow-lg">
           {/* Верхняя часть карточки */}
           <div className="relative p-4 bg-white border-b border-gray-200 sm:p-6 lg:p-8">
-            {/* Избранное — не навигирует */}
+            {/* Избранное */}
             <button
               type="button"
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                setIsFavorite((v) => !v);
-              }}
+              onClick={handleToggleFavorite}
               className="absolute z-10 transition-transform top-3 right-3 sm:top-4 sm:right-4 hover:scale-110"
               aria-label={isFavorite ? "Убрать из избранного" : "В избранное"}
             >
@@ -71,77 +153,71 @@ export default function ProductCard({
 
           {/* Инфо-блок */}
           <div className="p-3 sm:p-4">
-            {/* Переход по названию */}
             <Link
               to={productUrl}
               className="block focus:outline-none focus:ring-2 focus:ring-[#6F2A2B] rounded"
               title={title}
               aria-label={title || "Товар"}
             >
-              <p className="text-[#1E1E1E] text-sm sm:text-base mb-3 sm:mb-4 line-clamp-2 lg:line-clamp-3">
+              <p className="text-[#1E1E1E] text-sm sm:text-base mb-6 line-clamp-2 lg:line-clamp-3">
                 {title}
               </p>
             </Link>
 
-  <div className="flex items-center justify-between gap-3 mt-10">
-  <span className="text-xl sm:text-2xl text-[#6F2A2B] whitespace-nowrap">
-    {price}
-  </span>
+            {/* Цена + кнопка */}
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-xl sm:text-2xl text-[#6F2A2B] font-normal whitespace-nowrap">
+                {price}
+              </span>
 
-  {available ? (
-    <button
-      type="button"
-      onClick={(e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        setInCart((v) => !v);
-      }}
-      className={`
-        flex items-center justify-center
-        rounded-md text-sm sm:text-[15px]
-        transition-colors
-        px-3 py-[10px]
-        h-11
-        min-w-[110px]
-        ${
-          inCart
-            ? "bg-white border border-[#6F2A2B] text-[#6F2A2B]"
-            : "bg-[#6F2A2B] text-white hover:bg-[#5a2223]"
-        }
-      `}
-      aria-label={inCart ? "Убрать из корзины" : "Добавить в корзину"}
-    >
-      <FadeSwitch active={inCart}>
-        <span className="flex items-center justify-center gap-1 leading-none whitespace-nowrap">
-          {inCart ? (
-            <>
-              <Check className="w-4 h-4" />
-              <span>В корзине</span>
-            </>
-          ) : (
-            <span>В корзину</span>
-          )}
-        </span>
-      </FadeSwitch>
-    </button>
-  ) : (
-    <span
-      className="
-        inline-flex items-center justify-center
-        rounded-md text-sm sm:text-[15px]
-        px-3 py-[10px]
-        h-11
-        min-w-[110px]
-        bg-gray-100 text-gray-500
-        whitespace-nowrap
-      "
-    >
-      Нет в наличии
-    </span>
-  )}
-</div>
-
-
+              {available ? (
+                <button
+                  type="button"
+                  onClick={handleAddToCart}
+                  className={`
+                    flex items-center justify-center
+                    rounded-md text-sm sm:text-[15px]
+                    transition-colors
+                    px-3 py-[10px]
+                    h-11
+                    min-w-[110px]
+                    ${
+                      inCart
+                        ? "bg-white border border-[#6F2A2B] text-[#6F2A2B]"
+                        : "bg-[#6F2A2B] text-white hover:bg-[#5a2223]"
+                    }
+                  `}
+                  aria-label={inCart ? "Убрать из корзины" : "Добавить в корзину"}
+                >
+                  <FadeSwitch active={inCart}>
+                    <span className="flex items-center justify-center gap-1 leading-none whitespace-nowrap">
+                      {inCart ? (
+                        <>
+                          <Check className="w-4 h-4" />
+                          <span>В корзине</span>
+                        </>
+                      ) : (
+                        <span>В корзину</span>
+                      )}
+                    </span>
+                  </FadeSwitch>
+                </button>
+              ) : (
+                <span
+                  className="
+                    inline-flex items-center justify-center
+                    rounded-md text-sm sm:text-[15px]
+                    px-3 py-[10px]
+                    h-11
+                    min-w-[110px]
+                    bg-gray-100 text-gray-500
+                    whitespace-nowrap
+                  "
+                >
+                  Нет в наличии
+                </span>
+              )}
+            </div>
           </div>
         </div>
       </HoverLift>
