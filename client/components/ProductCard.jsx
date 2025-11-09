@@ -83,58 +83,65 @@ export default function ProductCard({
               </p>
             </Link>
 
-            <div className="flex flex-col gap-3 pt-4 sm:pt-6 md:pt-7 md:flex-row md:items-center md:justify-between">
-              <span className="text-xl sm:text-2xl text-[#6F2A2B]">{price}</span>
+  <div className="flex items-center justify-between gap-3 mt-10">
+  <span className="text-xl sm:text-2xl text-[#6F2A2B] whitespace-nowrap">
+    {price}
+  </span>
 
-              {available ? (
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    setInCart((v) => !v);
-                  }}
-                  className={`
-                    flex items-center justify-center
-                    rounded-md text-sm sm:text-[15px]
-                    transition-colors
-                    px-4 py-3 sm:px-3
-                    ${
-                      inCart
-                        ? "bg-white border border-[#6F2A2B] text-[#6F2A2B]"
-                        : "bg-[#6F2A2B] text-white hover:bg-[#5a2223]"
-                    }
-                    w-full md:w-auto
-                  `}
-                  aria-label={inCart ? "Убрать из корзины" : "Добавить в корзину"}
-                >
-                  <FadeSwitch active={inCart}>
-                    <span className="flex items-center justify-center gap-1 leading-none">
-                      {inCart ? (
-                        <>
-                          <Check className="w-4 h-4" />
-                          <span>В корзине</span>
-                        </>
-                      ) : (
-                        <span>В корзину</span>
-                      )}
-                    </span>
-                  </FadeSwitch>
-                </button>
-              ) : (
-                <span
-                  className="
-                    inline-flex items-center justify-center
-                    rounded-md text-sm sm:text-[15px]
-                    px-4 py-3 sm:px-3
-                    bg-gray-100 text-gray-500
-                    w-full md:w-auto
-                  "
-                >
-                  Нет в наличии
-                </span>
-              )}
-            </div>
+  {available ? (
+    <button
+      type="button"
+      onClick={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setInCart((v) => !v);
+      }}
+      className={`
+        flex items-center justify-center
+        rounded-md text-sm sm:text-[15px]
+        transition-colors
+        px-3 py-[10px]
+        h-11
+        min-w-[110px]
+        ${
+          inCart
+            ? "bg-white border border-[#6F2A2B] text-[#6F2A2B]"
+            : "bg-[#6F2A2B] text-white hover:bg-[#5a2223]"
+        }
+      `}
+      aria-label={inCart ? "Убрать из корзины" : "Добавить в корзину"}
+    >
+      <FadeSwitch active={inCart}>
+        <span className="flex items-center justify-center gap-1 leading-none whitespace-nowrap">
+          {inCart ? (
+            <>
+              <Check className="w-4 h-4" />
+              <span>В корзине</span>
+            </>
+          ) : (
+            <span>В корзину</span>
+          )}
+        </span>
+      </FadeSwitch>
+    </button>
+  ) : (
+    <span
+      className="
+        inline-flex items-center justify-center
+        rounded-md text-sm sm:text-[15px]
+        px-3 py-[10px]
+        h-11
+        min-w-[110px]
+        bg-gray-100 text-gray-500
+        whitespace-nowrap
+      "
+    >
+      Нет в наличии
+    </span>
+  )}
+</div>
+
+
           </div>
         </div>
       </HoverLift>
