@@ -80,28 +80,34 @@ const getFirstImage = (product) => {
 };
 
 // ---------- Преобразование продукта в карточки (каждый вариант — отдельная карточка) ----------
+// ---------- Преобразование продукта в карточки (каждый вариант — отдельная карточка) ----------
 const expandProductToCards = (product) => {
   const firstImage = getFirstImage(product);
 
-  // Есть variants -> разворачиваем каждый как отдельную карточку с id варианта
   if (Array.isArray(product?.variants) && product.variants.length > 0) {
     return product.variants.map((v, idx) => {
       const price = Number(v?.price ?? 0);
       const variantId = v?.id ?? v?.sku ?? `${product.id ?? product.slug}-v${idx}`;
+      const imageUrl = typeof v?.imageUrl === "string" && v.imageUrl.length > 0 ? v.imageUrl : firstImage;
+      const stock = Number(v?.stock ?? 0); // <-- важно
+
       return {
         cardId: `p-${product.id ?? product.slug}-v-${variantId}`,
-        id: variantId,                         // <-- ID карточки = ID варианта (роут /product/:id)
-        parentId: product?.id ?? product?.slug ?? null, // при необходимости
+        id: variantId,                                  
+        parentId: product?.id ?? product?.slug ?? null,
         title: getVariantDisplayName(product, v),
-        image: firstImage,
+        image: imageUrl,
         price: Number.isFinite(price) ? price : 0,
+        stock: Number.isFinite(stock) ? stock : 0,
       };
     });
   }
 
-  // Без variants -> одна карточка, открываем по ID продукта (совместимость)
+  // Без variants -> одна карточка
   const price = Number(product?.price ?? 0);
   const pid = product?.id ?? product?.slug ?? Math.random().toString(36).slice(2);
+  const stock = Number(product?.stock ?? 0);
+
   return [
     {
       cardId: `p-${pid}`,
@@ -110,9 +116,11 @@ const expandProductToCards = (product) => {
       title: getProductName(product),
       image: firstImage,
       price: Number.isFinite(price) ? price : 0,
+      stock: Number.isFinite(stock) ? stock : 0,
     },
   ];
 };
+
 
 export default function Catalog() {
   // товары для карточек (после экспанда)
@@ -600,13 +608,14 @@ export default function Catalog() {
 
                       return (
                         <ProductCard
-                          key={product.cardId}
-                          to={to}
-                          productId={product.id}
-                          image={product.image}
-                          title={product.title ?? product.name ?? "Товар"}
-                          price={`${Number(product.price ?? 0).toLocaleString()} ₽`}
-                        />
+                        key={product.cardId}
+                        to={to}
+                        productId={product.id}
+                        image={product.image}
+                        title={product.title ?? product.name ?? "Товар"}
+                        price={`${Number(product.price ?? 0).toLocaleString()} ₽`}
+                        stock={product.stock}
+                      />
                       );
                     })}
                   </div>

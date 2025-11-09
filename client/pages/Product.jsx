@@ -1,3 +1,4 @@
+// client/pages/Product.jsx
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams, useLocation, useNavigate } from "react-router-dom";
 import Header from "@/components/Header";
@@ -6,14 +7,14 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, Heart } from "lucide-react";
 import { PageFade } from "@/utils/PageAnimations";
 
-// Универсальная секция-аккордеон
+// ------------------ UI: секция-аккордеон ------------------
 function CardSection({ title, defaultOpen = false, children }) {
   const [open, setOpen] = useState(defaultOpen);
   return (
     <PageFade>
       <div className="rounded-lg border border-[#E6E6E6]">
         <button
-          onClick={() => setOpen((v) => !v)}
+          onClick={() => setOpen(v => !v)}
           className="flex w-full items-center justify-between px-4 py-3 text-[15px] font-medium text-[#1E1E1E]"
         >
           {title}
@@ -31,17 +32,11 @@ function CardSection({ title, defaultOpen = false, children }) {
   );
 }
 
+// ------------------ утилиты ------------------
 const pickName = (obj, fall = "") =>
   obj?.name ?? obj?.title ?? obj?.displayName ?? obj?.display_name ?? fall;
 
-
 const pickDisplayName = (obj) => obj?.display_name ?? obj?.displayName ?? null;
-
-const getImageUrl = (img) => {
-  if (!img) return null;
-  if (typeof img === "string") return img;
-  return img.url || img.path || img.src || null;
-};
 
 const s = (v) => (v == null ? null : String(v));
 
@@ -77,8 +72,50 @@ const normalizeVariants = (product) => {
 
 const pickSKU = (obj) => obj?.sku ?? obj?.article ?? obj?.code ?? "—";
 
+// кэш objectURL по imageId
+const imageCache = new Map();
+
+// грузим один файл-изображение -> objectURL
+async function fetchImageUrl(productId, imageId, token) {
+  if (!productId || !imageId) return "/korm1.svg";
+  const cacheKey = `${productId}:${imageId}`;
+  if (imageCache.has(cacheKey)) return imageCache.get(cacheKey);
+
+  try {
+    const res = await fetch(`/api/products/${encodeURIComponent(productId)}/images/${encodeURIComponent(imageId)}`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      // credentials: "include", // если используешь cookie-сессию
+    });
+    if (!res.ok) {
+      // для диагностики
+      let body = "";
+      try { body = await res.text(); } catch {}
+      console.warn("[images]", res.status, res.url, body?.slice(0, 300));
+      const fb = "/korm1.svg";
+      imageCache.set(cacheKey, fb);
+      return fb;
+    }
+    const blob = await res.blob();
+    const ct = res.headers.get("content-type") || blob.type || "";
+    if (!ct.startsWith("image/")) {
+      console.warn(`[images] not image content for id=${imageId}, content-type=${ct}`);
+      const fb = "/korm1.svg";
+      imageCache.set(cacheKey, fb);
+      return fb;
+    }
+    const url = URL.createObjectURL(blob);
+    imageCache.set(cacheKey, url);
+    return url;
+  } catch (e) {
+    console.warn("[images] error", e);
+    const fb = "/korm1.svg";
+    imageCache.set(cacheKey, fb);
+    return fb;
+  }
+}
+
+// ------------------ компонент ------------------
 export default function Product() {
-  // теперь id = productId из маршрута /product/:id
   const { id: productId } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
@@ -87,11 +124,14 @@ export default function Product() {
   const [failed, setFailed] = useState(false);
   const [product, setProduct] = useState(null);
 
-  const [selectedImage, setSelectedImage] = useState(0);
+  // картинки карусели
+  const [gallery, setGallery] = useState([]);      // [{id, url, isMain, altText}]
+  const [selectedImageIdx, setSelectedImageIdx] = useState(0);
+
   const [qty, setQty] = useState(1);
   const [isFav, setIsFav] = useState(false);
 
-  // Загружаем продукт по productId
+  // ---------- загрузка детали товара ----------
   useEffect(() => {
     let mounted = true;
     (async () => {
@@ -111,19 +151,57 @@ export default function Product() {
         if (mounted) setLoading(false);
       }
     })();
-    return () => (mounted = false);
+    return () => { mounted = false; };
   }, [productId]);
 
+  // ---------- загрузка картинок карусели ----------
+  useEffect(() => {
+    let mounted = true;
+    const token = localStorage.getItem("token");
 
-  const images = useMemo(() => {
-    const imgs = Array.isArray(product?.productImageDTOs) ? product.productImageDTOs : (Array.isArray(product?.images) ? product.images : []);
-    const list = imgs.map(getImageUrl).filter(Boolean).slice(0, 8);
-    return list.length ? list : ["/korm1.svg"];
-  }, [product]);
+    async function loadGallery() {
+      try {
+        if (!productId) return;
+        // список метаданных
+        const res = await fetch(`/api/products/${encodeURIComponent(productId)}/images`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+          // credentials: "include",
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        /** meta: [{ id, isMain, altText }] */
+        const meta = await res.json();
 
+        // главную ставим первой
+        const ordered = [...meta].sort((a, b) => (b.isMain === true) - (a.isMain === true));
+
+        // получаем objectURL для каждой
+        const urls = await Promise.all(
+          ordered.map(m => fetchImageUrl(productId, m.id, token))
+        );
+
+        const items = ordered.map((m, i) => ({
+          ...m,
+          url: urls[i] || "/korm1.svg",
+        }));
+
+        if (!mounted) return;
+        setGallery(items.length ? items : [{ id: "ph", url: "/korm1.svg", isMain: true, altText: "image" }]);
+        setSelectedImageIdx(0);
+      } catch (e) {
+        console.warn("gallery load error:", e);
+        if (!mounted) return;
+        setGallery([{ id: "ph", url: "/korm1.svg", isMain: true, altText: "image" }]);
+        setSelectedImageIdx(0);
+      }
+    }
+
+    loadGallery();
+    return () => { mounted = false; };
+  }, [productId]);
+
+  // ---------- варианты (оставляем как было, картинкам не мешает) ----------
   const variants = useMemo(() => normalizeVariants(product), [product]);
 
-  // читаем выбранный вариант из query ?variant=...
   const selectedIdx = useMemo(() => {
     const sp = new URLSearchParams(location.search);
     const qVariantId = sp.get("variant");
@@ -137,15 +215,12 @@ export default function Product() {
   const selectedVariant = variants[selectedIdx] || null;
 
   const title = useMemo(() => {
-  if (!product) return "Товар";
-  // если есть выбранный вариант — берём его displayName
-  const v = variants[selectedIdx]?.raw;
-  const variantName = pickDisplayName(v);
-  if (variantName) return variantName;
-
-  // иначе displayName товара, иначе fallback
-  return pickDisplayName(product) ?? pickName(product, "Товар");
-}, [product, variants, selectedIdx]);
+    if (!product) return "Товар";
+    const v = variants[selectedIdx]?.raw;
+    const variantName = pickDisplayName(v);
+    if (variantName) return variantName;
+    return pickDisplayName(product) ?? pickName(product, "Товар");
+  }, [product, variants, selectedIdx]);
 
   const priceStr = useMemo(() => {
     const p = Number(selectedVariant?.price ?? product?.price ?? 0);
@@ -172,21 +247,30 @@ export default function Product() {
     return st > 0 ? `${st} шт.` : "Нет в наличии";
   }, [selectedVariant, product]);
 
+const totalStock = useMemo(() => {
+  const st = Number(selectedVariant?.raw?.stock ?? product?.stock ?? 0);
+  return Number.isFinite(st) ? st : 0;
+}, [selectedVariant, product]);
+
+const available = totalStock >= 1;
+
+
   const composition = product?.composition ?? "—";
   const nutritionalValue = product?.nutritionalValue ?? "—";
   const guaranteedIndicators = product?.guaranteedIndicators ?? "—";
   const feedingNote = product?.feedingNote ?? "—";
 
-  // Переключение веса — меняем только query ?variant=... у текущего /product/:productId
   const handleSelectWeight = (idx) => {
     if (idx < 0 || idx >= variants.length) return;
     const nextVariantId = variants[idx].id;
     const sp = new URLSearchParams(location.search);
     sp.set("variant", String(nextVariantId));
     navigate(`/product/${encodeURIComponent(productId)}?${sp.toString()}`, { replace: false });
-    setSelectedImage(0);
+    // картинки теперь не связаны с вариантом — только сбросим выделение
+    setSelectedImageIdx(0);
   };
 
+  // ---------- загрузочные и ошибочные состояния ----------
   if (loading) {
     return (
       <div className="min-h-screen bg-white flex flex-col">
@@ -205,7 +289,7 @@ export default function Product() {
               </div>
             </div>
           </div>
-          </main>
+        </main>
         <Footer />
       </div>
     );
@@ -229,6 +313,9 @@ export default function Product() {
     );
   }
 
+  // ---------- рендер ----------
+  const mainImage = gallery[selectedImageIdx]?.url || "/korm1.svg";
+
   return (
     <div className="min-h-screen bg-white flex flex-col">
       <Header />
@@ -240,22 +327,34 @@ export default function Product() {
           </Link>
 
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2 md:gap-8">
-            {/* Изображения */}
+            {/* Карусель изображений */}
             <div className="flex flex-col w-full">
               <div className="rounded-lg border border-[#E6E6E6] bg-white p-2">
                 <div className="flex w-full items-center justify-center overflow-hidden rounded-md bg-[#F2F2F2] h-64 md:h-[360px]">
-                  <img src={images[selectedImage]} alt={title} className="object-contain w-full h-full" />
+                  <img
+                    src={mainImage}
+                    alt={gallery[selectedImageIdx]?.altText || title}
+                    className="object-contain w-full h-full"
+                    onError={(e) => { e.currentTarget.src = "/korm1.svg"; }}
+                  />
                 </div>
               </div>
 
+              {/* превьюшки */}
               <div className="grid grid-cols-4 gap-2 mt-3">
-                {images.map((img, i) => (
+                {gallery.map((img, i) => (
                   <button
-                    key={i}
-                    onClick={() => setSelectedImage(i)}
-                    className={`overflow-hidden rounded-md border ${selectedImage === i ? "border-[#6F2A2B]" : "border-[#E6E6E6]"} bg-[#F7F7F7] h-16`}
+                    key={img.id ?? i}
+                    onClick={() => setSelectedImageIdx(i)}
+                    className={`overflow-hidden rounded-md border ${selectedImageIdx === i ? "border-[#6F2A2B]" : "border-[#E6E6E6]"} bg-[#F7F7F7] h-16`}
+                    title={img.altText || ""}
                   >
-                    <img src={img} alt={`img-${i}`} className="object-contain w-full h-full" />
+                    <img
+                      src={img.url}
+                      alt={img.altText || `img-${i}`}
+                      className="object-contain w-full h-full"
+                      onError={(e) => { e.currentTarget.src = "/korm1.svg"; }}
+                    />
                   </button>
                 ))}
               </div>
@@ -270,13 +369,12 @@ export default function Product() {
               <div className="flex flex-col items-start gap-4 mt-4 sm:flex-row sm:items-center">
                 <div className="text-[24px] font-semibold text-[#1E1E1E]">{priceStr}</div>
                 <div className="inline-flex h-9 items-center rounded-full border border-[#1E1E1E]">
-                  <button onClick={() => setQty((n) => Math.max(1, n - 1))} className="h-9 w-9 text-[18px]">–</button>
+                  <button onClick={() => setQty(n => Math.max(1, n - 1))} className="h-9 w-9 text-[18px]">–</button>
                   <span className="min-w-[36px] text-center text-[15px]">{qty}</span>
-                  <button onClick={() => setQty((n) => n + 1)} className="h-9 w-9 text-[18px]">+</button>
+                  <button onClick={() => setQty(n => n + 1)} className="h-9 w-9 text-[18px]">+</button>
                 </div>
               </div>
 
-              {/* Переключение между вариантами (весами) */}
               {variants.length > 0 && (
                 <div className="mt-5">
                   <div className="mb-2 text-[13px] font-medium text-[#1E1E1E]">Вес:</div>
@@ -300,11 +398,18 @@ export default function Product() {
               )}
 
               <div className="flex flex-col gap-3 mt-5 sm:flex-row">
-                <Button className="h-11 rounded-lg bg-[#6F2A2B] px-6 text-[14px] text-white hover:bg-[#5a2223] w-full sm:w-auto">
-                  Добавить в корзину
-                </Button>
+                {available ? (
+                  <Button className="h-11 rounded-lg bg-[#6F2A2B] px-6 text-[14px] text-white hover:bg-[#5a2223] w-full sm:w-auto">
+                    Добавить в корзину
+                  </Button>
+                ) : (
+                  <span className="h-11 inline-flex items-center justify-center rounded-lg px-6 text-[14px] w-full sm:w-auto bg-gray-100 text-gray-500">
+                    Нет в наличии
+                  </span>
+                )}
+
                 <button
-                  onClick={() => setIsFav((v) => !v)}
+                  onClick={() => setIsFav(v => !v)}
                   className={`flex h-11 items-center justify-center rounded-lg border sm:w-11 ${
                     isFav ? "border-[#6F2A2B] text-[#6F2A2B]" : "border-[#DADADA] text-[#9B9B9B]"
                   }`}
@@ -316,9 +421,10 @@ export default function Product() {
                 </button>
               </div>
 
+
               <div className="mt-6 grid grid-cols-1 md:grid-cols-[180px_1fr] gap-y-2 text-[14px]">
                 <div className="text-[#6B6B6B]">Артикул (SKU):</div>
-                <div>{pickSKU(selectedVariant?.raw) || pickSKU(product) || "—"}</div>
+                <div>{skuText}</div>
 
                 <div className="text-[#6B6B6B]">Бренд:</div>
                 <div>{brand}</div>
