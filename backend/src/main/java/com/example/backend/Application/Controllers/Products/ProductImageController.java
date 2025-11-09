@@ -62,6 +62,14 @@ class ProductImageController {
         return ResponseEntity.ok(productImageDTOS);
     }
 
+    @GetMapping("/{id}")
+    public ResponseEntity<byte[]> serveImage(@PathVariable Long id) {
+        ProductImage img = productImageRepository.findById(id).orElseThrow(() -> new ResourseNotFoundException("Image not found"));
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType(img.getContentType()))
+                .body(img.getData());
+    }
+
     public ProductImageDTO toProductImageDTO(ProductImage productImage){
         if(productImage != null){
             return new ProductImageDTO(productImage.getId(), productImage.getIsMain(), productImage.getAltText());}

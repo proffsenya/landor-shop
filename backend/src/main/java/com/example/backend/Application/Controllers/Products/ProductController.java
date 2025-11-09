@@ -90,10 +90,10 @@ class ProductController {
         String mainImageUrl = product.getImages().stream()
                 .filter(img -> Boolean.TRUE.equals(img.getIsMain()))
                 .findFirst()
-                .map(img -> "/api/images/" + img.getId())
+                .map(img -> "/api/products/" + product.getId() + "/images/" + img.getId())
                 .orElseGet(() -> product.getImages().stream()
                         .findFirst()
-                        .map(img -> "/api/images/" + img.getId())
+                        .map(img -> "/api/products/" + product.getId() + "/images/" + img.getId())
                         .orElse(null));
 
         List<VariantCardDTO> variantCards = product.getProductVariants().stream()
@@ -103,6 +103,7 @@ class ProductController {
                                 ? v.getDisplayName()
                                 : (product.getName() + (v.getWeight() != null ? (", " + v.getWeight() + " кг") : "")),
                         v.getPrice(),
+                        v.getStock(),
                         mainImageUrl
                 ))
                 .toList();
