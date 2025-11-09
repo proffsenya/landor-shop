@@ -59,10 +59,21 @@ public class ProductImagesService {
         if (files != null) {
             for (MultipartFile file : files) {
                 if (file == null || file.isEmpty()) continue;
-
+                System.out.println("Incoming file: name=" + file.getOriginalFilename() + " size=" + file.getSize() + " ct=" + file.getContentType());
                 String ct = file.getContentType();
-                if (ct == null || (!ct.equals("image/jpeg") && !ct.equals("image/png") && !ct.equals("image/webp"))) {
-                    throw new InvalidRequestException("Unsupported file type: " + ct);
+                boolean ok = false;
+                if (ct != null) {
+                    ok = ct.toLowerCase().startsWith("image/");
+                }
+                if (!ok) {
+                    String filename = file.getOriginalFilename();
+                    if (filename != null) {
+                        String lower = filename.toLowerCase();
+                        ok = lower.endsWith(".jpg") || lower.endsWith(".jpeg") || lower.endsWith(".png") || lower.endsWith(".webp");
+                    }
+                }
+                if (!ok) {
+                    throw new InvalidRequestException("Unsupported file type: " + ct + " filename=" + file.getOriginalFilename());
                 }
                 long maxBytes = 2 * 1024 * 1024; // 2MB limit
                 if (file.getSize() > maxBytes) {
@@ -77,6 +88,14 @@ public class ProductImagesService {
                 img.setAltText(product.getName());
                 img.setProduct(product);
                 img.setData(file.getBytes());
+
+                System.out.println(">>> IMG BEFORE SAVE: fileName=" + img.getFileName()
+                        + " contentType=" + img.getContentType()
+                        + " size=" + img.getSize()
+                        + " productId=" + (img.getProduct() != null ? img.getProduct().getId() : "null")
+                        + " dataClass=" + (img.getData() == null ? "null" : img.getData().getClass().getName())
+                        + " dataLen=" + (img.getData() == null ? "null" : img.getData().length));
+                System.out.println("SET PRODUCT: product.getId()=" + product.getId());
 
                 product.addImage(img);
                 first = false;

@@ -4,10 +4,12 @@ import com.example.backend.Domain.DTOs.CartItemDTO;
 import com.example.backend.Domain.DTOs.CartResponseDTO;
 import com.example.backend.Domain.Models.Cart;
 import com.example.backend.Domain.Models.CartItem;
+import com.example.backend.Infrastructure.Configurations.CustomUserDetails;
 import com.example.backend.Infrastructure.Exceptions.InvalidRequestException;
 import com.example.backend.Infrastructure.Services.CartService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -17,7 +19,7 @@ import java.util.List;
 
 @RestController
 @Validated
-@RequestMapping("/api/{userId}/cart")
+@RequestMapping("/api/cart")
 public class CartController {
     private final CartService cartService;
     @Autowired
@@ -28,20 +30,23 @@ public class CartController {
     public static record AddToCartRequest(Long variantId, Integer quantity) {}
 
     @PostMapping
-    public ResponseEntity<CartResponseDTO> createCart(@PathVariable Long userId,
+    public ResponseEntity<CartResponseDTO> createCart(@AuthenticationPrincipal CustomUserDetails principal,
                                                       @RequestBody AddToCartRequest request) throws InvalidRequestException {
+        Long userId = principal.getId();
         Cart cart = cartService.addProductVariantToCart(userId, request.variantId(), request.quantity());
         CartResponseDTO dto = toCartResponseDTO(cart);
         return ResponseEntity.ok(dto);
     }
 
     @GetMapping
-    public ResponseEntity<CartResponseDTO> getCart(@PathVariable Long userId) throws InvalidRequestException {
+    public ResponseEntity<CartResponseDTO> getCart(@AuthenticationPrincipal CustomUserDetails principal) throws InvalidRequestException {
+        Long userId = principal.getId();
         return ResponseEntity.ok(toCartResponseDTO(cartService.getCartByUserId(userId)));
     }
 
     @DeleteMapping
-    public ResponseEntity<Void> deleteCart(@PathVariable Long userId) throws InvalidRequestException {
+    public ResponseEntity<Void> deleteCart(@AuthenticationPrincipal CustomUserDetails principal) throws InvalidRequestException {
+        Long userId = principal.getId();
         cartService.clearCart(userId);
         return ResponseEntity.noContent().build();
     }

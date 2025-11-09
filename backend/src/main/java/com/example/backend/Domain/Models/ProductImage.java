@@ -4,11 +4,14 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import org.hibernate.annotations.ColumnDefault;
+import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
+import org.hibernate.type.SqlTypes;
 
 @Entity
 @Table(name = "product_images")
+@Access(AccessType.FIELD)
 public class ProductImage {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -24,7 +27,8 @@ public class ProductImage {
     @Lob
     @Basic(fetch = FetchType.LAZY)
     @NotNull
-    @Column(name = "data", nullable = false, columnDefinition = "BYTEA")
+    @JdbcTypeCode(SqlTypes.BINARY)
+    @Column(name = "data", nullable = false)
     private byte[] data;
 
     @ColumnDefault("false")

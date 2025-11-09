@@ -32,6 +32,7 @@ public class SpringSecurityConfiguration {
                         .requestMatchers(HttpMethod.POST, "/api/products").permitAll() // временно для тестирования
                         .requestMatchers("/api/auth/**").permitAll() // если есть аутентификация
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/products/save-image-alone").permitAll()
                         .requestMatchers("/error").permitAll()
 
                         // Защищенные endpoints (требуют аутентификации)

@@ -14,6 +14,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.*;
 
 @Service
@@ -170,10 +172,11 @@ public class ProductService {
 
         processProductRelationships(product, createProductDTO);
         setProductVariants(product, createProductDTO);
+        Product saved = productRepository.save(product);
 
-        productImagesService.addImagesToProduct(product, files);
+        productImagesService.addImagesToProduct(saved, files);
 
-        return productRepository.save(product);
+        return productRepository.save(saved);
     }
 
     @Transactional

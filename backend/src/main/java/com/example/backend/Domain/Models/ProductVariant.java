@@ -84,6 +84,18 @@ public class ProductVariant {
             inverseJoinColumns = @JoinColumn(name = "scent_id"))
     private Set<Scent> scents = new LinkedHashSet<>();
 
+    @OneToMany
+    @JoinColumn(name = "product_variant_id")
+    private Set<Favorite> favorites = new LinkedHashSet<>();
+
+    public Set<Favorite> getFavorites() {
+        return favorites;
+    }
+
+    public void setFavorites(Set<Favorite> favorites) {
+        this.favorites = favorites;
+    }
+
     public Long getId() {
         return id;
     }

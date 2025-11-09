@@ -188,11 +188,11 @@ public class Product {
         this.images = images;
     }
     public void addImage(ProductImage img) {
-        images.add(img);
         img.setProduct(this);
+        this.images.add(img);
     }
     public void removeImage(ProductImage img) {
-        images.remove(img);
+        this.images.remove(img);
         img.setProduct(null);
     }
     public Brand getBrand() {

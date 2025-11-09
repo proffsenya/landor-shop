@@ -61,6 +61,18 @@ public class User {
     @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
     private Set<Order> orders = new LinkedHashSet<>();
 
+    @OneToMany
+    @JoinColumn(name = "user_id")
+    private Set<Favorite> favorites = new LinkedHashSet<>();
+
+    public Set<Favorite> getFavorites() {
+        return favorites;
+    }
+
+    public void setFavorites(Set<Favorite> favorites) {
+        this.favorites = favorites;
+    }
+
     public Long getId() {
         return id;
     }
