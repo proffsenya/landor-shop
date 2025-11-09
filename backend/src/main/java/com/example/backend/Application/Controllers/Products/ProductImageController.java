@@ -36,21 +36,40 @@ class ProductImageController {
     }
 
 //    @PreAuthorize("hasRole('STAFF')")
+//    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+//    public ResponseEntity<List<ProductImageDTO>> addImagesToProduct(@PathVariable Long productID, @RequestParam("file") List<MultipartFile> file){
+//        try {
+//            Product product = productRepository.findById(productID).orElseThrow(()-> new ResourseNotFoundException("Product not found"));
+//            productImagesService.addImagesToProduct(product, file);
+//            List<ProductImageDTO> productImageDTOS = product.getImages()
+//                    .stream()
+//                    .map(this::toProductImageDTO)
+//                    .toList();
+//            return ResponseEntity.ok(productImageDTOS);
+//        }
+//        catch (IOException e) {
+//            throw new InvalidRequestException("File processing error");
+//        }
+//    }
+
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<List<ProductImageDTO>> addImagesToProduct(@PathVariable Long productID, @RequestParam("file") List<MultipartFile> file){
+    public ResponseEntity<List<ProductImageDTO>> addImagesToProduct(
+            @PathVariable Long productID,
+            @RequestParam("file") List<MultipartFile> file,
+            @RequestParam(value = "variantId", required = false) Long variantId) {
         try {
-            Product product = productRepository.findById(productID).orElseThrow(()-> new ResourseNotFoundException("Product not found"));
-            productImagesService.addImagesToProduct(product, file);
+            Product product = productRepository.findById(productID).orElseThrow(() -> new ResourseNotFoundException("Product not found"));
+            productImagesService.addImagesToProduct(product, file, variantId);
             List<ProductImageDTO> productImageDTOS = product.getImages()
                     .stream()
                     .map(this::toProductImageDTO)
                     .toList();
             return ResponseEntity.ok(productImageDTOS);
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
             throw new InvalidRequestException("File processing error");
         }
     }
+
 
     @GetMapping
     public ResponseEntity<List<ProductImageDTO>> getProductImageById(@PathVariable Long productID){

@@ -50,6 +50,13 @@ public class ProductImage {
     @Column(name = "size")
     private Long size;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "product_variant_id")
+    private ProductVariant productVariant;
+
+    public ProductVariant getProductVariant() { return productVariant; }
+    public void setProductVariant(ProductVariant productVariant) { this.productVariant = productVariant; }
+
     public Long getSize() {
         return size;
     }

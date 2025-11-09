@@ -28,8 +28,9 @@ public class SpringSecurityConfiguration {
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
                         // Публичные endpoints (без аутентификации)
-                        .requestMatchers(HttpMethod.GET, "/api/products/**").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/products").permitAll() // временно для тестирования
+                        .requestMatchers(HttpMethod.GET, "/api/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/products").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/**").permitAll()// временно для тестирования
                         .requestMatchers("/api/auth/**").permitAll() // если есть аутентификация
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/products/save-image-alone").permitAll()

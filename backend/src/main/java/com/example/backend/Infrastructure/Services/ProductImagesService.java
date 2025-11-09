@@ -3,9 +3,11 @@ package com.example.backend.Infrastructure.Services;
 import com.example.backend.Domain.DTOs.ProductImageDTO;
 import com.example.backend.Domain.Models.Product;
 import com.example.backend.Domain.Models.ProductImage;
+import com.example.backend.Domain.Models.ProductVariant;
 import com.example.backend.Infrastructure.Exceptions.InvalidRequestException;
 import com.example.backend.Infrastructure.Repos.ProductImageRepository;
 import com.example.backend.Infrastructure.Repos.ProductRepository;
+import com.example.backend.Infrastructure.Repos.ProductVariantRepository;
 import org.springframework.data.crossstore.ChangeSetPersister;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,9 +22,11 @@ import java.util.Optional;
 public class ProductImagesService {
     private final ProductRepository productRepository;
     private final ProductImageRepository productImageRepository;
-    public ProductImagesService(ProductRepository productRepository, ProductImageRepository productImageRepository) {
+    private final ProductVariantRepository productVariantRepository;
+    public ProductImagesService(ProductRepository productRepository, ProductImageRepository productImageRepository,  ProductVariantRepository productVariantRepository) {
         this.productRepository = productRepository;
         this.productImageRepository = productImageRepository;
+        this.productVariantRepository = productVariantRepository;
     }
 
     @Transactional
@@ -51,20 +55,25 @@ public class ProductImagesService {
 //    }
 
     @Transactional
-    public void addImagesToProduct(Product product, List<MultipartFile> files) throws IOException {
-        if (product == null) {throw new InvalidRequestException("Product is empty");}
-        boolean hasMain = product.getImages().stream().anyMatch(img -> Boolean.TRUE.equals(img.getIsMain()));
+    public void addImagesToProduct(Product product, List<MultipartFile> files, Long variantId) throws IOException {
+        if (product == null) throw new InvalidRequestException("Product is empty");
 
+        ProductVariant linkedVariant = null;
+        if (variantId != null) {
+            linkedVariant = productVariantRepository.findById(variantId).orElse(null);
+            if (linkedVariant == null) throw new InvalidRequestException("Variant not found");
+        }
+
+        boolean hasMain = product.getImages().stream().anyMatch(img -> Boolean.TRUE.equals(img.getIsMain()));
         boolean first = true;
+
         if (files != null) {
             for (MultipartFile file : files) {
                 if (file == null || file.isEmpty()) continue;
-                System.out.println("Incoming file: name=" + file.getOriginalFilename() + " size=" + file.getSize() + " ct=" + file.getContentType());
+
                 String ct = file.getContentType();
                 boolean ok = false;
-                if (ct != null) {
-                    ok = ct.toLowerCase().startsWith("image/");
-                }
+                if (ct != null) ok = ct.toLowerCase().startsWith("image/");
                 if (!ok) {
                     String filename = file.getOriginalFilename();
                     if (filename != null) {
@@ -72,13 +81,10 @@ public class ProductImagesService {
                         ok = lower.endsWith(".jpg") || lower.endsWith(".jpeg") || lower.endsWith(".png") || lower.endsWith(".webp");
                     }
                 }
-                if (!ok) {
-                    throw new InvalidRequestException("Unsupported file type: " + ct + " filename=" + file.getOriginalFilename());
-                }
-                long maxBytes = 2 * 1024 * 1024; // 2MB limit
-                if (file.getSize() > maxBytes) {
-                    throw new InvalidRequestException("File too large: " + file.getOriginalFilename());
-                }
+                if (!ok) throw new InvalidRequestException("Unsupported file type: " + ct + " filename=" + file.getOriginalFilename());
+
+                long maxBytes = 2 * 1024 * 1024;
+                if (file.getSize() > maxBytes) throw new InvalidRequestException("File too large: " + file.getOriginalFilename());
 
                 ProductImage img = new ProductImage();
                 img.setFileName(file.getOriginalFilename());
@@ -89,19 +95,74 @@ public class ProductImagesService {
                 img.setProduct(product);
                 img.setData(file.getBytes());
 
-                System.out.println(">>> IMG BEFORE SAVE: fileName=" + img.getFileName()
-                        + " contentType=" + img.getContentType()
-                        + " size=" + img.getSize()
-                        + " productId=" + (img.getProduct() != null ? img.getProduct().getId() : "null")
-                        + " dataClass=" + (img.getData() == null ? "null" : img.getData().getClass().getName())
-                        + " dataLen=" + (img.getData() == null ? "null" : img.getData().length));
-                System.out.println("SET PRODUCT: product.getId()=" + product.getId());
+                if (linkedVariant != null) {
+                    img.setProductVariant(linkedVariant);
+                }
 
-                product.addImage(img);
+                productImageRepository.save(img);
+                product.getImages().add(img);
+
                 first = false;
             }
         }
     }
 
+    @Transactional
+    public void addImagesToProduct(Product product, List<MultipartFile> files) throws IOException {
+        addImagesToProduct(product, files, null);
+    }
+//
+//    @Transactional
+//    public void addImagesToProduct(Product product, List<MultipartFile> files) throws IOException {
+//        if (product == null) {throw new InvalidRequestException("Product is empty");}
+//        boolean hasMain = product.getImages().stream().anyMatch(img -> Boolean.TRUE.equals(img.getIsMain()));
+//
+//        boolean first = true;
+//        if (files != null) {
+//            for (MultipartFile file : files) {
+//                if (file == null || file.isEmpty()) continue;
+//                System.out.println("Incoming file: name=" + file.getOriginalFilename() + " size=" + file.getSize() + " ct=" + file.getContentType());
+//                String ct = file.getContentType();
+//                boolean ok = false;
+//                if (ct != null) {
+//                    ok = ct.toLowerCase().startsWith("image/");
+//                }
+//                if (!ok) {
+//                    String filename = file.getOriginalFilename();
+//                    if (filename != null) {
+//                        String lower = filename.toLowerCase();
+//                        ok = lower.endsWith(".jpg") || lower.endsWith(".jpeg") || lower.endsWith(".png") || lower.endsWith(".webp");
+//                    }
+//                }
+//                if (!ok) {
+//                    throw new InvalidRequestException("Unsupported file type: " + ct + " filename=" + file.getOriginalFilename());
+//                }
+//                long maxBytes = 2 * 1024 * 1024; // 2MB limit
+//                if (file.getSize() > maxBytes) {
+//                    throw new InvalidRequestException("File too large: " + file.getOriginalFilename());
+//                }
+//
+//                ProductImage img = new ProductImage();
+//                img.setFileName(file.getOriginalFilename());
+//                img.setContentType(ct);
+//                img.setSize(file.getSize());
+//                img.setIsMain(!hasMain && first);
+//                img.setAltText(product.getName());
+//                img.setProduct(product);
+//                img.setData(file.getBytes());
+//
+//                System.out.println(">>> IMG BEFORE SAVE: fileName=" + img.getFileName()
+//                        + " contentType=" + img.getContentType()
+//                        + " size=" + img.getSize()
+//                        + " productId=" + (img.getProduct() != null ? img.getProduct().getId() : "null")
+//                        + " dataClass=" + (img.getData() == null ? "null" : img.getData().getClass().getName())
+//                        + " dataLen=" + (img.getData() == null ? "null" : img.getData().length));
+//                System.out.println("SET PRODUCT: product.getId()=" + product.getId());
+//
+//                product.addImage(img);
+//                first = false;
+//            }
+//        }
+//    }
 
 }

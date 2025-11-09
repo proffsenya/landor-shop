@@ -27,20 +27,30 @@ class ProductController {
         this.productService = productService;
     }
 
+//    @GetMapping("/cards")
+//    public ResponseEntity<List<ProductCardDTO>> getProductCard(
+//            @RequestParam(required = false) Boolean active,
+//            @RequestParam(defaultValue = "0") int page,
+//            @RequestParam(defaultValue = "20") int size
+//    ) {
+//        List<Product> products = active != null ?
+//                productService.findByIsActive(active) :
+//                productService.findAll();
+//
+//        List<ProductCardDTO> cards = products.stream()
+//                .map(this::toProductCardDTO)
+//                .toList();
+//
+//        return ResponseEntity.ok(cards);
+//    }
+
     @GetMapping("/cards")
     public ResponseEntity<List<ProductCardDTO>> getProductCard(
             @RequestParam(required = false) Boolean active,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size
     ) {
-        List<Product> products = active != null ?
-                productService.findByIsActive(active) :
-                productService.findAll();
-
-        List<ProductCardDTO> cards = products.stream()
-                .map(this::toProductCardDTO)
-                .toList();
-
+        List<ProductCardDTO> cards = productService.getProductCardsForFrontend(active);
         return ResponseEntity.ok(cards);
     }
 

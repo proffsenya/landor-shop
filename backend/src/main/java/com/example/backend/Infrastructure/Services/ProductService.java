@@ -1,9 +1,6 @@
 package com.example.backend.Infrastructure.Services;
 
-import com.example.backend.Domain.DTOs.CreateProductDTO;
-import com.example.backend.Domain.DTOs.ResponseVariantDTO;
-import com.example.backend.Domain.DTOs.UpdateProductDTO;
-import com.example.backend.Domain.DTOs.CreateVariantDTO;
+import com.example.backend.Domain.DTOs.*;
 import com.example.backend.Domain.Models.*;
 import com.example.backend.Infrastructure.Exceptions.InvalidRequestException;
 import com.example.backend.Infrastructure.Exceptions.ResourceAlreadyExistsException;
@@ -184,6 +181,42 @@ public class ProductService {
         if (!productRepository.findById(id).isPresent())
         {throw new InvalidRequestException("Product with id " + id + " does not exist");}
         productRepository.deleteById(id);
+    }
+
+    @Transactional(readOnly = true)
+    public List<ProductCardDTO> getProductCardsForFrontend(Boolean active) {
+        List<Product> products = (active != null) ? findByIsActive(active) : findAll();
+
+        return products.stream().map(product -> {
+            String productMain = product.getImages().stream()
+                    .filter(img -> Boolean.TRUE.equals(img.getIsMain()))
+                    .findFirst()
+                    .map(img -> "/api/products/" + product.getId() + "/images/" + img.getId())
+                    .orElseGet(() -> product.getImages().stream()
+                            .findFirst()
+                            .map(img -> "/api/products/" + product.getId() + "/images/" + img.getId())
+                            .orElse(null));
+
+            List<VariantCardDTO> variantCards = product.getProductVariants().stream().map(v -> {
+                String variantImage = product.getImages().stream()
+                        .filter(img -> img.getProductVariant() != null && img.getProductVariant().getId().equals(v.getId()))
+                        .findFirst()
+                        .map(img -> "/api/products/" + product.getId() + "/images/" + img.getId())
+                        .orElse(productMain);
+
+                return new VariantCardDTO(
+                        v.getId(),
+                        v.getDisplayName() != null && !v.getDisplayName().isBlank()
+                                ? v.getDisplayName()
+                                : (product.getName() + (v.getWeight() != null ? (", " + v.getWeight() + " кг") : "")),
+                        v.getPrice(),
+                        v.getStock(),
+                        variantImage
+                );
+            }).toList();
+
+            return new ProductCardDTO(product.getId(), product.getName(), variantCards);
+        }).toList();
     }
 
     private void processProductRelationships(Product product, CreateProductDTO dto) {
