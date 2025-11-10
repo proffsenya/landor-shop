@@ -36,7 +36,7 @@ public class FavoriteController {
 
         Long userId = principal.getId();
         Long variantId = request.variantId;
-        VariantCardDTO vCard = favoritesService.addToFavorites(variantId, userId);
+        VariantCardDTO vCard = favoritesService.addToFavorites(userId, variantId);
         return ResponseEntity.ok(vCard);
     }
 

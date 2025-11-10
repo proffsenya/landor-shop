@@ -7,6 +7,7 @@ import com.example.backend.Domain.Models.CartItem;
 import com.example.backend.Infrastructure.Configurations.CustomUserDetails;
 import com.example.backend.Infrastructure.Exceptions.InvalidRequestException;
 import com.example.backend.Infrastructure.Services.CartService;
+import jakarta.validation.constraints.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -48,6 +49,14 @@ public class CartController {
     public ResponseEntity<Void> deleteCart(@AuthenticationPrincipal CustomUserDetails principal) throws InvalidRequestException {
         Long userId = principal.getId();
         cartService.clearCart(userId);
+        return ResponseEntity.noContent().build();
+    }
+
+    @DeleteMapping("/{variantId}")
+    public ResponseEntity<Void> deleteItemFromCart(@AuthenticationPrincipal CustomUserDetails principal,
+                                                   @RequestBody AddToCartRequest request) throws InvalidRequestException {
+        Long userId = principal.getId();
+        cartService.removeCartItem(userId, request.variantId(), request.quantity());
         return ResponseEntity.noContent().build();
     }
 
