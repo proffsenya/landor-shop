@@ -8,7 +8,30 @@ import ProductSection from "../components/ProductsSection";
 import { PageFade, ListMotion, ToastMotion } from "@/utils/PageAnimations";
 import { motion, AnimatePresence } from "framer-motion";
 
-// ---- утилиты ----
+// ---- helpers: authToken + sessionStorage sync с карточками ----
+const getAuthToken = () => {
+  if (typeof window === "undefined") return "guest";
+  return localStorage.getItem("authToken") || "guest";
+};
+const STORAGE_CART = (authToken) => `cart:variants:${authToken || "guest"}`;
+
+const loadSet = (key) => {
+  try {
+    const raw = sessionStorage.getItem(key);
+    if (!raw) return new Set();
+    const arr = JSON.parse(raw);
+    return new Set(Array.isArray(arr) ? arr : []);
+  } catch {
+    return new Set();
+  }
+};
+const saveSet = (key, set) => {
+  try {
+    sessionStorage.setItem(key, JSON.stringify(Array.from(set)));
+  } catch {}
+};
+
+// ---- утилиты отображения ----
 const fmtMoney = (n) =>
   new Intl.NumberFormat("ru-RU", {
     style: "currency",
@@ -30,9 +53,7 @@ const mapCartResponse = (data) => {
     variantId: row?.variantId ?? null,
     name: row?.displayName || row?.productName || "Товар",
     // показываем актуальную цену, если есть; иначе — цену на момент добавления
-    price: Number(
-      row?.currentPrice ?? row?.priceAtAdded ?? row?.price ?? 0
-    ),
+    price: Number(row?.currentPrice ?? row?.priceAtAdded ?? row?.price ?? 0),
     quantity: Math.max(1, Number(row?.quantity ?? 1)),
     // если бек отдаёт imageUrl — берём его; иначе плейсхолдер
     image: row?.imageUrl || "/korm1.svg",
@@ -41,6 +62,9 @@ const mapCartResponse = (data) => {
 };
 
 export default function Cart() {
+  const authToken = getAuthToken();
+  const cartKey = STORAGE_CART(authToken);
+
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -65,11 +89,10 @@ export default function Cart() {
     setLoading(true);
     setError("");
     try {
-      const token = localStorage.getItem("token");
       const res = await fetch("/api/cart", {
         method: "GET",
         headers: {
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
         },
       });
       if (!res.ok) {
@@ -83,6 +106,15 @@ export default function Cart() {
       const mapped = mapCartResponse(data);
       setItems(mapped);
       setSelected(new Set(mapped.map((i) => i.id))); // выбрать всё по умолчанию
+
+      // синхронизируем локальный набор вариантов «в корзине», чтобы кнопки на карточках были актуальны
+      const setCart = new Set(
+        mapped
+          .map((i) => i.variantId)
+          .filter((v) => v !== null && v !== undefined)
+          .map(String)
+      );
+      saveSet(cartKey, setCart);
     } catch (e) {
       setItems([]);
       setSelected(new Set());
@@ -94,20 +126,20 @@ export default function Cart() {
 
   useEffect(() => {
     fetchCart();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authToken]);
 
   // ---- API: удаление позиции из корзины ----
   async function apiRemoveCartItem(item) {
-    const token = localStorage.getItem("token") || "";
     const variantId = item.variantId != null ? Number(item.variantId) : null;
     const cartItemId = item.id != null ? String(item.id) : null;
 
-    // 1) попытка: DELETE с JSON-телом { variantId }
+    // 1) попытка: DELETE с JSON-телом { variantId } или { cartItemId }
     try {
       const res = await fetch("/api/cart", {
         method: "DELETE",
         headers: {
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
           "Content-Type": "application/json",
         },
         body: JSON.stringify(
@@ -118,25 +150,23 @@ export default function Cart() {
 
       // Если сервер не принимает тело (400/405/415) — пробуем query
       if ([400, 405, 415].includes(res.status)) {
-        // 2) попытка: DELETE с query ?variantId=... или ?cartItemId=...
         const qp = new URLSearchParams(
-          variantId != null ? { variantId: String(variantId) } : { cartItemId: String(cartItemId || "") }
+          variantId != null
+            ? { variantId: String(variantId) }
+            : { cartItemId: String(cartItemId || "") }
         ).toString();
 
         const res2 = await fetch(`/api/cart?${qp}`, {
           method: "DELETE",
           headers: {
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
           },
         });
         if (res2.ok) return true;
 
-        // 3) на крайний случай: если сервер ждёт только variantId, но его нет
         if (variantId == null && cartItemId) {
-          // ничего больше сделать нельзя — вернём false
           return false;
         }
-
         return false;
       }
 
@@ -165,10 +195,10 @@ export default function Cart() {
   };
 
   const removeItem = async (id) => {
-    // оптимистично уберём из UI
     const item = items.find((x) => x.id === id);
     if (!item) return;
 
+    // оптимистично уберём из UI
     setItems((prev) => prev.filter((i) => i.id !== id));
     setSelected((prev) => {
       const next = new Set(prev);
@@ -180,8 +210,16 @@ export default function Cart() {
 
     if (ok) {
       showToast("Товар удалён из корзины");
-      // опционально — можно обновить корзину с сервера для синхронизации
-      // fetchCart();
+
+      // синхронизация sessionStorage для кнопки «В корзину» в карточках
+      if (item.variantId != null) {
+        const setCart = loadSet(cartKey);
+        setCart.delete(String(item.variantId));
+        saveSet(cartKey, setCart);
+      }
+
+      // при необходимости можно подтянуть корзину заново:
+      // await fetchCart();
     } else {
       // откат, если сервер не подтвердил
       setItems((prev) => [item, ...prev]);
@@ -291,9 +329,7 @@ export default function Cart() {
                           transition={{ duration: 0.25, ease: "easeOut" }}
                           style={{ position: "relative", translateX: 0 }}
                           transformTemplate={({ y, scale, rotate }) =>
-                            `translateY(${y || 0}) ${
-                              scale ? `scale(${scale})` : ""
-                            } ${rotate ? `rotate(${rotate})` : ""}`
+                            `translateY(${y || 0}) ${scale ? `scale(${scale})` : ""} ${rotate ? `rotate(${rotate})` : ""}`
                           }
                           className="border-b border-[#E2E2E2] py-4 lg:py-6"
                         >
@@ -329,9 +365,7 @@ export default function Cart() {
                             <div className="flex justify-center">
                               <div className="flex items-center justify-between w-[120px] h-[38px] border border-[#1E1E1E] rounded-full text-[16px]">
                                 <button
-                                  onClick={() =>
-                                    updateQuantity(i.id, i.quantity + 1)
-                                  }
+                                  onClick={() => updateQuantity(i.id, i.quantity + 1)}
                                   className="w-10 text-lg leading-none"
                                   aria-label="Увеличить"
                                 >
@@ -339,9 +373,7 @@ export default function Cart() {
                                 </button>
                                 <span>{i.quantity}</span>
                                 <button
-                                  onClick={() =>
-                                    updateQuantity(i.id, i.quantity - 1)
-                                  }
+                                  onClick={() => updateQuantity(i.id, i.quantity - 1)}
                                   className="w-10 text-lg leading-none"
                                   aria-label="Уменьшить"
                                 >
@@ -411,9 +443,7 @@ export default function Cart() {
                               <div className="flex items-center">
                                 <div className="flex items-center justify-between w-[110px] h-[36px] border border-[#1E1E1E] rounded-full text-[16px]">
                                   <button
-                                    onClick={() =>
-                                      updateQuantity(i.id, i.quantity + 1)
-                                    }
+                                    onClick={() => updateQuantity(i.id, i.quantity + 1)}
                                     className="w-10 text-lg leading-none"
                                     aria-label="Увеличить"
                                   >
@@ -421,9 +451,7 @@ export default function Cart() {
                                   </button>
                                   <span>{i.quantity}</span>
                                   <button
-                                    onClick={() =>
-                                      updateQuantity(i.id, i.quantity - 1)
-                                    }
+                                    onClick={() => updateQuantity(i.id, i.quantity - 1)}
                                     className="w-10 text-lg leading-none"
                                     aria-label="Уменьшить"
                                   >

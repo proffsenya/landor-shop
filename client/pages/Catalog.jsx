@@ -609,7 +609,7 @@ export default function Catalog() {
                           key={product.cardId}
                           to={to}
                           productId={isVariantCard ? product.parentId : product.id}  // ✅ основной продукт
-                          variantId={isVariantCard ? product.id : product.variantId || product.id} // ✅ сюда передаём id варианта
+                          variantId={isVariantCard ? product.id : product.defaultVariantId || product.id } // ✅ сюда передаём id варианта
                           image={product.image}
                           title={product.title ?? product.name ?? "Товар"}
                           price={`${Number(product.price ?? 0).toLocaleString()} ₽`}

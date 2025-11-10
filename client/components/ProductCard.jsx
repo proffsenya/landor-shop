@@ -4,13 +4,13 @@ import { Heart, Check } from "lucide-react";
 import { HoverLift, StaggerItem } from "../utils/CatalogAnimations";
 import { ScalePulse, FadeSwitch } from "../utils/ActionAnimations";
 
-// ---- helpers: storage by token ------------------------------------------
-const STORAGE_CART = (token) => `cart:variants:${token || "guest"}`;
-const STORAGE_FAVS = (token) => `favs:variants:${token || "guest"}`;
+// ---- helpers: storage by authToken ------------------------------------------
+const STORAGE_CART = (authToken) => `cart:variants:${authToken || "guest"}`;
+const STORAGE_FAVS = (authToken) => `favs:variants:${authToken || "guest"}`;
 
-const getToken = () => {
+const getAuthToken = () => {
   if (typeof window === "undefined") return "guest";
-  return localStorage.getItem("token") || "guest";
+  return localStorage.getItem("authToken") || "guest";
 };
 
 const loadSet = (key) => {
@@ -37,7 +37,7 @@ export default function ProductCard({
   title,
   price,
   to,
-  stock, // приходит из Catalog
+  stock,
 }) {
   const productUrl =
     to ??
@@ -51,9 +51,9 @@ export default function ProductCard({
   const numericStock = Number(stock);
   const available = Number.isFinite(numericStock) && numericStock >= 1;
 
-  const token = getToken();
-  const cartKey = STORAGE_CART(token);
-  const favsKey = STORAGE_FAVS(token);
+  const authToken = getAuthToken();
+  const cartKey = STORAGE_CART(authToken);
+  const favsKey = STORAGE_FAVS(authToken);
 
   // ---- Инициализация из sessionStorage ----
   useEffect(() => {
@@ -70,16 +70,14 @@ export default function ProductCard({
     e.stopPropagation();
 
     if (!available || !variantId) return;
-
-    // Если уже "в корзине" — не повторяем запрос
-    if (inCart) return;
+    if (inCart) return; // уже в корзине — не дублируем
 
     try {
       const res = await fetch(`/api/cart`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+          Authorization: `Bearer ${authToken}`,
         },
         body: JSON.stringify({ variantId: Number(variantId), quantity: 1 }),
       });
@@ -95,21 +93,49 @@ export default function ProductCard({
     }
   };
 
-  // ---- Избранное ----
-  const handleToggleFavorite = (e) => {
+  // ---- Избранное (POST /api/favorites при включении) ----
+  const handleToggleFavorite = async (e) => {
     e.preventDefault();
     e.stopPropagation();
-
     if (!variantId) return;
 
-    setIsFavorite((prev) => {
-      const next = !prev;
-      const favSet = loadSet(favsKey);
-      if (next) favSet.add(String(variantId));
-      else favSet.delete(String(variantId));
-      saveSet(favsKey, favSet);
-      return next;
-    });
+    const next = !isFavorite;
+
+    // оптимистично меняем локально
+    setIsFavorite(next);
+    const favSet = loadSet(favsKey);
+    if (next) favSet.add(String(variantId));
+    else favSet.delete(String(variantId));
+    saveSet(favsKey, favSet);
+
+    // при включении — шлём POST /api/favorites
+    if (next) {
+      try {
+        const res = await fetch("/api/favorites", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${authToken}`,
+          },
+          body: JSON.stringify({ variantId: Number(variantId) }),
+        });
+        if (!res.ok) {
+          const txt = await res.text().catch(() => "");
+          throw new Error(`HTTP ${res.status} ${txt}`);
+        }
+        // успех — ничего не делаем (локальное состояние уже выставлено)
+      } catch (err) {
+        console.warn("Не удалось добавить в избранное:", err);
+        // откат
+        setIsFavorite(false);
+        const rollback = loadSet(favsKey);
+        rollback.delete(String(variantId));
+        saveSet(favsKey, rollback);
+      }
+    } else {
+      // выключение: ТЗ просило только POST для добавления.
+      // Если появится API удаления — сюда можно добавить DELETE /api/favorites.
+    }
   };
 
   return (
