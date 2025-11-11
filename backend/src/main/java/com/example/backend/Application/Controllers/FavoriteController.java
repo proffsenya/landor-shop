@@ -46,7 +46,7 @@ public class FavoriteController {
             @PathVariable Long variantId
     ){
         Long userId = principal.getId();
-        favoritesService.removeFromFavorites(variantId, userId);
+        favoritesService.removeFromFavorites(userId, variantId);
         return ResponseEntity.noContent().build();
     }
 
