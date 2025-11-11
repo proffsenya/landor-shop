@@ -46,7 +46,12 @@ export default function Favorites() {
         // ВАЖНО: храним и favoriteId (id записи), и variantId (что нужно для DELETE /favorites/{variantId})
         const mapped = Array.isArray(data)
           ? data.map((item) => ({
-              id: Number(item.id),                // ← ключ и id для удаления
+              // id — это id записи избранного (нужен для удаления конкретной записи)
+              id: Number(item.id),
+
+              // ВАЖНО: variantId — то, что требуется для move-to-cart и для добавления в корзину
+              variantId: Number(item.variantId ?? item.variantID ?? item.variant_id ?? item.id),
+
               name: item.displayName,
               price: Number(item.price ?? 0),
               image: item.imageUrl || "/korm1.svg",
@@ -55,6 +60,9 @@ export default function Favorites() {
               dateAdded: new Date().toLocaleDateString("ru-RU"),
             }))
           : [];
+
+
+
 
 
         setFavorites(mapped);
@@ -258,38 +266,77 @@ async function apiDeleteFavorite(id) {
   }
 };
 
+async function moveFavoritesToCart(variantIdsRaw) {
+  const headers =
+    authToken !== "guest" ? { Authorization: `Bearer ${authToken}` } : {};
+  const all = (variantIdsRaw || []).map((x) => Number(x)).filter(Number.isFinite);
+
+  if (all.length === 0) return { ok: false, moved: new Set() };
+
+  try {
+    const res = await fetch("/api/favorites/move-to-cart", {
+      method: "POST",
+      headers: { ...headers, "Content-Type": "application/json" },
+      // Вариант 1 (рабочий у тебя): сырым массивом чисел
+      body: JSON.stringify(all),
+    });
+    if (res.ok) {
+      return { ok: true, moved: new Set(all) };
+    }
+    const body = await safeText(res);
+    console.warn("[move-to-cart] raw array ->", res.status, body);
+    return { ok: false, moved: new Set() };
+  } catch (e) {
+    console.warn("[move-to-cart] error", e);
+    return { ok: false, moved: new Set() };
+  }
+}
+
+
 
   // ===== Добавить выбранные в корзину =====
   const addAllToCart = async () => {
-    const inStockItems = favorites.filter(
-      (item) => item.isInStock && selected.has(item.id)
-    );
-    if (inStockItems.length === 0) {
-      showToast("Нет товаров в наличии");
-      return;
-    }
+  // Берём только отмеченные позиции
+  const chosen = favorites.filter((f) => selected.has(f.id));
 
-    try {
-      for (const item of inStockItems) {
-        const res = await fetch("/api/cart", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            ...(authToken !== "guest" ? { Authorization: `Bearer ${authToken}` } : {}),
-          },
-          body: JSON.stringify({ variantId: Number(item.id), quantity: 1 }),
-        });
-        if (!res.ok) {
-          const body = await safeText(res);
-          console.warn(`Ошибка добавления в корзину (variantId=${item.id}): HTTP ${res.status} · ${body}`);
-        }
-      }
-      showToast(`Добавлено в корзину: ${inStockItems.length}`);
-    } catch (e) {
-      console.warn("Ошибка добавления:", e);
-      showToast("Не удалось добавить в корзину", 2000);
-    }
-  };
+  if (chosen.length === 0) {
+    showToast("Выберите товары");
+    return;
+  }
+
+  // Можно отправлять любые (в наличии и нет) — бэк сам решит.
+  const toMoveVariantIds = chosen.map((f) => f.variantId);
+
+  const { ok, moved } = await moveFavoritesToCart(toMoveVariantIds);
+  if (!ok) {
+    showToast("Не удалось добавить в корзину", 2000);
+    return;
+  }
+
+  // Убираем перемещённые из локального списка (по variantId)
+  setFavorites((prev) => prev.filter((f) => !moved.has(f.variantId)));
+
+  // Чистим выделение от того, чего больше нет
+  setSelected((prev) => {
+    const next = new Set(prev);
+    for (const f of chosen) next.delete(f.id);
+    return next;
+  });
+
+  // Синхронизируем sessionStorage избранного (храним id записей)
+  const key = favsKeyByToken(authToken);
+  const afterIds = favorites
+    .filter((f) => !moved.has(f.variantId))
+    .map((f) => String(f.id));
+  sessionStorage.setItem(key, JSON.stringify(afterIds));
+
+  // Обновим бейджи
+  try { window.dispatchEvent(new Event("favorites:update")); } catch {}
+  try { window.dispatchEvent(new Event("cart:update")); } catch {}
+
+  showToast(`Добавлено в корзину: ${moved.size}`);
+};
+
 
   return (
     <div className="min-h-screen bg-white">
@@ -385,10 +432,38 @@ async function apiDeleteFavorite(id) {
                               {formatPrice(item.price)}
                             </div>
                             {item.isInStock && (
-                              <button className="h-[40px] px-4 rounded-[10px] bg-[#6F2A2B] text-white text-[15px] hover:bg-[#5a2223]">
+                              <button
+                                className="h-[40px] px-4 rounded-[10px] bg-[#6F2A2B] text-white text-[15px] hover:bg-[#5a2223]"
+                                onClick={async () => {
+                                  const { ok, moved } = await moveFavoritesToCart([item.variantId]);
+                                  if (ok && moved.has(item.variantId)) {
+                                    // убрать товар из локального избранного
+                                    setFavorites((prev) => prev.filter((x) => x.variantId !== item.variantId));
+                                    setSelected((prev) => {
+                                      const next = new Set(prev);
+                                      next.delete(item.id);
+                                      return next;
+                                    });
+
+                                    // обновить sessionStorage (храним variantId)
+                                    const key = favsKeyByToken(authToken);
+                                    const after = favorites
+                                      .filter((x) => x.variantId !== item.variantId)
+                                      .map((x) => String(x.variantId));
+                                    sessionStorage.setItem(key, JSON.stringify(after));
+
+                                    try { window.dispatchEvent(new Event("favorites:update")); } catch {}
+                                    try { window.dispatchEvent(new Event("cart:update")); } catch {}
+                                    showToast("Перенесено в корзину");
+                                  } else {
+                                    showToast("Не удалось добавить", 1800);
+                                  }
+                                }}
+                              >
                                 В корзину
                               </button>
                             )}
+
                           </div>
                         </div>
                       </div>
@@ -466,8 +541,7 @@ async function apiDeleteFavorite(id) {
                 </div>
               </div>
 
-              {/* Панель */}
-              <div className="flex flex-col items-stretch justify-between gap-4 mt-6 sm:flex-row sm:items-center">
+              <div className="hidden md:flex flex-col items-stretch justify-between gap-4 mt-6 sm:flex-row sm:items-center">
                 <Link to="/catalog" className="inline-flex items-center justify-center text-[#5A5A5A] hover:text-[#1E1E1E]">
                   <ArrowLeft className="w-4 h-4 mr-2" />
                   В каталог
@@ -491,6 +565,7 @@ async function apiDeleteFavorite(id) {
                   </button>
                 </div>
               </div>
+
             </>
           )}
         </div>
