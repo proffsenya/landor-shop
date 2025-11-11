@@ -3,9 +3,14 @@ import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Heart, ShoppingCart, Search } from "lucide-react";
 import AccordionMotion from "@/utils/AccordionMotion";
+import GlobalSearch from "@/components/GlobalSearch";
+
 
 const getAuthToken = () =>
-  localStorage.getItem("authToken") || localStorage.getItem("token") || "guest";
+  localStorage.getItem("authToken") || localStorage.getItem("authToken") || "guest";
+
+const allProducts =
+  JSON.parse(sessionStorage.getItem("catalog:all") || "[]");
 
 export default function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -173,16 +178,8 @@ export default function Header() {
 
           {/* Поиск и иконки */}
           <div className="flex items-center gap-6">
-            <div className="relative">
-              <input
-                type="text"
-                placeholder="Искать здесь..."
-                className="w-96 h-11 pl-4 pr-20 py-3 rounded-full border border-[#A9A9A9] text-sm bg-gray-50"
-              />
-              <button className="absolute right-0 top-0 bg-[#6F2A2B] text-white px-6 py-3 rounded-r-full hover:bg-[#5a2223]">
-                <Search className="w-5 h-5" />
-              </button>
-            </div>
+            <GlobalSearch dataset={allProducts} />
+
 
             {/* Избранное */}
             <Link to="/favorites" className="relative">

@@ -207,6 +207,7 @@ export default function Catalog() {
       const cards = Array.isArray(data) ? data.flatMap(expandProductToCards) : [];
       setProducts(cards);
       setPage(1);
+      sessionStorage.setItem("catalog:all", JSON.stringify(data));
     } catch (e) {
       setProducts([]);
       setPage(1);
