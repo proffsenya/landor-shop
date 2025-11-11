@@ -13,6 +13,65 @@ const getAuthToken = () => {
   return localStorage.getItem("authToken") || "guest";
 };
 
+// --- ДОБАВЬ ЭТИ ХЕЛПЕРЫ ВЫШЕ (рядом с loadSet/saveSet) ---
+async function safeText(res) {
+  try { return await res.text(); } catch { return ""; }
+}
+
+async function apiDeleteFavorite(variantId, authToken) {
+  const headers = authToken !== "guest" ? { Authorization: `Bearer ${authToken}` } : {};
+  try {
+    const r = await fetch(`/api/favorites/${encodeURIComponent(variantId)}`, { method: "DELETE", headers });
+    if (r.ok) return true;
+    console.warn("DELETE /api/favorites/:variantId ->", r.status, await safeText(r));
+  } catch (e) { console.warn("favorites delete path err", e); }
+
+  try {
+    const r = await fetch(`/api/favorites?variantId=${encodeURIComponent(variantId)}`, { method: "DELETE", headers });
+    if (r.ok) return true;
+    console.warn("DELETE /api/favorites?variantId ->", r.status, await safeText(r));
+  } catch (e) { console.warn("favorites delete query err", e); }
+
+  try {
+    const r = await fetch(`/api/favorites`, {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json", ...headers },
+      body: JSON.stringify({ id: Number(variantId), variantId: Number(variantId) })
+    });
+    if (r.ok) return true;
+    console.warn("DELETE /api/favorites body ->", r.status, await safeText(r));
+  } catch (e) { console.warn("favorites delete body err", e); }
+
+  return false;
+}
+
+async function apiDeleteFromCart(variantId, authToken) {
+  const headers = authToken !== "guest" ? { Authorization: `Bearer ${authToken}` } : {};
+  try {
+    const r = await fetch(`/api/cart/${encodeURIComponent(variantId)}`, { method: "DELETE", headers });
+    if (r.ok) return true;
+    console.warn("DELETE /api/cart/:variantId ->", r.status, await safeText(r));
+  } catch (e) { console.warn("cart delete path err", e); }
+
+  try {
+    const r = await fetch(`/api/cart?variantId=${encodeURIComponent(variantId)}`, { method: "DELETE", headers });
+    if (r.ok) return true;
+    console.warn("DELETE /api/cart?variantId ->", r.status, await safeText(r));
+  } catch (e) { console.warn("cart delete query err", e); }
+
+  try {
+    const r = await fetch(`/api/cart`, {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json", ...headers },
+      body: JSON.stringify({ variantId: Number(variantId), quantity: 1 })
+    });
+    if (r.ok) return true;
+    console.warn("DELETE /api/cart body ->", r.status, await safeText(r));
+  } catch (e) { console.warn("cart delete body err", e); }
+
+  return false;
+}
+
 const loadSet = (key) => {
   try {
     const raw = sessionStorage.getItem(key);
@@ -66,12 +125,15 @@ export default function ProductCard({
 
   // ---- Добавить в корзину ----
   const handleAddToCart = async (e) => {
-    e.preventDefault();
-    e.stopPropagation();
+  e.preventDefault();
+  e.stopPropagation();
+  if (!variantId || !available) return;
 
-    if (!available || !variantId) return;
-    if (inCart) return; // уже в корзине — не дублируем
+  const vidStr = String(variantId);
+  const vidNum = Number(variantId);
 
+  if (!inCart) {
+    // ДОБАВИТЬ
     try {
       const res = await fetch(`/api/cart`, {
         method: "POST",
@@ -79,65 +141,86 @@ export default function ProductCard({
           "Content-Type": "application/json",
           Authorization: `Bearer ${authToken}`,
         },
-        body: JSON.stringify({ variantId: Number(variantId), quantity: 1 }),
+        body: JSON.stringify({ variantId: vidNum, quantity: 1 }),
       });
-
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      if (!res.ok) throw new Error(`HTTP ${res.status} ${await safeText(res)}`);
 
       setInCart(true);
       const cartSet = loadSet(cartKey);
-      cartSet.add(String(variantId));
+      cartSet.add(vidStr);
       saveSet(cartKey, cartSet);
       window.dispatchEvent(new Event("cart:update"));
     } catch (err) {
       console.warn("Ошибка при добавлении в корзину:", err);
     }
-  };
+  } else {
+    // УДАЛИТЬ (второй клик по кнопке «В корзине»)
+    const ok = await apiDeleteFromCart(vidNum, authToken);
+    if (ok) {
+      setInCart(false);
+      const cartSet = loadSet(cartKey);
+      cartSet.delete(vidStr);
+      saveSet(cartKey, cartSet);
+      window.dispatchEvent(new Event("cart:update"));
+    } else {
+      console.warn("Не удалось удалить из корзины");
+    }
+  }
+};
+
 
   // ---- Избранное (POST /api/favorites при включении) ----
-  const handleToggleFavorite = async (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (!variantId) return;
+  // ---- Избранное: повторное нажатие удаляет из избранного И из корзины ----
+const handleToggleFavorite = async (e) => {
+  e.preventDefault();
+  e.stopPropagation();
+  if (!variantId) return;
 
-    const next = !isFavorite;
+  const vidStr = String(variantId);
+  const vidNum = Number(variantId);
+  const next = !isFavorite;
 
-    // оптимистично меняем локально
-    setIsFavorite(next);
-    const favSet = loadSet(favsKey);
-    if (next) favSet.add(String(variantId));
-    else favSet.delete(String(variantId));
-    saveSet(favsKey, favSet);
+  // оптимистично
+  setIsFavorite(next);
+  const favSet = loadSet(favsKey);
+  if (next) favSet.add(vidStr);
+  else favSet.delete(vidStr);
+  saveSet(favsKey, favSet);
 
-    // при включении — шлём POST /api/favorites
-    if (next) {
-      try {
-        const res = await fetch("/api/favorites", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${authToken}`,
-          },
-          body: JSON.stringify({ variantId: Number(variantId) }),
-        });
-        if (!res.ok) {
-          const txt = await res.text().catch(() => "");
-          throw new Error(`HTTP ${res.status} ${txt}`);
-        }
-        window.dispatchEvent(new Event("favorites:update"));
-      } catch (err) {
-        console.warn("Не удалось добавить в избранное:", err);
-        // откат
-        setIsFavorite(false);
-        const rollback = loadSet(favsKey);
-        rollback.delete(String(variantId));
-        saveSet(favsKey, rollback);
-      }
-    } else {
-      // выключение: ТЗ просило только POST для добавления.
-      // Если появится API удаления — сюда можно добавить DELETE /api/favorites.
+  if (next) {
+    // добавить в избранное
+    try {
+      const res = await fetch("/api/favorites", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${authToken}`,
+        },
+        body: JSON.stringify({ variantId: vidNum }),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status} ${await safeText(res)}`);
+      window.dispatchEvent(new Event("favorites:update"));
+    } catch (err) {
+      // откат
+      setIsFavorite(false);
+      const rb = loadSet(favsKey); rb.delete(vidStr); saveSet(favsKey, rb);
+      console.warn("Не удалось добавить в избранное:", err);
     }
-  };
+  } else {
+    // удалить из избранного
+    const ok = await apiDeleteFavorite(vidNum, authToken);
+    if (ok) {
+      window.dispatchEvent(new Event("favorites:update"));
+    } else {
+      // откат
+      setIsFavorite(true);
+      const rb = loadSet(favsKey); rb.add(vidStr); saveSet(favsKey, rb);
+      console.warn("Не удалось удалить из избранного");
+    }
+  }
+};
+
+
 
   return (
     <StaggerItem>

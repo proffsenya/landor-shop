@@ -50,6 +50,61 @@ const getAuthToken = () => {
 const STORAGE_CART = (token) => `cart:variants:${token || "guest"}`;
 const STORAGE_FAVS = (token) => `favs:variants:${token || "guest"}`;
 
+async function safeText(res) {
+  try { return await res.text(); } catch { return ""; }
+}
+
+function authHeaders(authToken, extra = {}) {
+  const h = { ...extra };
+  if (authToken && authToken !== "guest") h.Authorization = `Bearer ${authToken}`;
+  return h;
+}
+
+/** POST /api/favorites { variantId } */
+async function apiAddFavorite(variantId, authToken) {
+  const r = await fetch("/api/favorites", {
+    method: "POST",
+    headers: authHeaders(authToken, { "Content-Type": "application/json" }),
+    body: JSON.stringify({ variantId: Number(variantId) }),
+  });
+  if (!r.ok) throw new Error(`POST /api/favorites -> ${r.status} ${await safeText(r)}`);
+  return true;
+}
+
+/** DELETE /api/favorites по разным вариантам роутинга */
+async function apiRemoveFavorite(variantId, authToken) {
+  // 1) DELETE /api/favorites/:variantId
+  try {
+    const r = await fetch(`/api/favorites/${encodeURIComponent(variantId)}`, {
+      method: "DELETE",
+      headers: authHeaders(authToken),
+    });
+    if (r.ok) return true;
+  } catch {}
+
+  // 2) DELETE /api/favorites?variantId=...
+  try {
+    const r = await fetch(`/api/favorites?variantId=${encodeURIComponent(variantId)}`, {
+      method: "DELETE",
+      headers: authHeaders(authToken),
+    });
+    if (r.ok) return true;
+  } catch {}
+
+  // 3) DELETE /api/favorites (body)
+  try {
+    const r = await fetch(`/api/favorites`, {
+      method: "DELETE",
+      headers: authHeaders(authToken, { "Content-Type": "application/json" }),
+      body: JSON.stringify({ variantId: Number(variantId) }),
+    });
+    if (r.ok) return true;
+  } catch {}
+
+  return false;
+}
+
+
 const loadSet = (key) => {
   try {
     const raw = sessionStorage.getItem(key);
@@ -464,46 +519,42 @@ const handleToggleFavorite = async () => {
   if (!vidStr) return;
 
   const vidNum = Number(vidStr);
-  const headers =
-    authToken !== "guest"
-      ? { "Content-Type": "application/json", Authorization: `Bearer ${authToken}` }
-      : { "Content-Type": "application/json" };
-
-  // текущее состояние в сессии
   const favSet = loadSet(favKey);
-  const isNowFav = favSet.has(vidStr);
+  const nowFav = favSet.has(vidStr);
 
-  if (!isNowFav) {
-    // === ДОБАВИТЬ В ИЗБРАННОЕ (POST /api/favorites) ===
-    try {
-      const res = await fetch("/api/favorites", {
-        method: "POST",
-        headers,
-        body: JSON.stringify({ variantId: vidNum }),
-      });
-      if (!res.ok) {
-        const t = await safeText(res);
-        console.warn("Не удалось добавить в избранное:", res.status, t);
-        return;
-      }
-      // успех — синхронизируем сессии/кнопку
-      favSet.add(vidStr);
-      saveSet(favKey, favSet);
-      setIsFav(true);
-      try { window.dispatchEvent(new Event("favs:changed")); } catch {}
-    } catch (e) {
-      console.warn("Ошибка запроса избранного (POST):", e);
+  // оптимистично переключаем UI + sessionStorage
+  setIsFav(!nowFav);
+  if (!nowFav) favSet.add(vidStr);
+  else favSet.delete(vidStr);
+  saveSet(favKey, favSet);
+
+  try {
+    if (!nowFav) {
+      // добавить в избранное
+      await apiAddFavorite(vidNum, authToken);
+    } else {
+      // удалить из избранного
+      const ok = await apiRemoveFavorite(vidNum, authToken);
+      if (!ok) throw new Error("favorites delete failed");
     }
-  } else {
-    const ok = await apiDeleteFavorite(vidNum, authToken);
-    if (!ok) return;
-
-    favSet.delete(vidStr);
-    saveSet(favKey, favSet);
-    setIsFav(false);
+    // обновить бейджи/прочие слушатели
+    try { window.dispatchEvent(new Event("favorites:update")); } catch {}
     try { window.dispatchEvent(new Event("favs:changed")); } catch {}
+  } catch (e) {
+    // откат при ошибке
+    const rollback = loadSet(favKey);
+    if (!nowFav) {
+      rollback.delete(vidStr);
+      setIsFav(false);
+    } else {
+      rollback.add(vidStr);
+      setIsFav(true);
+    }
+    saveSet(favKey, rollback);
+    console.warn("[favorites] api error:", e);
   }
 };
+
 
 
   // ---------- загрузочные и ошибочные состояния ----------
@@ -649,22 +700,26 @@ const handleToggleFavorite = async () => {
                   <div className="flex flex-wrap gap-2">
                     {variants.map((opt, idx) => {
                       const active = idx === selectedIdx;
+                      const notAvail = !opt.available;
                       return (
                         <button
                           key={opt.id}
-                          disabled={!opt.available}
                           onClick={() => handleSelectWeight(idx)}
-                          className={`h-9 rounded-full px-4 text-[12px] ${
+                          // Визуально отмечаем недоступные, но НЕ блокируем клик
+                          className={`h-9 rounded-full px-4 text-[12px] transition ${
                             active
                               ? "bg-[#6F2A2B] text-white"
                               : "border border-[#D6D6D6] text-[#1E1E1E]"
-                          } disabled:opacity-40`}
-                          title={opt.available ? "" : "Нет в наличии"}
+                          } ${notAvail ? "opacity-50" : ""}`}
+                          title={notAvail ? "Нет в наличии" : ""}
+                          aria-pressed={active}
+                          aria-label={notAvail ? `${opt.label} (нет в наличии)` : opt.label}
                         >
                           {opt.label}
                         </button>
                       );
                     })}
+
                   </div>
                 </div>
               )}
