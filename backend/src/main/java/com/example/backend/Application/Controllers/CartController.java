@@ -28,13 +28,13 @@ public class CartController {
         this.cartService = cartService;
     }
 
-    public static record AddToCartRequest(Long variantId, Integer quantity) {}
+    public static record AddToCartRequest(Long variantId) {}
 
     @PostMapping
     public ResponseEntity<CartResponseDTO> createCart(@AuthenticationPrincipal CustomUserDetails principal,
                                                       @RequestBody AddToCartRequest request) throws InvalidRequestException {
         Long userId = principal.getId();
-        Cart cart = cartService.addProductVariantToCart(userId, request.variantId(), request.quantity());
+        Cart cart = cartService.addProductVariantToCart(userId, request.variantId());
         CartResponseDTO dto = toCartResponseDTO(cart);
         return ResponseEntity.ok(dto);
     }
@@ -72,7 +72,7 @@ public class CartController {
     public ResponseEntity<Void> deleteItemFromCart(@AuthenticationPrincipal CustomUserDetails principal,
                                                    @RequestBody AddToCartRequest request) throws InvalidRequestException {
         Long userId = principal.getId();
-        cartService.removeCartItem(userId, request.variantId(), request.quantity());
+        cartService.removeCartItem(userId, request.variantId());
         return ResponseEntity.noContent().build();
     }
 

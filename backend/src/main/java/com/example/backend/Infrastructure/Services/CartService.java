@@ -35,15 +35,12 @@ public class CartService {
     }
 
     @Transactional
-    public Cart addProductVariantToCart(Long userId, Long productVariantId, Integer quantity) throws InvalidRequestException {
-        if (quantity == null || quantity <= 0) {
-            throw new InvalidRequestException("Quantity must be positive");
-        }
+    public Cart addProductVariantToCart(Long userId, Long productVariantId) throws InvalidRequestException {
         User user = userRepository.findById(userId).orElseThrow(()->new InvalidRequestException("User not found"));
         ProductVariant variant =  productVariantRepository.findById(productVariantId).orElseThrow(()->new InvalidRequestException("Product not found"));
 
         Cart cart = cartRepository.findByUser(user).orElseGet(()->newCart(user));
-        CartItem savedItem = cartItemService.addItemToCart(cart, variant, quantity);
+        CartItem savedItem = cartItemService.addItemToCart(cart, variant, 1);
 
         cart.getCartItems().removeIf(ci -> ci.getId() != null && ci.getId().equals(savedItem.getId()));
         cart.getCartItems().add(savedItem);
@@ -61,17 +58,23 @@ public class CartService {
     }
 
     @Transactional
-    public Cart removeCartItem(Long userId, Long productVariantId, Integer quantity) throws InvalidRequestException {
+    public Cart removeCartItem(Long userId, Long productVariantId) throws InvalidRequestException {
         User user = userRepository.findById(userId).orElseThrow(()->new InvalidRequestException("User not found"));
         ProductVariant variant =  productVariantRepository.findById(productVariantId).orElseThrow(()->new InvalidRequestException("Product not found"));
 
-        Cart cart = cartRepository.findByUser(user).orElseGet(()->newCart(user));
-        CartItem updated = cartItemService.removeItemFromCart(cart, variant, quantity);
-
-        if (updated != null) {
-            cart.getCartItems().removeIf(ci -> ci.getId() != null && ci.getId().equals(updated.getId()));
-            cart.getCartItems().add(updated);
+        Optional<Cart> cartOpt = cartRepository.findByUser(user);
+        if (cartOpt.isEmpty()) {
+            throw new InvalidRequestException("Cart not found");
         }
+
+        Cart cart = cartOpt.get();
+        CartItem existing = cartItemRepository.findByCartAndProductVariant(cart, variant);
+        if (existing == null){
+            throw new InvalidRequestException("Item not found in cart");
+        }
+
+        cartItemService.removeItemFromCart(cart, variant, existing.getQuantity());
+        cart.getCartItems().removeIf(ci -> ci.getId() != null && ci.getId().equals(existing.getId()));
         return cartRepository.save(cart);
     }
 
@@ -119,7 +122,7 @@ public class CartService {
         Optional<Cart> cartOpt = cartRepository.findByUser(user);
         if (cartOpt.isEmpty()) {
             if (delta > 0) {
-                return addProductVariantToCart(userId, productVariantId, delta);
+                return addProductVariantToCart(userId, productVariantId);
             } else {
                 throw new InvalidRequestException("Item not found in cart");
             }
