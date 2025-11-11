@@ -112,7 +112,7 @@ public class FavoritesService {
             }
 
             try {
-                cartService.addProductVariantToCart(user.getId(), vid, 1);
+                cartService.addProductVariantToCart(user.getId(), vid);
                 moved.add(vid);
             } catch (Exception ex) {
                 errors.add("Failed to add variant " + vid + ": " + ex.getMessage());
