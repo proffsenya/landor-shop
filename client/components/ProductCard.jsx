@@ -88,6 +88,7 @@ export default function ProductCard({
       const cartSet = loadSet(cartKey);
       cartSet.add(String(variantId));
       saveSet(cartKey, cartSet);
+      window.dispatchEvent(new Event("cart:update"));
     } catch (err) {
       console.warn("Ошибка при добавлении в корзину:", err);
     }
@@ -123,7 +124,7 @@ export default function ProductCard({
           const txt = await res.text().catch(() => "");
           throw new Error(`HTTP ${res.status} ${txt}`);
         }
-        // успех — ничего не делаем (локальное состояние уже выставлено)
+        window.dispatchEvent(new Event("favorites:update"));
       } catch (err) {
         console.warn("Не удалось добавить в избранное:", err);
         // откат

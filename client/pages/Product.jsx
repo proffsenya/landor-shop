@@ -422,22 +422,53 @@ export default function Product() {
   };
 
   // ---------- избранное ----------
-  const handleToggleFavorite = () => {
-    const vid = String(selectedVariant?.id ?? "");
-    if (!vid) return;
+  // ---------- избранное ----------
+const handleToggleFavorite = async () => {
+  const vidStr = String(selectedVariant?.id ?? "");
+  if (!vidStr) return;
 
-    setIsFav((prev) => {
-      const next = !prev;
-      const set = loadSet(favKey);
-      if (next) set.add(vid);
-      else set.delete(vid);
-      saveSet(favKey, set);
-      try {
-        window.dispatchEvent(new Event("favs:changed"));
-      } catch {}
-      return next;
-    });
-  };
+  const vidNum = Number(vidStr);
+  const headers =
+    authToken !== "guest"
+      ? { "Content-Type": "application/json", Authorization: `Bearer ${authToken}` }
+      : { "Content-Type": "application/json" };
+
+  // текущее состояние в сессии
+  const favSet = loadSet(favKey);
+  const isNowFav = favSet.has(vidStr);
+
+  if (!isNowFav) {
+    // === ДОБАВИТЬ В ИЗБРАННОЕ (POST /api/favorites) ===
+    try {
+      const res = await fetch("/api/favorites", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ variantId: vidNum }),
+      });
+      if (!res.ok) {
+        const t = await safeText(res);
+        console.warn("Не удалось добавить в избранное:", res.status, t);
+        return;
+      }
+      // успех — синхронизируем сессии/кнопку
+      favSet.add(vidStr);
+      saveSet(favKey, favSet);
+      setIsFav(true);
+      try { window.dispatchEvent(new Event("favs:changed")); } catch {}
+    } catch (e) {
+      console.warn("Ошибка запроса избранного (POST):", e);
+    }
+  } else {
+    const ok = await apiDeleteFavorite(vidNum, authToken);
+    if (!ok) return;
+
+    favSet.delete(vidStr);
+    saveSet(favKey, favSet);
+    setIsFav(false);
+    try { window.dispatchEvent(new Event("favs:changed")); } catch {}
+  }
+};
+
 
   // ---------- загрузочные и ошибочные состояния ----------
   if (loading) {
