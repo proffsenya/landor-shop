@@ -15,6 +15,10 @@ const getAuthToken = () => {
 };
 const STORAGE_CART = (authToken) => `cart:variants:${authToken || "guest"}`;
 
+async function safeText(res) {
+  try { return await res.text(); } catch { return ""; }
+}
+
 const loadSet = (key) => {
   try {
     const raw = sessionStorage.getItem(key);
@@ -43,23 +47,23 @@ const pluralGoods = (n) =>
   n === 1 ? "товар" : n > 1 && n < 5 ? "товара" : "товаров";
 
 // Приводим ответ бэкенда к виду, понятному UI
+// Cart.jsx
 const mapCartResponse = (data) => {
   const items = Array.isArray(data?.cartItems) ? data.cartItems : [];
-  return items.map((row, idx) => ({
-    id:
-      row?.id ??
-      `${row?.productId ?? "p"}-${row?.variantId ?? "v"}-${idx}`, // безопасный ключ
-    productId: row?.productId ?? null,
-    variantId: row?.variantId ?? null,
+  return items.map((row) => ({
+    id: String(row?.id), // стабильный ключ строки = cartItem.id
+    cartItemId: Number(row?.id ?? 0),
+    productId: Number(row?.productId ?? 0),
+    variantId: Number(
+    row?.variantId ?? row?.productId ?? NaN), // если бэк не отдаёт variantId),
     name: row?.displayName || row?.productName || "Товар",
-    // показываем актуальную цену, если есть; иначе — цену на момент добавления
     price: Number(row?.currentPrice ?? row?.priceAtAdded ?? row?.price ?? 0),
     quantity: Math.max(1, Number(row?.quantity ?? 1)),
-    // если бек отдаёт imageUrl — берём его; иначе плейсхолдер
     image: row?.imageUrl || "/korm1.svg",
     weight: row?.weightLabel || "",
   }));
 };
+
 
 export default function Cart() {
   const authToken = getAuthToken();
@@ -130,51 +134,50 @@ export default function Cart() {
   }, [authToken]);
 
   // ---- API: удаление позиции из корзины ----
-  async function apiRemoveCartItem(item) {
-    const variantId = item.variantId != null ? Number(item.variantId) : null;
-    const cartItemId = item.id != null ? String(item.id) : null;
+  // ↓ добавь рядом с утилитами
+async function safeText(res) {
+  try { return await res.text(); } catch { return ""; }
+}
 
-    // 1) попытка: DELETE с JSON-телом { variantId } или { cartItemId }
-    try {
-      const res = await fetch("/api/cart", {
-        method: "DELETE",
-        headers: {
-          ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(
-          variantId != null ? { variantId } : { cartItemId }
-        ),
-      });
-      if (res.ok) return true;
+// ↓ замени целиком функцию удаления
+async function apiRemoveCartItem(item) {
+  const headers = {
+    "Content-Type": "application/json",
+    ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
+  };
+  const vId = Number(item.variantId);
 
-      // Если сервер не принимает тело (400/405/415) — пробуем query
-      if ([400, 405, 415].includes(res.status)) {
-        const qp = new URLSearchParams(
-          variantId != null
-            ? { variantId: String(variantId) }
-            : { cartItemId: String(cartItemId || "") }
-        ).toString();
-
-        const res2 = await fetch(`/api/cart?${qp}`, {
-          method: "DELETE",
-          headers: {
-            ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
-          },
-        });
-        if (res2.ok) return true;
-
-        if (variantId == null && cartItemId) {
-          return false;
-        }
-        return false;
-      }
-
-      return false;
-    } catch {
-      return false;
-    }
+  if (!Number.isFinite(vId)) {
+    console.warn("[cart] variantId отсутствует у позиции, удалить нельзя:", item);
+    return false;
   }
+
+  try {
+    // твой бек принимает DELETE /api/cart/{variantId} с JSON-телом
+    const r = await fetch(`/api/cart/${encodeURIComponent(vId)}`, {
+      method: "DELETE",
+      headers,
+      body: JSON.stringify({
+        variantId: vId,
+        quantity: 1,
+      }),
+    });
+
+    if (r.ok) return true;
+    console.warn(
+      "DELETE /api/cart/:variantId ->",
+      r.status,
+      await safeText(r)
+    );
+    return false;
+  } catch (e) {
+    console.warn("delete error", e);
+    return false;
+  }
+}
+
+
+
 
   // ---- локальные действия (оптимистично) ----
   const toggleAll = () => {
@@ -195,37 +198,38 @@ export default function Cart() {
   };
 
   const removeItem = async (id) => {
-    const item = items.find((x) => x.id === id);
-    if (!item) return;
+  const item = items.find((x) => x.id === id);
+  if (!item) return;
 
-    // оптимистично уберём из UI
-    setItems((prev) => prev.filter((i) => i.id !== id));
-    setSelected((prev) => {
-      const next = new Set(prev);
-      next.delete(id);
-      return next;
-    });
+  // оптимистично скрываем конкретную строку
+  setItems((prev) => prev.filter((i) => i.id !== id));
+  setSelected((prev) => {
+    const next = new Set(prev);
+    next.delete(id);
+    return next;
+  });
 
-    const ok = await apiRemoveCartItem(item);
+  const ok = await apiRemoveCartItem(item);
 
-    if (ok) {
-      showToast("Товар удалён из корзины");
+  if (ok) {
+    showToast("Товар удалён из корзины");
 
-      // синхронизация sessionStorage для кнопки «В корзину» в карточках
-      if (item.variantId != null) {
-        const setCart = loadSet(cartKey);
-        setCart.delete(String(item.variantId));
-        saveSet(cartKey, setCart);
-      }
-
-      // при необходимости можно подтянуть корзину заново:
-      // await fetchCart();
-    } else {
-      // откат, если сервер не подтвердил
-      setItems((prev) => [item, ...prev]);
-      showToast("Не получилось удалить. Повторите позже");
+    // обновляем локальный список variantId в корзине (для кнопок «В корзину»)
+    if (Number.isFinite(item.variantId)) {
+      const setCart = loadSet(cartKey);
+      setCart.delete(String(item.variantId));
+      saveSet(cartKey, setCart);
     }
-  };
+
+    // сообщим хедеру, чтобы обновил бейдж
+    window.dispatchEvent(new Event("cart:update"));
+  } else {
+    // откат
+    setItems((prev) => [item, ...prev]);
+    showToast("Не получилось удалить. Повторите позже");
+  }
+};
+
 
   // ---- вычисления ----
   const { totalCount, totalPrice } = useMemo(() => {

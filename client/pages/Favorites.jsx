@@ -46,9 +46,7 @@ export default function Favorites() {
         // ВАЖНО: храним и favoriteId (id записи), и variantId (что нужно для DELETE /favorites/{variantId})
         const mapped = Array.isArray(data)
           ? data.map((item) => ({
-              favoriteId: Number(item.favoriteId ?? item.id),           // id записи (если бэк его даёт)
-              variantId: Number(item.variantId ?? item.id),             // пытаемся получить настоящий variantId
-              id: Number(item.variantId ?? item.id),                    // используем variantId как ключ для выбора/удаления
+              id: Number(item.id),                // ← ключ и id для удаления
               name: item.displayName,
               price: Number(item.price ?? 0),
               image: item.imageUrl || "/korm1.svg",
@@ -57,6 +55,7 @@ export default function Favorites() {
               dateAdded: new Date().toLocaleDateString("ru-RU"),
             }))
           : [];
+
 
         setFavorites(mapped);
       } catch (e) {
@@ -99,53 +98,55 @@ export default function Favorites() {
   };
 
   // ===== helpers: DELETE по variantId с фолбэками =====
-  async function apiDeleteFavorite(variantId) {
-    const headers = authToken !== "guest" ? { Authorization: `Bearer ${authToken}` } : {};
+  // ===== helpers: DELETE по id из /api/favorites =====
+async function apiDeleteFavorite(id) {
+  const headers = authToken !== "guest" ? { Authorization: `Bearer ${authToken}` } : {};
 
-    // 1) DELETE /api/favorites/{variantId}
-    try {
-      const res = await fetch(`/api/favorites/${encodeURIComponent(variantId)}`, {
-        method: "DELETE",
-        headers,
-      });
-      if (res.ok) return true;
-      const body = await safeText(res);
-      console.warn(`[favorites] DELETE /favorites/${variantId} -> ${res.status}`, body);
-      if (![400, 404, 405, 415].includes(res.status)) return false; // другие ошибки — стоп
-    } catch (e) {
-      console.warn(`[favorites] path delete error`, e);
-    }
-
-    // 2) DELETE /api/favorites?variantId=...
-    try {
-      const res = await fetch(`/api/favorites?variantId=${encodeURIComponent(variantId)}`, {
-        method: "DELETE",
-        headers,
-      });
-      if (res.ok) return true;
-      const body = await safeText(res);
-      console.warn(`[favorites] DELETE /favorites?variantId=${variantId} -> ${res.status}`, body);
-      if (![400, 404, 405, 415].includes(res.status)) return false;
-    } catch (e) {
-      console.warn(`[favorites] query delete error`, e);
-    }
-
-    // 3) DELETE /api/favorites с JSON-teleм { variantId }
-    try {
-      const res = await fetch(`/api/favorites`, {
-        method: "DELETE",
-        headers: { ...headers, "Content-Type": "application/json" },
-        body: JSON.stringify({ variantId: Number(variantId) }),
-      });
-      if (res.ok) return true;
-      const body = await safeText(res);
-      console.warn(`[favorites] DELETE /favorites (body) -> ${res.status}`, body);
-      return false;
-    } catch (e) {
-      console.warn(`[favorites] body delete error`, e);
-      return false;
-    }
+  // основной вариант
+  try {
+    const res = await fetch(`/api/favorites/${encodeURIComponent(id)}`, {
+      method: "DELETE",
+      headers,
+    });
+    if (res.ok) return true;
+    const body = await safeText(res);
+    console.warn(`[favorites] DELETE /favorites/${id} -> ${res.status}`, body);
+    if (![400,404,405,415].includes(res.status)) return false;
+  } catch (e) {
+    console.warn("[favorites] path delete error", e);
   }
+
+  // фолбэк через query
+  try {
+    const res = await fetch(`/api/favorites?variantId=${encodeURIComponent(id)}`, {
+      method: "DELETE",
+      headers,
+    });
+    if (res.ok) return true;
+    const body = await safeText(res);
+    console.warn(`[favorites] DELETE /favorites?variantId=${id} -> ${res.status}`, body);
+  } catch (e) {
+    console.warn("[favorites] query delete error", e);
+  }
+
+  // фолбэк через тело
+  try {
+    const res = await fetch(`/api/favorites`, {
+      method: "DELETE",
+      headers: { ...headers, "Content-Type": "application/json" },
+      body: JSON.stringify({ id: Number(id) }),
+    });
+    if (res.ok) return true;
+    const body = await safeText(res);
+    console.warn(`[favorites] DELETE /favorites (body) -> ${res.status}`, body);
+  } catch (e) {
+    console.warn("[favorites] body delete error", e);
+  }
+
+  return false;
+}
+
+
 
   // ===== helpers: DELETE all с фолбэком тела =====
   async function deleteAllFavorites() {
@@ -188,37 +189,75 @@ export default function Favorites() {
 
   // ===== Удаление (всё / выбранные) =====
   const removeSelected = async () => {
-    if (favorites.length === 0) return;
-    const key = favsKeyByToken(authToken);
+  if (favorites.length === 0) return;
 
-    try {
-      if (allSelected) {
-        const ok = await deleteAllFavorites();
-        if (!ok) {
-          showToast("Сервер не удалил все избранные (см. консоль)", 2000);
-          return;
+  // какие именно id удаляем
+  const toDelete = allSelected
+    ? favorites.map((i) => i.id)
+    : Array.from(selected);
+
+  if (toDelete.length === 0) return;
+
+  const headers =
+    authToken !== "guest" ? { Authorization: `Bearer ${authToken}` } : {};
+
+  const failed = new Set();
+
+  // последовательно или параллельно — выбери сам; ниже параллельно
+  await Promise.all(
+    toDelete.map(async (id) => {
+      try {
+        const res = await fetch(`/api/favorites/${encodeURIComponent(id)}`, {
+          method: "DELETE",
+          headers,
+        });
+        if (!res.ok) {
+          const body = await safeText(res);
+          console.warn(`[favorites] DELETE /favorites/${id} -> ${res.status}`, body);
+          failed.add(id);
         }
-        setFavorites([]);
-        setSelected(new Set());
-        sessionStorage.setItem(key, "[]");
-        showToast("Все товары удалены из избранного");
-      } else {
-        const toDelete = Array.from(selected).map((x) => Number(x)); // x — это variantId
-        for (const variantId of toDelete) {
-          const ok = await apiDeleteFavorite(variantId);
-          if (!ok) console.warn(`Не удалось удалить variantId=${variantId}`);
-        }
-        const updated = favorites.filter((i) => !selected.has(i.id));
-        setFavorites(updated);
-        setSelected(new Set());
-        sessionStorage.setItem(key, JSON.stringify(updated.map((i) => String(i.id))));
-        showToast("Выбранные товары удалены");
+      } catch (e) {
+        console.warn(`[favorites] delete error id=${id}`, e);
+        failed.add(id);
       }
-    } catch (err) {
-      console.warn("Ошибка удаления избранного:", err);
-      showToast("Ошибка при удалении", 2000);
-    }
-  };
+    })
+  );
+
+  // успешные = toDelete \ failed
+  const succeeded = new Set(toDelete.filter((id) => !failed.has(id)));
+
+  // обновляем список
+  setFavorites((prev) => prev.filter((i) => !succeeded.has(i.id)));
+
+  // в selected оставим только то, что не удалилось
+  setSelected((prev) => {
+    const next = new Set(prev);
+    for (const id of succeeded) next.delete(id);
+    return next;
+  });
+
+  // sessionStorage: храним id оставшихся
+  const key = favsKeyByToken(authToken);
+  const after = favorites
+    .filter((i) => !succeeded.has(i.id))
+    .map((i) => String(i.id));
+  sessionStorage.setItem(key, JSON.stringify(after));
+
+  // бейдж в шапке
+  try { window.dispatchEvent(new Event("favorites:update")); } catch {}
+
+  if (failed.size === 0) {
+    showToast("Выбранные товары удалены");
+  } else if (failed.size === toDelete.length) {
+    showToast("Не удалось удалить выбранные (см. консоль)", 2000);
+  } else {
+    showToast(
+      `Удалено: ${toDelete.length - failed.size}, не удалено: ${failed.size}`,
+      2000
+    );
+  }
+};
+
 
   // ===== Добавить выбранные в корзину =====
   const addAllToCart = async () => {
@@ -318,6 +357,7 @@ export default function Favorites() {
                             onChange={() => toggleOne(item.id)}
                             className="w-4 h-4 accent-[#6F2A2B]"
                           />
+
                         </div>
 
                         <div className="flex-shrink-0 w-20 overflow-hidden rounded-md h-28 bg-gray-50">

@@ -79,8 +79,7 @@ const getFirstImage = (product) => {
   return first.url || first.path || first.src || "/korm1.svg";
 };
 
-// ---------- Преобразование продукта в карточки (каждый вариант — отдельная карточка) ----------
-// ---------- Преобразование продукта в карточки (каждый вариант — отдельная карточка) ----------
+
 const expandProductToCards = (product) => {
   const firstImage = getFirstImage(product);
 
@@ -390,7 +389,7 @@ export default function Catalog() {
                   </label>
                   <label className="flex items-center space-x-2">
                     <Checkbox checked={categoryFilters.wet} onCheckedChange={() => handleCategoryChange("wet")} />
-                    <span className="textсм">Влажные корма</span>
+                    <span className="text-sm">Влажные корма</span>
                   </label>
                   <label className="flex items-center space-x-2">
                     <Checkbox checked={categoryFilters.litter} onCheckedChange={() => handleCategoryChange("litter")} />

@@ -380,46 +380,82 @@ export default function Product() {
 
   // ---------- добавление в корзину ----------
   const handleAddToCart = async () => {
-    const vid = selectedVariant?.id;
-    if (!vid || adding || inCart) return;
+  const vid = selectedVariant?.id;
+  if (!vid || adding) return;
 
-    setAdding(true);
+  setAdding(true);
+
+  // если уже в корзине → удалить
+  if (inCart) {
     try {
-      const res = await fetch("/api/cart", {
-        method: "POST",
+      const res = await fetch(`/api/cart/${encodeURIComponent(vid)}`, {
+        method: "DELETE",
         headers: {
-          "Content-Type": "application/json",
           Authorization: `Bearer ${authToken}`,
+          "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          variantId: Number(vid),
-          quantity: Math.max(1, Number(qty) || 1),
-        }),
+        body: JSON.stringify({ variantId: Number(vid), quantity: 1 }),
       });
 
-      if (!res.ok) {
-        const text = await res.text().catch(() => "");
-        console.warn("Ошибка при добавлении в корзину:", res.status, text);
-        return;
+      if (res.ok) {
+        console.log("✅ Товар удалён из корзины:", vid);
+        const set = loadSet(cartKey);
+        set.delete(String(vid));
+        saveSet(cartKey, set);
+        setInCart(false);
+        window.dispatchEvent(new Event("cart:update"));
+        try {
+          window.dispatchEvent(new Event("cart:changed"));
+        } catch {}
+      } else {
+        console.warn("Ошибка при удалении:", res.status, await res.text());
       }
-
-      const data = await res.json();
-      console.log("✅ Добавлено в корзину:", data);
-
-      const set = loadSet(cartKey);
-      set.add(String(vid));
-      saveSet(cartKey, set);
-      setInCart(true);
-
-      try {
-        window.dispatchEvent(new Event("cart:changed"));
-      } catch {}
     } catch (e) {
-      console.warn("Ошибка запроса:", e);
+      console.warn("Ошибка удаления из корзины:", e);
     } finally {
       setAdding(false);
     }
-  };
+    return;
+  }
+
+  // если не в корзине → добавить
+  try {
+    const res = await fetch("/api/cart", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${authToken}`,
+      },
+      body: JSON.stringify({
+        variantId: Number(vid),
+        quantity: 1, // фиксированное количество при добавлении
+      }),
+    });
+
+    if (!res.ok) {
+      const text = await res.text().catch(() => "");
+      console.warn("Ошибка при добавлении в корзину:", res.status, text);
+      return;
+    }
+
+    const data = await res.json();
+    console.log("✅ Добавлено в корзину:", data);
+
+    const set = loadSet(cartKey);
+    set.add(String(vid));
+    saveSet(cartKey, set);
+    setInCart(true);
+    window.dispatchEvent(new Event("cart:update"));
+    try {
+      window.dispatchEvent(new Event("cart:changed"));
+    } catch {}
+  } catch (e) {
+    console.warn("Ошибка запроса:", e);
+  } finally {
+    setAdding(false);
+  }
+};
+
 
   // ---------- избранное ----------
   // ---------- избранное ----------
