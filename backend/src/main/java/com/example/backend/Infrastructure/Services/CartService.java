@@ -8,6 +8,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class CartService {
@@ -94,5 +95,73 @@ public class CartService {
         cart.setUser(user);
         return cartRepository.save(cart);
     }
+
+    @Transactional
+    public Cart incrementCartItem(Long userId, Long productVariantId) throws InvalidRequestException {
+        return changeCartItemQuantity(userId, productVariantId, +1);
+    }
+
+    @Transactional
+    public Cart decrementCartItem(Long userId, Long productVariantId) throws InvalidRequestException {
+        return changeCartItemQuantity(userId, productVariantId, -1);
+    }
+
+    @Transactional
+    public Cart changeCartItemQuantity(Long userId, Long productVariantId, int delta) throws InvalidRequestException {
+        if (delta == 0) {
+            return getCartByUserId(userId);
+        }
+
+        User user = userRepository.findById(userId).orElseThrow(() -> new InvalidRequestException("User not found"));
+
+        ProductVariant variant = productVariantRepository.findById(productVariantId).orElseThrow(() -> new InvalidRequestException("Product not found"));
+
+        Optional<Cart> cartOpt = cartRepository.findByUser(user);
+        if (cartOpt.isEmpty()) {
+            if (delta > 0) {
+                return addProductVariantToCart(userId, productVariantId, delta);
+            } else {
+                throw new InvalidRequestException("Item not found in cart");
+            }
+        }
+        Cart cart = cartOpt.get();
+
+        int updated = cartItemRepository.changeQuantityIfResultPositive(cart.getId(), productVariantId, delta);
+        if (updated > 0) {
+            CartItem saved = cartItemRepository.findByCartAndProductVariant(cart, variant);
+            if (saved != null) {
+                cart.getCartItems().removeIf(ci -> ci.getId() != null && ci.getId().equals(saved.getId()));
+                cart.getCartItems().add(saved);
+            }
+            return cartRepository.save(cart);
+        }
+
+        CartItem existing = cartItemRepository.findByCartAndProductVariant(cart, variant);
+
+        if (existing == null) {
+            if (delta > 0) {
+                CartItem saved = cartItemService.addItemToCart(cart, variant, delta);
+                cart.getCartItems().removeIf(ci -> ci.getProductVariant() != null && ci.getProductVariant().getId().equals(variant.getId()));
+                cart.getCartItems().add(saved);
+                return cartRepository.save(cart);
+            } else {
+                throw new InvalidRequestException("Item not found in cart");
+            }
+        } else {
+            int newQty = existing.getQuantity() + delta;
+            if (newQty <= 0) {
+                cartItemRepository.deleteIfQuantityNonPositive(cart.getId(), productVariantId);
+                cart.getCartItems().removeIf(ci -> ci.getId() != null && ci.getId().equals(existing.getId()));
+                return cartRepository.save(cart);
+            } else {
+                existing.setQuantity(newQty);
+                CartItem saved = cartItemRepository.save(existing);
+                cart.getCartItems().removeIf(ci -> ci.getId() != null && ci.getId().equals(saved.getId()));
+                cart.getCartItems().add(saved);
+                return cartRepository.save(cart);
+            }
+        }
+    }
+
 
 }

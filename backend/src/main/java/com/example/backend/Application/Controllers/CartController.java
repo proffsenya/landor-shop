@@ -39,6 +39,22 @@ public class CartController {
         return ResponseEntity.ok(dto);
     }
 
+    @PostMapping("/{variantId}/inc")
+    public ResponseEntity<CartResponseDTO> increaseItemInCart(@AuthenticationPrincipal CustomUserDetails principal,
+                                                     @PathVariable Long variantId) throws InvalidRequestException{
+        Long userId = principal.getId();
+        Cart updatedCart = cartService.incrementCartItem(userId, variantId);
+        return ResponseEntity.ok(toCartResponseDTO(updatedCart));
+    }
+
+    @PostMapping("/{variantId}/dec")
+    public ResponseEntity<CartResponseDTO> decreaseItemInCart(@AuthenticationPrincipal CustomUserDetails principal,
+                                                              @PathVariable Long variantId) throws InvalidRequestException{
+        Long userId = principal.getId();
+        Cart updatedCart = cartService.decrementCartItem(userId, variantId);
+        return ResponseEntity.ok(toCartResponseDTO(updatedCart));
+    }
+
     @GetMapping
     public ResponseEntity<CartResponseDTO> getCart(@AuthenticationPrincipal CustomUserDetails principal) throws InvalidRequestException {
         Long userId = principal.getId();
@@ -80,6 +96,7 @@ public class CartController {
     private CartItemDTO toCartItemDTO(CartItem cartItem) {
         return new CartItemDTO(
                 cartItem.getId(),
+                cartItem.getProductVariant().getId(),
                 cartItem.getQuantity(),
                 cartItem.getPriceAtAdded(),
                 cartItem.getCreatedAt(),

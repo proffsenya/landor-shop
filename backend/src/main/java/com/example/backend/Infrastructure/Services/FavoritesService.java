@@ -30,6 +30,7 @@ public class FavoritesService {
         this.cartService = cartService;
     }
 
+    @Transactional
     public VariantCardDTO addToFavorites(Long userId, Long variantId){
         User user = userRepository.findById(userId).orElseThrow(() -> new InvalidResourseException("User not found"));
         ProductVariant variant = productVariantRepository.findById(variantId).orElseThrow(() -> new InvalidResourseException("Variant not found"));
@@ -47,12 +48,14 @@ public class FavoritesService {
         return toVariantCardDTO(variant);
     }
 
+    @Transactional
     public void removeFromFavorites(Long userId, Long variantId){
         User user = userRepository.findById(userId).orElseThrow(() -> new InvalidResourseException("User not found"));
         ProductVariant variant = productVariantRepository.findById(variantId).orElseThrow(() -> new InvalidResourseException("Variant not found"));
         favoriteRepository.deleteByUserAndProductVariant(user, variant);
     }
 
+    @Transactional(readOnly = true)
     public List<VariantCardDTO> getFavorites(Long userId){
         User user = userRepository.findById(userId).orElseThrow(() -> new InvalidResourseException("User not found"));
         return favoriteRepository.findAllByUser(user)
@@ -61,6 +64,7 @@ public class FavoritesService {
                 .toList();
     }
 
+    @Transactional
     public void clearFavorites(Long userId){
         User user = userRepository.findById(userId).orElseThrow(() -> new InvalidResourseException("User not found"));
         favoriteRepository.deleteAllByUser(user);

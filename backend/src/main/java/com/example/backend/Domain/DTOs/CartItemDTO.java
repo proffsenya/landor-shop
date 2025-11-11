@@ -10,6 +10,7 @@ import java.time.Instant;
  * DTO for {@link com.example.backend.Domain.Models.CartItem}
  */
 public record CartItemDTO(Long id,
+                          Long variantId,
                           @NotNull Integer quantity,
                           @NotNull BigDecimal priceAtAdded,
                           Instant createdAt,
