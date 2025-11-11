@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 export default function HeroBanner() {
   return (
     <section className="relative overflow-hidden bg-[#FFF1DA]">
@@ -16,10 +17,10 @@ export default function HeroBanner() {
               Ваш любимец — наш{" "}
               <span className="block">главный дегустатор</span>
             </h1>
-
+            <Link to = "/catalog">
             <button className="bg-[#6F2A2B] text-white px-7 py-3 rounded-full translate-x-[80px] hover:bg-[#5a2223] transition-colors text-[16px] font-semibold shadow-md">
               Заказать сейчас
-            </button>
+            </button></Link>
           </div>
         </div>
 
