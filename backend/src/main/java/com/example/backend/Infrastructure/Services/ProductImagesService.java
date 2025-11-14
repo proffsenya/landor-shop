@@ -57,21 +57,26 @@ public class ProductImagesService {
     @Transactional
     public void addImagesToProduct(Product product, List<MultipartFile> files, Long variantId) throws IOException {
         if (product == null) throw new InvalidRequestException("Product is empty");
+        if (files == null || files.isEmpty()) throw new InvalidRequestException("Files is empty");
 
-        ProductVariant linkedVariant = null;
-        if (variantId != null) {
-            linkedVariant = productVariantRepository.findById(variantId).orElse(null);
-            if (linkedVariant == null) throw new InvalidRequestException("Variant not found");
-        }
+        List<ProductVariant> variants = new ArrayList<>(product.getProductVariants());
 
-        boolean hasMain = product.getImages().stream().anyMatch(img -> Boolean.TRUE.equals(img.getIsMain()));
+        boolean productMain = product.getImages().stream().anyMatch(img -> Boolean.TRUE.equals(img.getIsMain()));
         boolean first = true;
 
-        if (files != null) {
-            for (MultipartFile file : files) {
+        if (!variants.isEmpty() && files.size() == variants.size()) {
+            for (int i = 0; i < files.size(); i++) {
+                MultipartFile file = files.get(i);
                 if (file == null || file.isEmpty()) continue;
+                ProductVariant targetVariant = variants.get(i);
+                setAndAttach(targetVariant, file, product, !productMain && first);
+            }
+        }
+    }
 
-                String ct = file.getContentType();
+    @Transactional
+    public void setAndAttach(ProductVariant linkedVariant, MultipartFile file, Product product, boolean setIsMain) throws IOException {
+        String ct = file.getContentType();
                 boolean ok = false;
                 if (ct != null) ok = ct.toLowerCase().startsWith("image/");
                 if (!ok) {
@@ -90,7 +95,7 @@ public class ProductImagesService {
                 img.setFileName(file.getOriginalFilename());
                 img.setContentType(ct);
                 img.setSize(file.getSize());
-                img.setIsMain(!hasMain && first);
+                img.setIsMain(setIsMain);
                 img.setAltText(product.getName());
                 img.setProduct(product);
                 img.setData(file.getBytes());
@@ -102,9 +107,6 @@ public class ProductImagesService {
                 productImageRepository.save(img);
                 product.getImages().add(img);
 
-                first = false;
-            }
-        }
     }
 
     @Transactional
