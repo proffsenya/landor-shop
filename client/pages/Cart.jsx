@@ -47,7 +47,6 @@ const pluralGoods = (n) =>
   n === 1 ? "товар" : n > 1 && n < 5 ? "товара" : "товаров";
 
 // Приводим ответ бэкенда к виду, понятному UI
-// Cart.jsx
 const mapCartResponse = (data) => {
   const items = Array.isArray(data?.cartItems) ? data.cartItems : [];
   return items.map((row) => ({
@@ -63,7 +62,6 @@ const mapCartResponse = (data) => {
     weight: row?.weightLabel || "",
   }));
 };
-
 
 export default function Cart() {
   const authToken = getAuthToken();
@@ -134,50 +132,92 @@ export default function Cart() {
   }, [authToken]);
 
   // ---- API: удаление позиции из корзины ----
-  // ↓ добавь рядом с утилитами
-async function safeText(res) {
-  try { return await res.text(); } catch { return ""; }
-}
+  async function apiRemoveCartItem(item) {
+    const headers = {
+      "Content-Type": "application/json",
+      ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
+    };
+    const vId = Number(item.variantId);
 
-// ↓ замени целиком функцию удаления
-async function apiRemoveCartItem(item) {
-  const headers = {
-    "Content-Type": "application/json",
-    ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
+    if (!Number.isFinite(vId)) {
+      console.warn("[cart] variantId отсутствует у позиции, удалить нельзя:", item);
+      return false;
+    }
+
+    try {
+      // твой бек принимает DELETE /api/cart/{variantId} с JSON-телом
+      const r = await fetch(`/api/cart/${encodeURIComponent(vId)}`, {
+        method: "DELETE",
+        headers,
+        body: JSON.stringify({
+          variantId: vId,
+          quantity: 1,
+        }),
+      });
+
+      if (r.ok) return true;
+      console.warn(
+        "DELETE /api/cart/:variantId ->",
+        r.status,
+        await safeText(r)
+      );
+      return false;
+    } catch (e) {
+      console.warn("delete error", e);
+      return false;
+    }
+  }
+
+  // ---- изменение количества товара на бэке ----
+  const changeQuantityOnServer = async (item, direction /* "inc" | "dec" */) => {
+    const vId = Number(item.variantId);
+    if (!Number.isFinite(vId)) {
+      console.warn("[cart] нет variantId у позиции", item);
+      return false;
+    }
+
+    const headers = {
+      "Content-Type": "application/json",
+      ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
+    };
+
+    const url = `/api/cart/${encodeURIComponent(vId)}/${direction}`;
+
+    try {
+      const res = await fetch(url, { method: "POST", headers });
+      if (res.ok) return true;
+
+      console.warn(url, res.status, await safeText(res));
+      return false;
+    } catch (e) {
+      console.warn(url, e);
+      return false;
+    }
   };
-  const vId = Number(item.variantId);
 
-  if (!Number.isFinite(vId)) {
-    console.warn("[cart] variantId отсутствует у позиции, удалить нельзя:", item);
-    return false;
-  }
+  const handleIncrease = async (id) => {
+    const item = items.find((i) => i.id === id);
+    if (!item) return;
 
-  try {
-    // твой бек принимает DELETE /api/cart/{variantId} с JSON-телом
-    const r = await fetch(`/api/cart/${encodeURIComponent(vId)}`, {
-      method: "DELETE",
-      headers,
-      body: JSON.stringify({
-        variantId: vId,
-        quantity: 1,
-      }),
-    });
+    const ok = await changeQuantityOnServer(item, "inc");
+    if (!ok) {
+      showToast("Не удалось увеличить количество");
+      return;
+    }
+    updateQuantity(id, item.quantity + 1);
+  };
 
-    if (r.ok) return true;
-    console.warn(
-      "DELETE /api/cart/:variantId ->",
-      r.status,
-      await safeText(r)
-    );
-    return false;
-  } catch (e) {
-    console.warn("delete error", e);
-    return false;
-  }
-}
+  const handleDecrease = async (id) => {
+    const item = items.find((i) => i.id === id);
+    if (!item || item.quantity <= 1) return;
 
-
-
+    const ok = await changeQuantityOnServer(item, "dec");
+    if (!ok) {
+      showToast("Не удалось уменьшить количество");
+      return;
+    }
+    updateQuantity(id, item.quantity - 1);
+  };
 
   // ---- локальные действия (оптимистично) ----
   const toggleAll = () => {
@@ -198,38 +238,37 @@ async function apiRemoveCartItem(item) {
   };
 
   const removeItem = async (id) => {
-  const item = items.find((x) => x.id === id);
-  if (!item) return;
+    const item = items.find((x) => x.id === id);
+    if (!item) return;
 
-  // оптимистично скрываем конкретную строку
-  setItems((prev) => prev.filter((i) => i.id !== id));
-  setSelected((prev) => {
-    const next = new Set(prev);
-    next.delete(id);
-    return next;
-  });
+    // оптимистично скрываем конкретную строку
+    setItems((prev) => prev.filter((i) => i.id !== id));
+    setSelected((prev) => {
+      const next = new Set(prev);
+      next.delete(id);
+      return next;
+    });
 
-  const ok = await apiRemoveCartItem(item);
+    const ok = await apiRemoveCartItem(item);
 
-  if (ok) {
-    showToast("Товар удалён из корзины");
+    if (ok) {
+      showToast("Товар удалён из корзины");
 
-    // обновляем локальный список variantId в корзине (для кнопок «В корзину»)
-    if (Number.isFinite(item.variantId)) {
-      const setCart = loadSet(cartKey);
-      setCart.delete(String(item.variantId));
-      saveSet(cartKey, setCart);
+      // обновляем локальный список variantId в корзине (для кнопок «В корзину»)
+      if (Number.isFinite(item.variantId)) {
+        const setCart = loadSet(cartKey);
+        setCart.delete(String(item.variantId));
+        saveSet(cartKey, setCart);
+      }
+
+      // сообщим хедеру, чтобы обновил бейдж
+      window.dispatchEvent(new Event("cart:update"));
+    } else {
+      // откат
+      setItems((prev) => [item, ...prev]);
+      showToast("Не получилось удалить. Повторите позже");
     }
-
-    // сообщим хедеру, чтобы обновил бейдж
-    window.dispatchEvent(new Event("cart:update"));
-  } else {
-    // откат
-    setItems((prev) => [item, ...prev]);
-    showToast("Не получилось удалить. Повторите позже");
-  }
-};
-
+  };
 
   // ---- вычисления ----
   const { totalCount, totalPrice } = useMemo(() => {
@@ -239,7 +278,20 @@ async function apiRemoveCartItem(item) {
   }, [items]);
 
   const onPay = () => {
-    showToast("Переход к оплате…");
+    console.log("Текущая корзина:");
+    items.forEach((i) => {
+      console.log({
+        id: i.id,
+        cartItemId: i.cartItemId,
+        variantId: i.variantId,
+        productId: i.productId,
+        name: i.name,
+        quantity: i.quantity,
+        price: i.price,
+        total: i.price * i.quantity,
+      });
+    });
+    showToast("Проверь консоль, корзина выведена");
   };
 
   return (
@@ -369,7 +421,7 @@ async function apiRemoveCartItem(item) {
                             <div className="flex justify-center">
                               <div className="flex items-center justify-between w-[120px] h-[38px] border border-[#1E1E1E] rounded-full text-[16px]">
                                 <button
-                                  onClick={() => updateQuantity(i.id, i.quantity + 1)}
+                                  onClick={() => handleIncrease(i.id)}
                                   className="w-10 text-lg leading-none"
                                   aria-label="Увеличить"
                                 >
@@ -377,7 +429,7 @@ async function apiRemoveCartItem(item) {
                                 </button>
                                 <span>{i.quantity}</span>
                                 <button
-                                  onClick={() => updateQuantity(i.id, i.quantity - 1)}
+                                  onClick={() => handleDecrease(i.id)}
                                   className="w-10 text-lg leading-none"
                                   aria-label="Уменьшить"
                                 >
@@ -447,7 +499,7 @@ async function apiRemoveCartItem(item) {
                               <div className="flex items-center">
                                 <div className="flex items-center justify-between w-[110px] h-[36px] border border-[#1E1E1E] rounded-full text-[16px]">
                                   <button
-                                    onClick={() => updateQuantity(i.id, i.quantity + 1)}
+                                    onClick={() => handleIncrease(i.id)}
                                     className="w-10 text-lg leading-none"
                                     aria-label="Увеличить"
                                   >
@@ -455,7 +507,7 @@ async function apiRemoveCartItem(item) {
                                   </button>
                                   <span>{i.quantity}</span>
                                   <button
-                                    onClick={() => updateQuantity(i.id, i.quantity - 1)}
+                                    onClick={() => handleDecrease(i.id)}
                                     className="w-10 text-lg leading-none"
                                     aria-label="Уменьшить"
                                   >
@@ -588,3 +640,4 @@ async function apiRemoveCartItem(item) {
     </div>
   );
 }
+
