@@ -58,6 +58,7 @@ export default function GlobalSearch({
   dataset = [],
   maxItems = 5,
   className = "",
+  onSelect,
 }) {
   const [q, setQ] = useState("");
   const dq = useDebouncedValue(q, 200);
@@ -106,11 +107,12 @@ export default function GlobalSearch({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const submit = (idx = active) => {
+    const submit = (idx = active) => {
     const it = items[idx];
     if (!it) return;
     navigate(it.url || "#");
     setOpen(false);
+    if (onSelect) onSelect();
   };
 
   const onKeyDown = (e) => {
@@ -130,7 +132,7 @@ export default function GlobalSearch({
 
   return (
     <div ref={ref} className={`relative ${className}`}>
-      <input
+              <input
         ref={inputRef}
         type="text"
         value={q}
@@ -138,14 +140,15 @@ export default function GlobalSearch({
         onKeyDown={onKeyDown}
         onFocus={() => (items.length > 0 || dq.length > 0) && setOpen(true)}
         placeholder={placeholder}
-        className="w-96 h-11 pl-4 pr-20 py-3 rounded-full border border-[#A9A9A9] text-sm bg-gray-50"
+        className={`h-11 pl-4 pr-20 py-3 rounded-full border border-[#A9A9A9] text-sm bg-gray-50 ${className}`}
       />
       <button
         onClick={() => {
           if (items.length) submit(0);
           else navigate(`/catalog?search_query=${encodeURIComponent(q)}`);
+          if (onSelect) onSelect();
         }}
-        className="absolute right-0 top-0 bg-[#6F2A2B] text-white px-6 py-3 rounded-r-full hover:bg-[#5a2223]"
+        className="absolute right-0 top-0 h-11 bg-[#6F2A2B] text-white px-6 rounded-r-full hover:bg-[#5a2223] flex items-center justify-center"
       >
         <Search className="w-5 h-5" />
       </button>
