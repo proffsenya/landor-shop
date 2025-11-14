@@ -79,9 +79,9 @@ public class FavoritesService {
         String imageUrl = v.getProduct().getImages().stream()
                 .filter(img -> Boolean.TRUE.equals(img.getIsMain()))
                 .findFirst()
-                .map(img -> "/api/images/" + img.getId())
+                .map(img -> "/api/products/" + v.getProduct().getId() + "/images/" + img.getId())
                 .orElseGet(() -> v.getProduct().getImages().stream()
-                        .findFirst().map(img -> "/api/images/" + img.getId()).orElse(null));
+                        .findFirst().map(img -> "/api/products/" + v.getProduct().getId() + "/images/" + img.getId()).orElse(null));
 
         return new VariantCardDTO(v.getId(), display, v.getPrice(), v.getStock(), imageUrl);
     }
