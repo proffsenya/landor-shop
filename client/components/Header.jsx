@@ -22,8 +22,6 @@ export default function Header() {
   const location = useLocation();
   const authToken = getAuthToken();
 
-  // универсальный загрузчик количества
-    // универсальный загрузчик количества
   const loadCount = async (url, setter) => {
     try {
       const res = await fetch(url, {
@@ -69,9 +67,6 @@ export default function Header() {
     // первичная загрузка
     refreshBadges();
 
-    // обновлять при смене маршрута
-    // (например, вернулись из /product, где что-то добавили)
-    // а также по пользовательским событиям из других компонентов
     const onStorage = () => {
       setIsAuth(getAuthToken() !== "guest");
       refreshBadges();
