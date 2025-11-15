@@ -35,12 +35,20 @@ public class CartService {
     }
 
     @Transactional
-    public Cart addProductVariantToCart(Long userId, Long productVariantId) throws InvalidRequestException {
+    public Cart addProductVariantToCartFirstTime(Long userId, Long productVariantId) throws InvalidRequestException {
+        return addProductVariantToCart(userId, productVariantId, 1);
+    }
+
+    @Transactional
+    public Cart addProductVariantToCart(Long userId, Long productVariantId, Integer quantity) throws InvalidRequestException {
+        if (quantity <= 0) throw new InvalidRequestException("Quantity must be greater than zero");
         User user = userRepository.findById(userId).orElseThrow(()->new InvalidRequestException("User not found"));
         ProductVariant variant =  productVariantRepository.findById(productVariantId).orElseThrow(()->new InvalidRequestException("Product not found"));
 
+        if (variant.getStock() < quantity) throw new InvalidRequestException("Insufficient stock");
+
         Cart cart = cartRepository.findByUser(user).orElseGet(()->newCart(user));
-        CartItem savedItem = cartItemService.addItemToCart(cart, variant, 1);
+        CartItem savedItem = cartItemService.addItemToCart(cart, variant, quantity);
 
         cart.getCartItems().removeIf(ci -> ci.getId() != null && ci.getId().equals(savedItem.getId()));
         cart.getCartItems().add(savedItem);
@@ -122,7 +130,7 @@ public class CartService {
         Optional<Cart> cartOpt = cartRepository.findByUser(user);
         if (cartOpt.isEmpty()) {
             if (delta > 0) {
-                return addProductVariantToCart(userId, productVariantId);
+                return addProductVariantToCart(userId, productVariantId, delta);
             } else {
                 throw new InvalidRequestException("Item not found in cart");
             }

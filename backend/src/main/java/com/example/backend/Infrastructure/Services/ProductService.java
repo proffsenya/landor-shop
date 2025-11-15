@@ -4,10 +4,16 @@ import com.example.backend.Domain.DTOs.*;
 import com.example.backend.Domain.Models.*;
 import com.example.backend.Infrastructure.Exceptions.InvalidRequestException;
 import com.example.backend.Infrastructure.Exceptions.ResourceAlreadyExistsException;
+import com.example.backend.Infrastructure.Filtering.FilterParser;
+import com.example.backend.Infrastructure.Filtering.ProductSpecificationBuilder;
 import com.example.backend.Infrastructure.Repos.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -186,37 +192,7 @@ public class ProductService {
     @Transactional(readOnly = true)
     public List<ProductCardDTO> getProductCardsForFrontend(Boolean active) {
         List<Product> products = (active != null) ? findByIsActive(active) : findAll();
-
-        return products.stream().map(product -> {
-            String productMain = product.getImages().stream()
-                    .filter(img -> Boolean.TRUE.equals(img.getIsMain()))
-                    .findFirst()
-                    .map(img -> "/api/products/" + product.getId() + "/images/" + img.getId())
-                    .orElseGet(() -> product.getImages().stream()
-                            .findFirst()
-                            .map(img -> "/api/products/" + product.getId() + "/images/" + img.getId())
-                            .orElse(null));
-
-            List<VariantCardDTO> variantCards = product.getProductVariants().stream().map(v -> {
-                String variantImage = product.getImages().stream()
-                        .filter(img -> img.getProductVariant() != null && img.getProductVariant().getId().equals(v.getId()))
-                        .findFirst()
-                        .map(img -> "/api/products/" + product.getId() + "/images/" + img.getId())
-                        .orElse(productMain);
-
-                return new VariantCardDTO(
-                        v.getId(),
-                        v.getDisplayName() != null && !v.getDisplayName().isBlank()
-                                ? v.getDisplayName()
-                                : (product.getName() + (v.getWeight() != null ? (", " + v.getWeight() + " кг") : "")),
-                        v.getPrice(),
-                        v.getStock(),
-                        variantImage
-                );
-            }).toList();
-
-            return new ProductCardDTO(product.getId(), product.getName(), variantCards);
-        }).toList();
+        return products.stream().map(this::toProductCardDTO).toList();
     }
 
     private void processProductRelationships(Product product, CreateProductDTO dto) {
@@ -351,5 +327,66 @@ public class ProductService {
         }
 
         return sb.toString().trim();
+    }
+
+    @Transactional(readOnly = true)
+    public List<ProductCardDTO> filterProductCardsByParams(MultiValueMap<String, String> queryParams) {
+        ProductFilter filter = FilterParser.parseFromParams(queryParams);
+        Specification<Product> spec = ProductSpecificationBuilder.build(filter);
+
+        List<Product> products;
+        if (spec == null) {
+            products = productRepository.findAll(Sort.by(Sort.Direction.ASC, "id")); // можно убрать сорт или поменять
+        } else {
+            products = productRepository.findAll(spec);
+        }
+
+        return products.stream().map(this::toProductCardDTO).toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<ProductCardDTO> filterProductCardsByUrl(String filtersUrl) {
+        ProductFilter filter = FilterParser.parseFromUrlString(filtersUrl);
+        Specification<Product> spec = ProductSpecificationBuilder.build(filter);
+
+        List<Product> products;
+        if (spec == null) {
+            products = productRepository.findAll();
+        } else {
+            products = productRepository.findAll(spec);
+        }
+
+        return products.stream().map(this::toProductCardDTO).toList();
+    }
+
+    private ProductCardDTO toProductCardDTO(Product product) {
+        String productMain = product.getImages().stream()
+                .filter(img -> Boolean.TRUE.equals(img.getIsMain()))
+                .findFirst()
+                .map(img -> "/api/products/" + product.getId() + "/images/" + img.getId())
+                .orElseGet(() -> product.getImages().stream()
+                        .findFirst()
+                        .map(img -> "/api/products/" + product.getId() + "/images/" + img.getId())
+                        .orElse(null));
+
+        List<VariantCardDTO> variantCards = product.getProductVariants().stream().map(v -> {
+            String variantImage = product.getImages().stream()
+                    .filter(img -> img.getProductVariant() != null && img.getProductVariant().getId().equals(v.getId()))
+                    .findFirst()
+                    .map(img -> "/api/products/" + product.getId() + "/images/" + img.getId())
+                    .orElse(productMain);
+
+            return new VariantCardDTO(
+                    v.getId(),
+                    v.getDisplayName() != null && !v.getDisplayName().isBlank()
+                            ? v.getDisplayName()
+                            : (product.getName() + (v.getWeight() != null ? (", " + v.getWeight() + " кг") : "")),
+                    v.getPrice(),
+                    v.getStock(),
+                    variantImage
+            );
+        }).toList();
+
+        return new ProductCardDTO(product.getId(), product.getName(), variantCards);
     }
 }

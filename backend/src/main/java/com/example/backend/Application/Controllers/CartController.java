@@ -28,16 +28,18 @@ public class CartController {
         this.cartService = cartService;
     }
 
-    public static record AddToCartRequest(Long variantId) {}
+    public static record AddToCartRequest(Long variantId, Integer quantity) {}
 
     @PostMapping
     public ResponseEntity<CartResponseDTO> createCart(@AuthenticationPrincipal CustomUserDetails principal,
                                                       @RequestBody AddToCartRequest request) throws InvalidRequestException {
         Long userId = principal.getId();
-        Cart cart = cartService.addProductVariantToCart(userId, request.variantId());
+        int qty = (request.quantity() == null || request.quantity() == 0) ? 1 : request.quantity();
+        Cart cart = cartService.addProductVariantToCart(userId, request.variantId(), qty);
         CartResponseDTO dto = toCartResponseDTO(cart);
         return ResponseEntity.ok(dto);
     }
+
 
     @PostMapping("/{variantId}/inc")
     public ResponseEntity<CartResponseDTO> increaseItemInCart(@AuthenticationPrincipal CustomUserDetails principal,
