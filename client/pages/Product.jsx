@@ -104,7 +104,6 @@ async function apiRemoveFavorite(variantId, authToken) {
   return false;
 }
 
-
 const loadSet = (key) => {
   try {
     const raw = sessionStorage.getItem(key);
@@ -433,145 +432,159 @@ export default function Product() {
     };
   }, [selectedVariant?.id, cartKey, favKey]);
 
-  // ---------- добавление в корзину ----------
-  const handleAddToCart = async () => {
-  const vid = selectedVariant?.id;
-  if (!vid || adding) return;
+  // Функция для изменения количества товара в корзине
+  const changeQuantityOnServer = async (variantId, newQuantity) => {
+    const headers = {
+      "Content-Type": "application/json",
+      ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
+    };
 
-  setAdding(true);
-
-  // если уже в корзине → удалить
-  if (inCart) {
     try {
-      const res = await fetch(`/api/cart/${encodeURIComponent(vid)}`, {
+      // Сначала удаляем товар из корзины, если он там есть
+      await fetch(`/api/cart/${encodeURIComponent(variantId)}`, {
         method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${authToken}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ variantId: Number(vid), quantity: 1 }),
+        headers,
+        body: JSON.stringify({
+          variantId: Number(variantId),
+          quantity: 1,
+        }),
       });
 
-      if (res.ok) {
-        console.log("✅ Товар удалён из корзины:", vid);
-        const set = loadSet(cartKey);
-        set.delete(String(vid));
-        saveSet(cartKey, set);
-        setInCart(false);
-        window.dispatchEvent(new Event("cart:update"));
-        try {
-          window.dispatchEvent(new Event("cart:changed"));
-        } catch {}
-      } else {
-        console.warn("Ошибка при удалении:", res.status, await res.text());
+      // Затем добавляем товар с нужным количеством
+      const res = await fetch("/api/cart", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          variantId: Number(variantId),
+          quantity: newQuantity,
+        }),
+      });
+
+      if (!res.ok) {
+        const text = await res.text().catch(() => "");
+        console.warn("Ошибка при установке количества:", res.status, text);
+        return false;
       }
+
+      return true;
     } catch (e) {
-      console.warn("Ошибка удаления из корзины:", e);
-    } finally {
-      setAdding(false);
+      console.warn("Ошибка запроса:", e);
+      return false;
     }
-    return;
-  }
+  };
 
-  // если не в корзине → добавить
-  try {
-    const res = await fetch("/api/cart", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${authToken}`,
-      },
-      body: JSON.stringify({
-        variantId: Number(vid),
-        quantity: 1, // фиксированное количество при добавлении
-      }),
-    });
+  // ---------- добавление в корзину с выбранным количеством ----------
+  const handleAddToCart = async () => {
+    const vid = selectedVariant?.id;
+    if (!vid || adding) return;
 
-    if (!res.ok) {
-      const text = await res.text().catch(() => "");
-      console.warn("Ошибка при добавлении в корзину:", res.status, text);
+    setAdding(true);
+
+    // если уже в корзине → обновляем количество
+    if (inCart) {
+      try {
+        const ok = await changeQuantityOnServer(vid, qty);
+        if (ok) {
+          console.log("✅ Количество товара обновлено:", vid, "Количество:", qty);
+          window.dispatchEvent(new Event("cart:update"));
+          try {
+            window.dispatchEvent(new Event("cart:changed"));
+          } catch {}
+        } else {
+          console.warn("Не удалось обновить количество товара");
+        }
+      } catch (e) {
+        console.warn("Ошибка обновления количества:", e);
+      } finally {
+        setAdding(false);
+      }
       return;
     }
 
-    const data = await res.json();
-    console.log("✅ Добавлено в корзину:", data);
-
-    const set = loadSet(cartKey);
-    set.add(String(vid));
-    saveSet(cartKey, set);
-    setInCart(true);
-    window.dispatchEvent(new Event("cart:update"));
+    // если не в корзине → добавляем с нужным количеством
     try {
-      window.dispatchEvent(new Event("cart:changed"));
-    } catch {}
-  } catch (e) {
-    console.warn("Ошибка запроса:", e);
-  } finally {
-    setAdding(false);
-  }
-};
+      const ok = await changeQuantityOnServer(vid, qty);
+      if (!ok) {
+        console.warn("Не удалось добавить товар в корзину");
+        return;
+      }
 
+      console.log("✅ Добавлено в корзину:", vid, "Количество:", qty);
+
+      const set = loadSet(cartKey);
+      set.add(String(vid));
+      saveSet(cartKey, set);
+      setInCart(true);
+      window.dispatchEvent(new Event("cart:update"));
+      try {
+        window.dispatchEvent(new Event("cart:changed"));
+      } catch {}
+    } catch (e) {
+      console.warn("Ошибка запроса:", e);
+    } finally {
+      setAdding(false);
+      // Сбрасываем количество обратно к 1 после успешного добавления
+      setQty(1);
+    }
+  };
 
   // ---------- избранное ----------
-  // ---------- избранное ----------
-const handleToggleFavorite = async () => {
-  const vidStr = String(selectedVariant?.id ?? "");
-  if (!vidStr) return;
+  const handleToggleFavorite = async () => {
+    const vidStr = String(selectedVariant?.id ?? "");
+    if (!vidStr) return;
 
-  const vidNum = Number(vidStr);
-  const favSet = loadSet(favKey);
-  const nowFav = favSet.has(vidStr);
+    const vidNum = Number(vidStr);
+    const favSet = loadSet(favKey);
+    const nowFav = favSet.has(vidStr);
 
-  // оптимистично переключаем UI + sessionStorage
-  setIsFav(!nowFav);
-  if (!nowFav) favSet.add(vidStr);
-  else favSet.delete(vidStr);
-  saveSet(favKey, favSet);
+    // оптимистично переключаем UI + sessionStorage
+    setIsFav(!nowFav);
+    if (!nowFav) favSet.add(vidStr);
+    else favSet.delete(vidStr);
+    saveSet(favKey, favSet);
 
-  try {
-    if (!nowFav) {
-      // добавить в избранное
-      await apiAddFavorite(vidNum, authToken);
-    } else {
-      // удалить из избранного
-      const ok = await apiRemoveFavorite(vidNum, authToken);
-      if (!ok) throw new Error("favorites delete failed");
+    try {
+      if (!nowFav) {
+        // добавить в избранное
+        await apiAddFavorite(vidNum, authToken);
+      } else {
+        // удалить из избранного
+        const ok = await apiRemoveFavorite(vidNum, authToken);
+        if (!ok) throw new Error("favorites delete failed");
+      }
+      // обновить бейджи/прочие слушатели
+      try { window.dispatchEvent(new Event("favorites:update")); } catch {}
+      try { window.dispatchEvent(new Event("favs:changed")); } catch {}
+    } catch (e) {
+      // откат при ошибке
+      const rollback = loadSet(favKey);
+      if (!nowFav) {
+        rollback.delete(vidStr);
+        setIsFav(false);
+      } else {
+        rollback.add(vidStr);
+        setIsFav(true);
+      }
+      saveSet(favKey, rollback);
+      console.warn("[favorites] api error:", e);
     }
-    // обновить бейджи/прочие слушатели
-    try { window.dispatchEvent(new Event("favorites:update")); } catch {}
-    try { window.dispatchEvent(new Event("favs:changed")); } catch {}
-  } catch (e) {
-    // откат при ошибке
-    const rollback = loadSet(favKey);
-    if (!nowFav) {
-      rollback.delete(vidStr);
-      setIsFav(false);
-    } else {
-      rollback.add(vidStr);
-      setIsFav(true);
-    }
-    saveSet(favKey, rollback);
-    console.warn("[favorites] api error:", e);
-  }
-};
-
-
+  };
 
   // ---------- загрузочные и ошибочные состояния ----------
   if (loading) {
     return (
-      <div className="min-h-screen bg-white flex flex-col">
+      <div className="flex flex-col min-h-screen bg-white">
         <Header />
         <main className="flex-1">
           <div className="container mx-auto px-4 py-10 md:px-10 lg:px-[84px]">
-            <div className="animate-pulse space-y-4">
-              <div className="h-6 w-40 bg-gray-200 rounded" />
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="h-80 bg-gray-200 rounded" />
+            <div className="space-y-4 animate-pulse">
+              <div className="w-40 h-6 bg-gray-200 rounded" />
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                <div className="bg-gray-200 rounded h-80" />
                 <div className="space-y-3">
-                  <div className="h-6 bg-gray-200 w-2/3 rounded" />
-                  <div className="h-6 bg-gray-200 w-1/3 rounded" />
-                  <div className="h-10 bg-gray-200 w-40 rounded" />
+                  <div className="w-2/3 h-6 bg-gray-200 rounded" />
+                  <div className="w-1/3 h-6 bg-gray-200 rounded" />
+                  <div className="w-40 h-10 bg-gray-200 rounded" />
                 </div>
               </div>
             </div>
@@ -584,7 +597,7 @@ const handleToggleFavorite = async () => {
 
   if (failed || !product) {
     return (
-      <div className="min-h-screen bg-white flex flex-col">
+      <div className="flex flex-col min-h-screen bg-white">
         <Header />
         <main className="flex-1">
           <div className="container mx-auto px-4 py-10 md:px-10 lg:px-[84px]">
@@ -609,7 +622,7 @@ const handleToggleFavorite = async () => {
   const mainImage = gallery[selectedImageIdx]?.url || "/korm1.svg";
 
   return (
-    <div className="min-h-screen bg-white flex flex-col">
+    <div className="flex flex-col min-h-screen bg-white">
       <Header />
       <main className="flex-1">
         <div className="container mx-auto px-4 py-6 md:px-10 lg:px-[84px] md:py-8">
@@ -673,10 +686,11 @@ const handleToggleFavorite = async () => {
                 <div className="text-[24px] font-semibold text-[#1E1E1E]">
                   {priceStr}
                 </div>
+                {/* Счетчик количества */}
                 <div className="inline-flex h-9 items-center rounded-full border border-[#1E1E1E]">
                   <button
                     onClick={() => setQty((n) => Math.max(1, n - 1))}
-                    className="h-9 w-9 text-[18px]"
+                    className="h-9 w-9 text-[18px] hover:bg-gray-100 rounded-l-full"
                   >
                     –
                   </button>
@@ -685,7 +699,7 @@ const handleToggleFavorite = async () => {
                   </span>
                   <button
                     onClick={() => setQty((n) => n + 1)}
-                    className="h-9 w-9 text-[18px]"
+                    className="h-9 w-9 text-[18px] hover:bg-gray-100 rounded-r-full"
                   >
                     +
                   </button>
@@ -705,7 +719,6 @@ const handleToggleFavorite = async () => {
                         <button
                           key={opt.id}
                           onClick={() => handleSelectWeight(idx)}
-                          // Визуально отмечаем недоступные, но НЕ блокируем клик
                           className={`h-9 rounded-full px-4 text-[12px] transition ${
                             active
                               ? "bg-[#6F2A2B] text-white"
@@ -719,7 +732,6 @@ const handleToggleFavorite = async () => {
                         </button>
                       );
                     })}
-
                   </div>
                 </div>
               )}
@@ -737,12 +749,12 @@ const handleToggleFavorite = async () => {
                   >
                     {inCart ? (
                       <span className="flex items-center justify-center gap-1">
-                        <Check className="w-4 h-4" /> В корзине
+                        <Check className="w-4 h-4" /> В корзине ({qty} шт.)
                       </span>
                     ) : adding ? (
                       "Добавление..."
                     ) : (
-                      "Добавить в корзину"
+                      `Добавить в корзину ${qty > 1 ? `(${qty} шт.)` : ''}`
                     )}
                   </Button>
                 ) : (

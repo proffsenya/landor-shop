@@ -145,7 +145,6 @@ export default function Cart() {
     }
 
     try {
-      // твой бек принимает DELETE /api/cart/{variantId} с JSON-телом
       const r = await fetch(`/api/cart/${encodeURIComponent(vId)}`, {
         method: "DELETE",
         headers,
@@ -278,6 +277,12 @@ export default function Cart() {
   }, [items]);
 
   const onPay = () => {
+    // Проверяем, есть ли выбранные товары
+    if (selected.size === 0) {
+      showToast("Выберите товары для оформления заказа");
+      return;
+    }
+
     console.log("Текущая корзина:");
     items.forEach((i) => {
       console.log({
@@ -640,4 +645,3 @@ export default function Cart() {
     </div>
   );
 }
-
