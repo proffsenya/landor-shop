@@ -57,7 +57,7 @@ export default function Footer() {
             <ul className="space-y-1 text-xs sm:space-y-2 sm:text-sm">
               <li><a href="#" className="hover:opacity-70">О компании</a></li>
               <li><a href="#" className="hover:opacity-70">Сотрудничество</a></li>
-              <li><a href="#" className="hover:opacity-70">Питомники</a></li>
+              <li><a href="#" className="hover:opacity-70">Заводчики</a></li>
             </ul>
           </div>
 

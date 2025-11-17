@@ -2,14 +2,14 @@ export default function Benefits() {
   const benefits = [
     {
       title: "Конкурентные цены",
-      description: "Стоимость нашей продукции дешевле чем у конкурентов",
+      description: "Мы готовы предложить Вам корма по привлекательным ценам",
       icon: (
         <img src="/benefits/prices.svg" className="w-14 h-14 sm:w-16 sm:h-16" viewBox="0 0 90 91" fill="none"></img>
       ),
     },
     {
       title: "Быстрая доставка",
-      description: "Доставка в нашем интернет магазине всего 1 день",
+      description: "Доставка в нашем интернет магазине от 1 дня",
       icon: (
         <img 
           src="/benefits/delivery-truck.svg" 
@@ -41,22 +41,22 @@ export default function Benefits() {
       ),
     },
     {
-      title: "Гарантия качества",
-      description: "У нашего магазина есть гарантия качества от производителя",
+      title: "Приятные бонусы",
+      description: "Регулярные акции и скидки на нашем сайте",
       icon: (
         <img 
-          src="/benefits/factory.svg"  
+          src="/benefits/gift-box.png"  
           alt="Quality" 
           className="object-contain w-16 h-16 sm:w-20 sm:h-20"
         />
       ),
     },
     {
-      title: "Гарантия качества",
-      description: "У нашего магазина есть гарантия качества от производителя",
+      title: "Доставка по россии",
+      description: "Мы предлагаем доставку ТК в большинство регионов страны",
       icon: (
         <img 
-          src="/benefits/factory.svg"  
+          src="/benefits/location.png"  
           alt="Quality" 
           className="object-contain w-16 h-16 sm:w-20 sm:h-20"
         />
