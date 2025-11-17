@@ -5,7 +5,7 @@ import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ChevronDown, ChevronUp, Filter, Search, X } from "lucide-react";
+import { ChevronDown, ChevronUp, Filter, X } from "lucide-react";
 import ProductCard from "@/components/ProductCard";
 import AccordionMotion from "@/utils/AccordionMotion";
 import { motion } from "framer-motion";
@@ -22,8 +22,15 @@ const FilterSection = ({ title, children, isExpanded = true }) => {
         className="flex items-center justify-between w-full mb-3 font-medium text-left text-gray-900 select-none"
       >
         <span>{title}</span>
-        <motion.div animate={{ rotate: expanded ? 180 : 0 }} transition={{ duration: 0.25 }}>
-          {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+        <motion.div
+          animate={{ rotate: expanded ? 180 : 0 }}
+          transition={{ duration: 0.25 }}
+        >
+          {expanded ? (
+            <ChevronUp className="w-4 h-4" />
+          ) : (
+            <ChevronDown className="w-4 h-4" />
+          )}
         </motion.div>
       </button>
 
@@ -34,7 +41,7 @@ const FilterSection = ({ title, children, isExpanded = true }) => {
   );
 };
 
-// ---------- Хелперы названий (фикс undefined) ----------
+// ---------- Хелперы названий ----------
 const getProductName = (p) =>
   p?.name ??
   p?.title ??
@@ -43,25 +50,10 @@ const getProductName = (p) =>
   p?.displayName ??
   "Товар";
 
-const normalizeWeight = (w) => {
-  if (typeof w === "string") {
-    const n = Number.parseFloat(w.replace(",", "."));
-    return Number.isFinite(n) ? n : null;
-  }
-  return Number.isFinite(w) ? w : null;
-};
+const getVariantDisplayName = (_, v) =>
+  v?.display_name ?? v?.displayName ?? v?.name ?? "Товар";
 
-const weightLabel = (w) => {
-  const n = normalizeWeight(w);
-  if (n == null) return "";
-  return ` • ${n % 1 === 0 ? `${n} кг` : `${n.toFixed(3)} кг`}`;
-};
-
-const getVariantDisplayName = (_, v) => {
-  return v?.display_name ?? v?.displayName ?? v?.name ?? "Товар";
-};
-
-// ---------- Получение первой картинки из разных структур ----------
+// ---------- Получение первой картинки ----------
 const getFirstImage = (product) => {
   const images =
     (Array.isArray(product?.images) && product.images) ||
@@ -79,19 +71,24 @@ const getFirstImage = (product) => {
   return first.url || first.path || first.src || "/korm1.svg";
 };
 
+// ---------- Преобразование продукта в карточки ----------
 const expandProductToCards = (product) => {
   const firstImage = getFirstImage(product);
 
   if (Array.isArray(product?.variants) && product.variants.length > 0) {
     return product.variants.map((v, idx) => {
       const price = Number(v?.price ?? 0);
-      const variantId = v?.id ?? v?.sku ?? `${product.id ?? product.slug}-v${idx}`;
-      const imageUrl = typeof v?.imageUrl === "string" && v.imageUrl.length > 0 ? v.imageUrl : firstImage;
+      const variantId =
+        v?.id ?? v?.sku ?? `${product.id ?? product.slug}-v${idx}`;
+      const imageUrl =
+        typeof v?.imageUrl === "string" && v.imageUrl.length > 0
+          ? v.imageUrl
+          : firstImage;
       const stock = Number(v?.stock ?? 0);
 
       return {
         cardId: `p-${product.id ?? product.slug}-v-${variantId}`,
-        id: variantId,                                  
+        id: variantId,
         parentId: product?.id ?? product?.slug ?? null,
         title: getVariantDisplayName(product, v),
         image: imageUrl,
@@ -103,7 +100,8 @@ const expandProductToCards = (product) => {
 
   // Без variants -> одна карточка
   const price = Number(product?.price ?? 0);
-  const pid = product?.id ?? product?.slug ?? Math.random().toString(36).slice(2);
+  const pid =
+    product?.id ?? product?.slug ?? Math.random().toString(36).slice(2);
   const stock = Number(product?.stock ?? 0);
 
   return [
@@ -153,7 +151,7 @@ export default function Catalog() {
     large: false,
   });
   const [minicatFilters, setMiniCatFilters] = useState({
-    forKittens: false, // Только один фильтр для котят
+    forKittens: false,
   });
   const [minidogFilters, setMiniDogFilters] = useState({
     small: false,
@@ -191,72 +189,7 @@ export default function Catalog() {
   const ITEMS_PER_PAGE = 12;
   const [page, setPage] = useState(1);
 
-  // ---------- API: загрузка карточек ----------
-  const fetchCards = async (searchParams = "") => {
-    setLoading(true);
-    setError("");
-    try {
-      const url = searchParams ? `/api/products/cards?${searchParams}` : `/api/products/cards`;
-      const res = await fetch(url);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
-      const cards = Array.isArray(data) ? data.flatMap(expandProductToCards) : [];
-      setProducts(cards);
-      setPage(1);
-      sessionStorage.setItem("catalog:all", JSON.stringify(data));
-    } catch (e) {
-      setProducts([]);
-      setPage(1);
-      setError(e?.message || "Ошибка загрузки");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // первая загрузка (учтём query из адресной строки)
-  useEffect(() => {
-    fetchCards(window.location.search?.replace(/^\?/, ""));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // фильтрация на клиенте по поиску/цене
-  const filtered = useMemo(() => {
-    const q = searchQuery.trim().toLowerCase();
-    const from = priceFrom ? Number(priceFrom) : null;
-    const to = priceTo ? Number(priceTo) : null;
-
-    return products.filter((p) => {
-      const title = (p.title ?? p.name ?? "").toString().toLowerCase();
-      const price = Number(p.price ?? 0);
-      const byQuery = q ? title.includes(q) : true;
-      const byFrom = from !== null ? price >= from : true;
-      const byTo = to !== null ? price <= to : true;
-      return byQuery && byFrom && byTo;
-    });
-  }, [products, searchQuery, priceFrom, priceTo]);
-
-  const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE));
-
-  useEffect(() => {
-    if (page > totalPages) setPage(totalPages);
-  }, [page, totalPages]);
-
-  const paged = useMemo(() => {
-    const start = (page - 1) * ITEMS_PER_PAGE;
-    return filtered.slice(start, start + ITEMS_PER_PAGE);
-  }, [filtered, page]);
-
-  const goto = (p) => setPage(Math.min(Math.max(1, p), totalPages));
-
-  const handleCategoryChange = (category) => {
-    if (category === "all") {
-      setCategoryFilters({ all: true, dry: false, wet: false, litter: false, goodies: false });
-    } else {
-      setCategoryFilters((prev) => ({ ...prev, all: false, [category]: !prev[category] }));
-    }
-  };
-
-  // ---------- Query params генерация ----------
+  // ---------- Генерация query-строки для фильтров ----------
   const generateQueryParams = () => {
     const queryParams = new URLSearchParams();
 
@@ -289,13 +222,104 @@ export default function Catalog() {
     if (priceTo) queryParams.append("price_to", priceTo);
     if (searchQuery) queryParams.append("search_query", searchQuery);
 
-    return queryParams.toString();
+    return queryParams.toString(); // БЕЗ начального "?"
+  };
+
+  // ---------- API: /api/products/cards/search-by-url?filtersUrl=<строка> ----------
+  const fetchCards = async (filtersUrlString = "") => {
+    setLoading(true);
+    setError("");
+
+    try {
+      // filtersUrlString ожидается в формате "?category_dry=true&brand_landy=true"
+      const filtersUrlValue =
+        filtersUrlString || window.location.search || ""; // может быть "" либо "?..."
+
+      const url = `/api/products/cards/search-by-url?filtersUrl=${encodeURIComponent(
+        filtersUrlValue
+      )}`;
+
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+      const data = await res.json();
+      const cards = Array.isArray(data)
+        ? data.flatMap(expandProductToCards)
+        : [];
+      setProducts(cards);
+      setPage(1);
+      sessionStorage.setItem("catalog:all", JSON.stringify(data));
+    } catch (e) {
+      setProducts([]);
+      setPage(1);
+      setError(e?.message || "Ошибка загрузки");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // первая загрузка: используем то, что уже есть в адресной строке
+  useEffect(() => {
+    fetchCards(window.location.search || "");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // клиентская фильтрация по поиску/цене (можно оставить)
+  const filtered = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    const from = priceFrom ? Number(priceFrom) : null;
+    const to = priceTo ? Number(priceTo) : null;
+
+    return products.filter((p) => {
+      const title = (p.title ?? p.name ?? "").toString().toLowerCase();
+      const price = Number(p.price ?? 0);
+      const byQuery = q ? title.includes(q) : true;
+      const byFrom = from !== null ? price >= from : true;
+      const byTo = to !== null ? price <= to : true;
+      return byQuery && byFrom && byTo;
+    });
+  }, [products, searchQuery, priceFrom, priceTo]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE));
+
+  useEffect(() => {
+    if (page > totalPages) setPage(totalPages);
+  }, [page, totalPages]);
+
+  const paged = useMemo(() => {
+    const start = (page - 1) * ITEMS_PER_PAGE;
+    return filtered.slice(start, start + ITEMS_PER_PAGE);
+  }, [filtered, page]);
+
+  const goto = (p) => setPage(Math.min(Math.max(1, p), totalPages));
+
+  const handleCategoryChange = (category) => {
+    if (category === "all") {
+      setCategoryFilters({
+        all: true,
+        dry: false,
+        wet: false,
+        litter: false,
+        goodies: false,
+      });
+    } else {
+      setCategoryFilters((prev) => ({
+        ...prev,
+        all: false,
+        [category]: !prev[category],
+      }));
+    }
   };
 
   const handleApplyFilters = () => {
-    const queryParams = generateQueryParams();
-    window.history.pushState({}, "", "?" + queryParams);
-    fetchCards(queryParams);
+    const queryParams = generateQueryParams(); // "category_dry=true&brand_landy=true"
+    const filtersUrlString = queryParams ? `?${queryParams}` : "";
+
+    // обновляем URL страницы
+    window.history.pushState({}, "", filtersUrlString || window.location.pathname);
+
+    // отправляем в бэк именно эту строку
+    fetchCards(filtersUrlString);
     setMobileFiltersOpen(false);
   };
 
@@ -357,16 +381,19 @@ export default function Catalog() {
     setPriceTo("");
     setSearchQuery("");
 
+    // чистим URL
     window.history.pushState({}, "", window.location.pathname);
+
+    // отправляем пустую строку в filtersUrl
     fetchCards("");
     setMobileFiltersOpen(false);
   };
 
-  // Мобильные фильтры компонент
+  // Мобильные фильтры
   const MobileFilters = () => (
     <div className="fixed inset-0 z-50 bg-white lg:hidden">
       <div className="flex flex-col h-full">
-        {/* Хедер мобильных фильтров */}
+        {/* Хедер */}
         <div className="flex items-center justify-between p-4 border-b border-gray-200">
           <h2 className="text-lg font-bold text-gray-900">Фильтры</h2>
           <button
@@ -377,29 +404,44 @@ export default function Catalog() {
           </button>
         </div>
 
-        {/* Контент фильтров с прокруткой */}
+        {/* Контент фильтров */}
         <div className="flex-1 p-4 overflow-y-auto">
           <div className="space-y-6">
             <FilterSection title="По категории">
               <div className="space-y-2">
                 <label className="flex items-center space-x-2">
-                  <Checkbox checked={categoryFilters.all} onCheckedChange={() => handleCategoryChange("all")} />
+                  <Checkbox
+                    checked={categoryFilters.all}
+                    onCheckedChange={() => handleCategoryChange("all")}
+                  />
                   <span className="text-sm">Все корма</span>
                 </label>
                 <label className="flex items-center space-x-2">
-                  <Checkbox checked={categoryFilters.dry} onCheckedChange={() => handleCategoryChange("dry")} />
+                  <Checkbox
+                    checked={categoryFilters.dry}
+                    onCheckedChange={() => handleCategoryChange("dry")}
+                  />
                   <span className="text-sm">Сухие корма</span>
                 </label>
                 <label className="flex items-center space-x-2">
-                  <Checkbox checked={categoryFilters.wet} onCheckedChange={() => handleCategoryChange("wet")} />
+                  <Checkbox
+                    checked={categoryFilters.wet}
+                    onCheckedChange={() => handleCategoryChange("wet")}
+                  />
                   <span className="text-sm">Влажные корма</span>
                 </label>
                 <label className="flex items-center space-x-2">
-                  <Checkbox checked={categoryFilters.litter} onCheckedChange={() => handleCategoryChange("litter")} />
+                  <Checkbox
+                    checked={categoryFilters.litter}
+                    onCheckedChange={() => handleCategoryChange("litter")}
+                  />
                   <span className="text-sm">Наполнители</span>
                 </label>
                 <label className="flex items-center space-x-2">
-                  <Checkbox checked={categoryFilters.goodies} onCheckedChange={() => handleCategoryChange("goodies")} />
+                  <Checkbox
+                    checked={categoryFilters.goodies}
+                    onCheckedChange={() => handleCategoryChange("goodies")}
+                  />
                   <span className="text-sm">Лакомства</span>
                 </label>
               </div>
@@ -407,16 +449,34 @@ export default function Catalog() {
 
             <FilterSection title="По стоимости">
               <div className="flex space-x-2">
-                <Input placeholder="от" value={priceFrom} onChange={(e) => setPriceFrom(e.target.value)} className="flex-1" />
-                <Input placeholder="до" value={priceTo} onChange={(e) => setPriceTo(e.target.value)} className="flex-1" />
+                <Input
+                  placeholder="от"
+                  value={priceFrom}
+                  onChange={(e) => setPriceFrom(e.target.value)}
+                  className="flex-1"
+                />
+                <Input
+                  placeholder="до"
+                  value={priceTo}
+                  onChange={(e) => setPriceTo(e.target.value)}
+                  className="flex-1"
+                />
               </div>
             </FilterSection>
 
-            {/* Котенок - только один фильтр */}
+            {/* Котенок */}
             <FilterSection title="Котенок">
               <div className="space-y-2">
                 <label className="flex items-center space-x-2">
-                  <Checkbox checked={minicatFilters.forKittens} onCheckedChange={(c) => setMiniCatFilters(prev => ({ ...prev, forKittens: c }))} />
+                  <Checkbox
+                    checked={minicatFilters.forKittens}
+                    onCheckedChange={(c) =>
+                      setMiniCatFilters((prev) => ({
+                        ...prev,
+                        forKittens: c,
+                      }))
+                    }
+                  />
                   <span className="text-sm">Для котят</span>
                 </label>
               </div>
@@ -426,23 +486,52 @@ export default function Catalog() {
             <FilterSection title="Кошка">
               <div className="space-y-2">
                 <label className="flex items-center space-x-2">
-                  <Checkbox checked={catFilters.sterilized} onCheckedChange={(c) => setCatFilters(prev => ({ ...prev, sterilized: c }))} />
+                  <Checkbox
+                    checked={catFilters.sterilized}
+                    onCheckedChange={(c) =>
+                      setCatFilters((prev) => ({ ...prev, sterilized: c }))
+                    }
+                  />
                   <span className="text-sm">Для стерилизованных</span>
                 </label>
                 <label className="flex items-center space-x-2">
-                  <Checkbox checked={catFilters.skin} onCheckedChange={(c) => setCatFilters(prev => ({ ...prev, skin: c }))} />
-                  <span className="text-sm">Для здоровья кожи и блеска шерсти</span>
+                  <Checkbox
+                    checked={catFilters.skin}
+                    onCheckedChange={(c) =>
+                      setCatFilters((prev) => ({ ...prev, skin: c }))
+                    }
+                  />
+                  <span className="text-sm">
+                    Для здоровья кожи и блеска шерсти
+                  </span>
                 </label>
                 <label className="flex items-center space-x-2">
-                  <Checkbox checked={catFilters.digestion} onCheckedChange={(c) => setCatFilters(prev => ({ ...prev, digestion: c }))} />
-                  <span className="text-sm">Для чувствительного пищеварения</span>
+                  <Checkbox
+                    checked={catFilters.digestion}
+                    onCheckedChange={(c) =>
+                      setCatFilters((prev) => ({ ...prev, digestion: c }))
+                    }
+                  />
+                  <span className="text-sm">
+                    Для чувствительного пищеварения
+                  </span>
                 </label>
                 <label className="flex items-center space-x-2">
-                  <Checkbox checked={catFilters.picky} onCheckedChange={(c) => setCatFilters(prev => ({ ...prev, picky: c }))} />
+                  <Checkbox
+                    checked={catFilters.picky}
+                    onCheckedChange={(c) =>
+                      setCatFilters((prev) => ({ ...prev, picky: c }))
+                    }
+                  />
                   <span className="text-sm">Для привередливых</span>
                 </label>
                 <label className="flex items-center space-x-2">
-                  <Checkbox checked={catFilters.indoor} onCheckedChange={(c) => setCatFilters(prev => ({ ...prev, indoor: c }))} />
+                  <Checkbox
+                    checked={catFilters.indoor}
+                    onCheckedChange={(c) =>
+                      setCatFilters((prev) => ({ ...prev, indoor: c }))
+                    }
+                  />
                   <span className="text-sm">Для домашних</span>
                 </label>
               </div>
@@ -452,15 +541,30 @@ export default function Catalog() {
             <FilterSection title="Щенок">
               <div className="space-y-2">
                 <label className="flex items-center space-x-2">
-                  <Checkbox checked={minidogFilters.small} onCheckedChange={(c) => setMiniDogFilters(prev => ({ ...prev, small: c }))} />
+                  <Checkbox
+                    checked={minidogFilters.small}
+                    onCheckedChange={(c) =>
+                      setMiniDogFilters((prev) => ({ ...prev, small: c }))
+                    }
+                  />
                   <span className="text-sm">Для мелких пород</span>
                 </label>
                 <label className="flex items-center space-x-2">
-                  <Checkbox checked={minidogFilters.medium} onCheckedChange={(c) => setMiniDogFilters(prev => ({ ...prev, medium: c }))} />
+                  <Checkbox
+                    checked={minidogFilters.medium}
+                    onCheckedChange={(c) =>
+                      setMiniDogFilters((prev) => ({ ...prev, medium: c }))
+                    }
+                  />
                   <span className="text-sm">Для средних пород</span>
                 </label>
                 <label className="flex items-center space-x-2">
-                  <Checkbox checked={minidogFilters.large} onCheckedChange={(c) => setMiniDogFilters(prev => ({ ...prev, large: c }))} />
+                  <Checkbox
+                    checked={minidogFilters.large}
+                    onCheckedChange={(c) =>
+                      setMiniDogFilters((prev) => ({ ...prev, large: c }))
+                    }
+                  />
                   <span className="text-sm">Для крупных пород</span>
                 </label>
               </div>
@@ -470,41 +574,81 @@ export default function Catalog() {
             <FilterSection title="Собака">
               <div className="space-y-2">
                 <label className="flex items-center space-x-2">
-                  <Checkbox checked={dogFilters.small} onCheckedChange={(c) => setDogFilters(prev => ({ ...prev, small: c }))} />
+                  <Checkbox
+                    checked={dogFilters.small}
+                    onCheckedChange={(c) =>
+                      setDogFilters((prev) => ({ ...prev, small: c }))
+                    }
+                  />
                   <span className="text-sm">Для мелких пород</span>
                 </label>
                 <label className="flex items-center space-x-2">
-                  <Checkbox checked={dogFilters.medium} onCheckedChange={(c) => setDogFilters(prev => ({ ...prev, medium: c }))} />
+                  <Checkbox
+                    checked={dogFilters.medium}
+                    onCheckedChange={(c) =>
+                      setDogFilters((prev) => ({ ...prev, medium: c }))
+                    }
+                  />
                   <span className="text-sm">Для средних пород</span>
                 </label>
                 <label className="flex items-center space-x-2">
-                  <Checkbox checked={dogFilters.large} onCheckedChange={(c) => setDogFilters(prev => ({ ...prev, large: c }))} />
+                  <Checkbox
+                    checked={dogFilters.large}
+                    onCheckedChange={(c) =>
+                      setDogFilters((prev) => ({ ...prev, large: c }))
+                    }
+                  />
                   <span className="text-sm">Для крупных пород</span>
                 </label>
               </div>
             </FilterSection>
 
-            {/* Страна производства */}
+            {/* Страна */}
             <FilterSection title="Страна производства">
               <div className="space-y-2">
                 <label className="flex items-center space-x-2">
-                  <Checkbox checked={countryFilters.spain} onCheckedChange={(c) => setCountryFilters(prev => ({ ...prev, spain: c }))} />
+                  <Checkbox
+                    checked={countryFilters.spain}
+                    onCheckedChange={(c) =>
+                      setCountryFilters((prev) => ({ ...prev, spain: c }))
+                    }
+                  />
                   <span className="text-sm">Испания</span>
                 </label>
                 <label className="flex items-center space-x-2">
-                  <Checkbox checked={countryFilters.germany} onCheckedChange={(c) => setCountryFilters(prev => ({ ...prev, germany: c }))} />
+                  <Checkbox
+                    checked={countryFilters.germany}
+                    onCheckedChange={(c) =>
+                      setCountryFilters((prev) => ({ ...prev, germany: c }))
+                    }
+                  />
                   <span className="text-sm">Германия</span>
                 </label>
                 <label className="flex items-center space-x-2">
-                  <Checkbox checked={countryFilters.russia} onCheckedChange={(c) => setCountryFilters(prev => ({ ...prev, russia: c }))} />
+                  <Checkbox
+                    checked={countryFilters.russia}
+                    onCheckedChange={(c) =>
+                      setCountryFilters((prev) => ({ ...prev, russia: c }))
+                    }
+                  />
                   <span className="text-sm">Россия</span>
                 </label>
                 <label className="flex items-center space-x-2">
-                  <Checkbox checked={countryFilters.belarus} onCheckedChange={(c) => setCountryFilters(prev => ({ ...prev, belarus: c }))} />
+                  <Checkbox
+                    checked={countryFilters.belarus}
+                    onCheckedChange={(c) =>
+                      setCountryFilters((prev) => ({ ...prev, belarus: c }))
+                    }
+                  />
                   <span className="text-sm">Беларусь</span>
                 </label>
                 <label className="flex items-center space-x-2">
-                  <Checkbox checked={countryFilters.china} onCheckedChange={(c) => setCountryFilters(prev => ({ ...prev, china: c }))} />
+                  <Checkbox
+                    checked={countryFilters.china}
+                    onCheckedChange={(c) =>
+                      setCountryFilters((prev) => ({ ...prev, china: c }))
+                    }
+                  />
                   <span className="text-sm">Китай</span>
                 </label>
               </div>
@@ -529,7 +673,9 @@ export default function Catalog() {
                   <label key={key} className="flex items-center space-x-2">
                     <Checkbox
                       checked={tasteFilters[key]}
-                      onCheckedChange={(c) => setTasteFilters(prev => ({ ...prev, [key]: c }))}
+                      onCheckedChange={(c) =>
+                        setTasteFilters((prev) => ({ ...prev, [key]: c }))
+                      }
                     />
                     <span className="text-sm">{label}</span>
                   </label>
@@ -549,7 +695,9 @@ export default function Catalog() {
                   <label key={key} className="flex items-center space-x-2">
                     <Checkbox
                       checked={brandFilters[key]}
-                      onCheckedChange={(c) => setBrandFilters(prev => ({ ...prev, [key]: c }))}
+                      onCheckedChange={(c) =>
+                        setBrandFilters((prev) => ({ ...prev, [key]: c }))
+                      }
                     />
                     <span className="text-sm">{label}</span>
                   </label>
@@ -559,12 +707,18 @@ export default function Catalog() {
           </div>
         </div>
 
-        {/* Футер с кнопками */}
+        {/* Футер кнопок */}
         <div className="p-4 bg-white border-t border-gray-200">
-          <Button onClick={handleApplyFilters} className="w-full bg-[hsl(var(--landor-primary))] hover:bg-[hsl(var(--landor-primary))]/90 text-white mb-3">
+          <Button
+            onClick={handleApplyFilters}
+            className="w-full bg-[hsl(var(--landor-primary))] hover:bg-[hsl(var(--landor-primary))]/90 text-white mb-3"
+          >
             Применить
           </Button>
-          <Button onClick={handleResetFilters} className="w-full text-white bg-gray-500 hover:bg-gray-600">
+          <Button
+            onClick={handleResetFilters}
+            className="w-full text-white bg-gray-500 hover:bg-gray-600"
+          >
             Сбросить фильтры
           </Button>
         </div>
@@ -576,7 +730,7 @@ export default function Catalog() {
     <div className="min-h-screen bg-white">
       <Header />
       <div className="container px-4 py-8 mx-auto">
-        {/* Мобильная панель управления */}
+        {/* Мобильная панель */}
         <div className="flex items-center gap-3 mb-6 lg:hidden">
           <Button
             onClick={() => setMobileFiltersOpen(true)}
@@ -589,30 +743,51 @@ export default function Catalog() {
 
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-4">
           {/* Левая колонка — фильтры (десктоп) */}
-          <SlideFade direction="left" distance={36} delay={0.05} className="hidden lg:block lg:col-span-1">
+          <SlideFade
+            direction="left"
+            distance={36}
+            delay={0.05}
+            className="hidden lg:block lg:col-span-1"
+          >
             <div className="p-6 bg-white border border-gray-200 rounded-lg">
               <h2 className="mb-6 text-xl font-bold text-gray-900">Фильтры</h2>
 
+              {/* Те же фильтры, что и в MobileFilters */}
               <FilterSection title="По категории">
                 <div className="space-y-2">
                   <label className="flex items-center space-x-2">
-                    <Checkbox checked={categoryFilters.all} onCheckedChange={() => handleCategoryChange("all")} />
+                    <Checkbox
+                      checked={categoryFilters.all}
+                      onCheckedChange={() => handleCategoryChange("all")}
+                    />
                     <span className="text-sm">Все корма</span>
                   </label>
                   <label className="flex items-center space-x-2">
-                    <Checkbox checked={categoryFilters.dry} onCheckedChange={() => handleCategoryChange("dry")} />
+                    <Checkbox
+                      checked={categoryFilters.dry}
+                      onCheckedChange={() => handleCategoryChange("dry")}
+                    />
                     <span className="text-sm">Сухие корма</span>
                   </label>
                   <label className="flex items-center space-x-2">
-                    <Checkbox checked={categoryFilters.wet} onCheckedChange={() => handleCategoryChange("wet")} />
+                    <Checkbox
+                      checked={categoryFilters.wet}
+                      onCheckedChange={() => handleCategoryChange("wet")}
+                    />
                     <span className="text-sm">Влажные корма</span>
                   </label>
                   <label className="flex items-center space-x-2">
-                    <Checkbox checked={categoryFilters.litter} onCheckedChange={() => handleCategoryChange("litter")} />
+                    <Checkbox
+                      checked={categoryFilters.litter}
+                      onCheckedChange={() => handleCategoryChange("litter")}
+                    />
                     <span className="text-sm">Наполнители</span>
                   </label>
                   <label className="flex items-center space-x-2">
-                    <Checkbox checked={categoryFilters.goodies} onCheckedChange={() => handleCategoryChange("goodies")} />
+                    <Checkbox
+                      checked={categoryFilters.goodies}
+                      onCheckedChange={() => handleCategoryChange("goodies")}
+                    />
                     <span className="text-sm">Лакомства</span>
                   </label>
                 </div>
@@ -620,16 +795,34 @@ export default function Catalog() {
 
               <FilterSection title="По стоимости">
                 <div className="flex space-x-2">
-                  <Input placeholder="от" value={priceFrom} onChange={(e) => setPriceFrom(e.target.value)} className="flex-1" />
-                  <Input placeholder="до" value={priceTo} onChange={(e) => setPriceTo(e.target.value)} className="flex-1" />
+                  <Input
+                    placeholder="от"
+                    value={priceFrom}
+                    onChange={(e) => setPriceFrom(e.target.value)}
+                    className="flex-1"
+                  />
+                  <Input
+                    placeholder="до"
+                    value={priceTo}
+                    onChange={(e) => setPriceTo(e.target.value)}
+                    className="flex-1"
+                  />
                 </div>
               </FilterSection>
 
-              {/* Котенок - только один фильтр */}
+              {/* Котенок */}
               <FilterSection title="Котенок">
                 <div className="space-y-2">
                   <label className="flex items-center space-x-2">
-                    <Checkbox checked={minicatFilters.forKittens} onCheckedChange={(c) => setMiniCatFilters(prev => ({ ...prev, forKittens: c }))} />
+                    <Checkbox
+                      checked={minicatFilters.forKittens}
+                      onCheckedChange={(c) =>
+                        setMiniCatFilters((prev) => ({
+                          ...prev,
+                          forKittens: c,
+                        }))
+                      }
+                    />
                     <span className="text-sm">Для котят</span>
                   </label>
                 </div>
@@ -639,23 +832,52 @@ export default function Catalog() {
               <FilterSection title="Кошка">
                 <div className="space-y-2">
                   <label className="flex items-center space-x-2">
-                    <Checkbox checked={catFilters.sterilized} onCheckedChange={(c) => setCatFilters(prev => ({ ...prev, sterilized: c }))} />
+                    <Checkbox
+                      checked={catFilters.sterilized}
+                      onCheckedChange={(c) =>
+                        setCatFilters((prev) => ({ ...prev, sterilized: c }))
+                      }
+                    />
                     <span className="text-sm">Для стерилизованных</span>
                   </label>
                   <label className="flex items-center space-x-2">
-                    <Checkbox checked={catFilters.skin} onCheckedChange={(c) => setCatFilters(prev => ({ ...prev, skin: c }))} />
-                    <span className="text-sm">Для здоровья кожи и блеска шерсти</span>
+                    <Checkbox
+                      checked={catFilters.skin}
+                      onCheckedChange={(c) =>
+                        setCatFilters((prev) => ({ ...prev, skin: c }))
+                      }
+                    />
+                    <span className="text-sm">
+                      Для здоровья кожи и блеска шерсти
+                    </span>
                   </label>
                   <label className="flex items-center space-x-2">
-                    <Checkbox checked={catFilters.digestion} onCheckedChange={(c) => setCatFilters(prev => ({ ...prev, digestion: c }))} />
-                    <span className="text-sm">Для чувствительного пищеварения</span>
+                    <Checkbox
+                      checked={catFilters.digestion}
+                      onCheckedChange={(c) =>
+                        setCatFilters((prev) => ({ ...prev, digestion: c }))
+                      }
+                    />
+                    <span className="text-sm">
+                      Для чувствительного пищеварения
+                    </span>
                   </label>
                   <label className="flex items-center space-x-2">
-                    <Checkbox checked={catFilters.picky} onCheckedChange={(c) => setCatFilters(prev => ({ ...prev, picky: c }))} />
+                    <Checkbox
+                      checked={catFilters.picky}
+                      onCheckedChange={(c) =>
+                        setCatFilters((prev) => ({ ...prev, picky: c }))
+                      }
+                    />
                     <span className="text-sm">Для привередливых</span>
                   </label>
                   <label className="flex items-center space-x-2">
-                    <Checkbox checked={catFilters.indoor} onCheckedChange={(c) => setCatFilters(prev => ({ ...prev, indoor: c }))} />
+                    <Checkbox
+                      checked={catFilters.indoor}
+                      onCheckedChange={(c) =>
+                        setCatFilters((prev) => ({ ...prev, indoor: c }))
+                      }
+                    />
                     <span className="text-sm">Для домашних</span>
                   </label>
                 </div>
@@ -665,15 +887,30 @@ export default function Catalog() {
               <FilterSection title="Щенок">
                 <div className="space-y-2">
                   <label className="flex items-center space-x-2">
-                    <Checkbox checked={minidogFilters.small} onCheckedChange={(c) => setMiniDogFilters(prev => ({ ...prev, small: c }))} />
+                    <Checkbox
+                      checked={minidogFilters.small}
+                      onCheckedChange={(c) =>
+                        setMiniDogFilters((prev) => ({ ...prev, small: c }))
+                      }
+                    />
                     <span className="text-sm">Для мелких пород</span>
                   </label>
                   <label className="flex items-center space-x-2">
-                    <Checkbox checked={minidogFilters.medium} onCheckedChange={(c) => setMiniDogFilters(prev => ({ ...prev, medium: c }))} />
+                    <Checkbox
+                      checked={minidogFilters.medium}
+                      onCheckedChange={(c) =>
+                        setMiniDogFilters((prev) => ({ ...prev, medium: c }))
+                      }
+                    />
                     <span className="text-sm">Для средних пород</span>
                   </label>
                   <label className="flex items-center space-x-2">
-                    <Checkbox checked={minidogFilters.large} onCheckedChange={(c) => setMiniDogFilters(prev => ({ ...prev, large: c }))} />
+                    <Checkbox
+                      checked={minidogFilters.large}
+                      onCheckedChange={(c) =>
+                        setMiniDogFilters((prev) => ({ ...prev, large: c }))
+                      }
+                    />
                     <span className="text-sm">Для крупных пород</span>
                   </label>
                 </div>
@@ -683,41 +920,81 @@ export default function Catalog() {
               <FilterSection title="Собака">
                 <div className="space-y-2">
                   <label className="flex items-center space-x-2">
-                    <Checkbox checked={dogFilters.small} onCheckedChange={(c) => setDogFilters(prev => ({ ...prev, small: c }))} />
+                    <Checkbox
+                      checked={dogFilters.small}
+                      onCheckedChange={(c) =>
+                        setDogFilters((prev) => ({ ...prev, small: c }))
+                      }
+                    />
                     <span className="text-sm">Для мелких пород</span>
                   </label>
                   <label className="flex items-center space-x-2">
-                    <Checkbox checked={dogFilters.medium} onCheckedChange={(c) => setDogFilters(prev => ({ ...prev, medium: c }))} />
+                    <Checkbox
+                      checked={dogFilters.medium}
+                      onCheckedChange={(c) =>
+                        setDogFilters((prev) => ({ ...prev, medium: c }))
+                      }
+                    />
                     <span className="text-sm">Для средних пород</span>
                   </label>
                   <label className="flex items-center space-x-2">
-                    <Checkbox checked={dogFilters.large} onCheckedChange={(c) => setDogFilters(prev => ({ ...prev, large: c }))} />
+                    <Checkbox
+                      checked={dogFilters.large}
+                      onCheckedChange={(c) =>
+                        setDogFilters((prev) => ({ ...prev, large: c }))
+                      }
+                    />
                     <span className="text-sm">Для крупных пород</span>
                   </label>
                 </div>
               </FilterSection>
 
-              {/* Страна производства */}
+              {/* Страна */}
               <FilterSection title="Страна производства">
                 <div className="space-y-2">
                   <label className="flex items-center space-x-2">
-                    <Checkbox checked={countryFilters.spain} onCheckedChange={(c) => setCountryFilters(prev => ({ ...prev, spain: c }))} />
+                    <Checkbox
+                      checked={countryFilters.spain}
+                      onCheckedChange={(c) =>
+                        setCountryFilters((prev) => ({ ...prev, spain: c }))
+                      }
+                    />
                     <span className="text-sm">Испания</span>
                   </label>
                   <label className="flex items-center space-x-2">
-                    <Checkbox checked={countryFilters.germany} onCheckedChange={(c) => setCountryFilters(prev => ({ ...prev, germany: c }))} />
+                    <Checkbox
+                      checked={countryFilters.germany}
+                      onCheckedChange={(c) =>
+                        setCountryFilters((prev) => ({ ...prev, germany: c }))
+                      }
+                    />
                     <span className="text-sm">Германия</span>
                   </label>
                   <label className="flex items-center space-x-2">
-                    <Checkbox checked={countryFilters.russia} onCheckedChange={(c) => setCountryFilters(prev => ({ ...prev, russia: c }))} />
+                    <Checkbox
+                      checked={countryFilters.russia}
+                      onCheckedChange={(c) =>
+                        setCountryFilters((prev) => ({ ...prev, russia: c }))
+                      }
+                    />
                     <span className="text-sm">Россия</span>
                   </label>
                   <label className="flex items-center space-x-2">
-                    <Checkbox checked={countryFilters.belarus} onCheckedChange={(c) => setCountryFilters(prev => ({ ...prev, belarus: c }))} />
+                    <Checkbox
+                      checked={countryFilters.belarus}
+                      onCheckedChange={(c) =>
+                        setCountryFilters((prev) => ({ ...prev, belarus: c }))
+                      }
+                    />
                     <span className="text-sm">Беларусь</span>
                   </label>
                   <label className="flex items-center space-x-2">
-                    <Checkbox checked={countryFilters.china} onCheckedChange={(c) => setCountryFilters(prev => ({ ...prev, china: c }))} />
+                    <Checkbox
+                      checked={countryFilters.china}
+                      onCheckedChange={(c) =>
+                        setCountryFilters((prev) => ({ ...prev, china: c }))
+                      }
+                    />
                     <span className="text-sm">Китай</span>
                   </label>
                 </div>
@@ -742,7 +1019,12 @@ export default function Catalog() {
                     <label key={key} className="flex items-center space-x-2">
                       <Checkbox
                         checked={tasteFilters[key]}
-                        onCheckedChange={(c) => setTasteFilters(prev => ({ ...prev, [key]: c }))}
+                        onCheckedChange={(c) =>
+                          setTasteFilters((prev) => ({
+                            ...prev,
+                            [key]: c,
+                          }))
+                        }
                       />
                       <span className="text-sm">{label}</span>
                     </label>
@@ -762,7 +1044,12 @@ export default function Catalog() {
                     <label key={key} className="flex items-center space-x-2">
                       <Checkbox
                         checked={brandFilters[key]}
-                        onCheckedChange={(c) => setBrandFilters(prev => ({ ...prev, [key]: c }))}
+                        onCheckedChange={(c) =>
+                          setBrandFilters((prev) => ({
+                            ...prev,
+                            [key]: c,
+                          }))
+                        }
                       />
                       <span className="text-sm">{label}</span>
                     </label>
@@ -770,10 +1057,16 @@ export default function Catalog() {
                 </div>
               </FilterSection>
 
-              <Button onClick={handleApplyFilters} className="w-full bg-[hsl(var(--landor-primary))] hover:bg-[hsl(var(--landor-primary))]/90 text-white mt-6">
+              <Button
+                onClick={handleApplyFilters}
+                className="w-full bg-[hsl(var(--landor-primary))] hover:bg-[hsl(var(--landor-primary))]/90 text-white mt-6"
+              >
                 Применить
               </Button>
-              <Button onClick={handleResetFilters} className="w-full bg-[hsl(var(--landor-primary))] hover:bg-[hsl(var(--landor-primary))]/90 text-white mt-3">
+              <Button
+                onClick={handleResetFilters}
+                className="w-full mt-3 text-white bg-gray-500 hover:bg-gray-600"
+              >
                 Сбросить фильтры
               </Button>
             </div>
@@ -783,35 +1076,60 @@ export default function Catalog() {
           <div className="lg:col-span-3">
             <ScrollFade>
               <div className="mb-6">
-                <h1 className="mb-4 text-2xl font-bold text-gray-900">Каталог</h1>
+                <h1 className="mb-4 text-2xl font-bold text-gray-900">
+                  Каталог
+                </h1>
               </div>
             </ScrollFade>
 
-            {loading && <div className="py-12 text-center text-gray-500">Загрузка…</div>}
-            {!loading && error && <div className="py-12 text-center text-red-600">Ошибка: {error}</div>}
+            {loading && (
+              <div className="py-12 text-center text-gray-500">Загрузка…</div>
+            )}
+            {!loading && error && (
+              <div className="py-12 text-center text-red-600">
+                Ошибка: {error}
+              </div>
+            )}
             {!loading && !error && products.length === 0 && (
-              <div className="py-12 text-center text-gray-500">Нет товаров</div>
+              <div className="py-12 text-center text-gray-500">
+                Нет товаров
+              </div>
             )}
 
             {!loading && !error && products.length > 0 && (
               <>
-                <StaggerParent delayChildren={0.05} stagger={0.05} key={page}>
+                <StaggerParent
+                  delayChildren={0.05}
+                  stagger={0.05}
+                  key={page}
+                >
                   <div className="grid grid-cols-1 gap-4 mb-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                     {paged.map((product) => {
-                      const isVariantCard = !!product.parentId && product.parentId !== product.id;
+                      const isVariantCard =
+                        !!product.parentId && product.parentId !== product.id;
                       const to = isVariantCard
-                        ? `/product/${encodeURIComponent(product.parentId)}?variant=${encodeURIComponent(product.id)}`
+                        ? `/product/${encodeURIComponent(
+                            product.parentId
+                          )}?variant=${encodeURIComponent(product.id)}`
                         : `/product/${encodeURIComponent(product.id)}`;
 
                       return (
                         <ProductCard
                           key={product.cardId}
                           to={to}
-                          productId={isVariantCard ? product.parentId : product.id}
-                          variantId={isVariantCard ? product.id : product.defaultVariantId || product.id}
+                          productId={
+                            isVariantCard ? product.parentId : product.id
+                          }
+                          variantId={
+                            isVariantCard
+                              ? product.id
+                              : product.defaultVariantId || product.id
+                          }
                           image={product.image}
                           title={product.title ?? product.name ?? "Товар"}
-                          price={`${Number(product.price ?? 0).toLocaleString()} ₽`}
+                          price={`${Number(
+                            product.price ?? 0
+                          ).toLocaleString()} ₽`}
                           stock={product.stock}
                         />
                       );
@@ -821,11 +1139,18 @@ export default function Catalog() {
 
                 <SlideFade direction="up" distance={20}>
                   <div className="flex items-center justify-center space-x-2">
-                    <Button variant="outline" size="sm" onClick={() => goto(page - 1)} disabled={page === 1}>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => goto(page - 1)}
+                      disabled={page === 1}
+                    >
                       &lt;
                     </Button>
 
-                    <span className="text-sm font-medium text-gray-700">{String(page).padStart(2, "0")}</span>
+                    <span className="text-sm font-medium text-gray-700">
+                      {String(page).padStart(2, "0")}
+                    </span>
 
                     <Button
                       variant="outline"
@@ -838,7 +1163,8 @@ export default function Catalog() {
                   </div>
 
                   <div className="mt-4 text-sm text-center text-gray-500">
-                    Показано {paged.length} из {filtered.length} товаров · Страница {page} из {totalPages}
+                    Показано {paged.length} из {filtered.length} товаров ·
+                    Страница {page} из {totalPages}
                   </div>
                 </SlideFade>
               </>
@@ -847,7 +1173,6 @@ export default function Catalog() {
         </div>
       </div>
 
-      {/* Мобильные фильтры (overlay) */}
       {mobileFiltersOpen && <MobileFilters />}
 
       <Footer />
