@@ -6,7 +6,7 @@ import Footer from "@/components/Footer";
 import BreadcrumbNav from "@/components/BreadcrumbNav";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Heart, Check } from "lucide-react";
-import { PageFade } from "@/utils/PageAnimations";
+import { PageFade, ToastMotion } from "@/utils/PageAnimations";
 import AccordionMotion from "@/utils/AccordionMotion";
 
 // ------------------ UI: секция-аккордеон ------------------
@@ -19,7 +19,7 @@ const CardSection = memo(({ title, defaultOpen = false, children }) => {
       <div className="rounded-lg border border-[#E6E6E6]">
         <button
           onClick={toggleOpen}
-          className="flex w-full items-center justify-between px-4 py-3 text-[15px] font-medium text-[#1E1E1E] rounded-t-lg"
+          className="flex w-full items-center justify-between px-4 py-3 text-[18px] font-medium text-[#1E1E1E] rounded-t-lg"
         >
           {title}
           <span className="inline-flex h-6 w-6 items-center justify-center text-[#6F2A2B] text-[18px]">
@@ -27,7 +27,7 @@ const CardSection = memo(({ title, defaultOpen = false, children }) => {
           </span>
         </button>
         <AccordionMotion isOpen={open}>
-          <div className="px-4 pb-4 text-[14px] leading-relaxed text-[#2a2a2a]">
+          <div className="px-4 pb-4 text-base leading-relaxed text-gray-600">
             {children}
           </div>
         </AccordionMotion>
@@ -281,6 +281,13 @@ export default function Product() {
 
   const [inCart, setInCart] = useState(false);
   const [adding, setAdding] = useState(false);
+  const [toast, setToast] = useState("");
+
+  // Функция для показа уведомлений
+  const showToast = (msg, ms = 1500) => {
+    setToast(msg);
+    setTimeout(() => setToast(""), ms);
+  };
 
   // Сохраняем ссылку на каталог с последними фильтрами
   const catalogLink = useMemo(() => {
@@ -556,8 +563,10 @@ export default function Product() {
           window.dispatchEvent(new Event("cart:changed"));
         } catch {}
         setQty(1);
+        showToast("Товар добавлен в корзину");
       } catch (err) {
         console.warn("Ошибка при добавлении в корзину:", err);
+        showToast("Не удалось добавить в корзину", 2000);
       } finally {
         setAdding(false);
       }
@@ -575,8 +584,10 @@ export default function Product() {
         try {
           window.dispatchEvent(new Event("cart:changed"));
         } catch {}
+        showToast("Товар удалён из корзины");
       } else {
         console.warn("Не удалось удалить из корзины");
+        showToast("Не получилось удалить. Повторите позже", 2000);
       }
       setAdding(false);
     }
@@ -609,6 +620,7 @@ export default function Product() {
       // обновить бейджи/прочие слушатели
       try { window.dispatchEvent(new Event("favorites:update")); } catch {}
       try { window.dispatchEvent(new Event("favs:changed")); } catch {}
+      showToast(!nowFav ? "Товар добавлен в избранное" : "Товар удалён из избранного");
     } catch (e) {
       // откат при ошибке
       const rollback = loadSet(favKey);
@@ -621,6 +633,7 @@ export default function Product() {
       }
       saveSet(favKey, rollback);
       console.warn("[favorites] api error:", e);
+      showToast("Не удалось изменить избранное", 2000);
     }
   };
 
@@ -690,7 +703,7 @@ export default function Product() {
             {/* Карусель изображений */}
             <div className="flex flex-col w-full">
               <div className="rounded-lg border border-[#E6E6E6] bg-white p-2">
-                <div className="flex w-full items-center justify-center overflow-hidden rounded-md bg-[#F2F2F2] h-64 md:h-[360px]">
+                <div className="flex w-full items-center justify-center overflow-hidden rounded-md bg-white h-64 md:h-[360px]">
                   <img
                     src={mainImage}
                     alt={gallery[selectedImageIdx]?.altText || title}
@@ -708,11 +721,11 @@ export default function Product() {
                   <button
                     key={img.id ?? i}
                     onClick={() => setSelectedImageIdx(i)}
-                    className={`overflow-hidden rounded-md border ${
+                    className={`overflow-hidden rounded-md ${
                       selectedImageIdx === i
-                        ? "border-[#6F2A2B]"
-                        : "border-[#E6E6E6]"
-                    } bg-[#F7F7F7] h-16`}
+                        ? "ring-2 ring-[#6F2A2B]"
+                        : ""
+                    } bg-white h-16`}
                     title={img.altText || ""}
                   >
                     <img
@@ -866,17 +879,17 @@ export default function Product() {
 
           <div className="mt-8 space-y-3">
             <CardSection title="Описание" defaultOpen>
-              <p className="text-[13px] leading-relaxed text-[#1E1E1E] whitespace-pre-line">
+              <p className="text-base leading-relaxed text-gray-600 whitespace-pre-line">
                 {description}
               </p>
             </CardSection>
             <CardSection title="Гарантируемые показатели" defaultOpen>
-              <p className="text-[13px] leading-relaxed text-[#1E1E1E] whitespace-pre-line">
+              <p className="text-base leading-relaxed text-gray-600 whitespace-pre-line">
                 {guaranteedIndicators}
               </p>
             </CardSection>
             <CardSection title="Нормы кормления" defaultOpen>
-              <p className="text-[13px] leading-relaxed text-[#1E1E1E] whitespace-pre-line">
+              <p className="text-base leading-relaxed text-gray-600 whitespace-pre-line">
                 {feedingNote}
               </p>
             </CardSection>
@@ -884,6 +897,7 @@ export default function Product() {
         </div>
       </main>
       <Footer />
+      <ToastMotion show={!!toast}>{toast}</ToastMotion>
     </div>
   );
 }

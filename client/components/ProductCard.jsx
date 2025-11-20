@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { Heart, Check } from "lucide-react";
 import { HoverLift, StaggerItem } from "../utils/CatalogAnimations";
 import { ScalePulse, FadeSwitch } from "../utils/ActionAnimations";
+import { ToastMotion } from "../utils/PageAnimations";
 
 // ---- helpers: storage by authToken ------------------------------------------
 const STORAGE_CART = (authToken) => `cart:variants:${authToken || "guest"}`;
@@ -123,6 +124,13 @@ const ProductCard = memo(function ProductCard({
 
   const [isFavorite, setIsFavorite] = useState(false);
   const [inCart, setInCart] = useState(false);
+  const [toast, setToast] = useState("");
+
+  // Функция для показа уведомлений
+  const showToast = (msg, ms = 1500) => {
+    setToast(msg);
+    setTimeout(() => setToast(""), ms);
+  };
 
   const numericStock = Number(stock);
   const available = Number.isFinite(numericStock) && numericStock >= 1;
@@ -167,8 +175,10 @@ const ProductCard = memo(function ProductCard({
       cartSet.add(vidStr);
       saveSet(cartKey, cartSet);
       window.dispatchEvent(new Event("cart:update"));
+      showToast("Товар добавлен в корзину");
     } catch (err) {
       console.warn("Ошибка при добавлении в корзину:", err);
+      showToast("Не удалось добавить в корзину", 2000);
     }
   } else {
     // УДАЛИТЬ (второй клик по кнопке «В корзине»)
@@ -179,8 +189,10 @@ const ProductCard = memo(function ProductCard({
       cartSet.delete(vidStr);
       saveSet(cartKey, cartSet);
       window.dispatchEvent(new Event("cart:update"));
+      showToast("Товар удалён из корзины");
     } else {
       console.warn("Не удалось удалить из корзины");
+      showToast("Не получилось удалить. Повторите позже", 2000);
     }
   }
 }, [variantId, available, inCart, authToken, cartKey]);
@@ -217,22 +229,26 @@ const handleToggleFavorite = useCallback(async (e) => {
       });
       if (!res.ok) throw new Error(`HTTP ${res.status} ${await safeText(res)}`);
       window.dispatchEvent(new Event("favorites:update"));
+      showToast("Товар добавлен в избранное");
     } catch (err) {
       // откат
       setIsFavorite(false);
       const rb = loadSet(favsKey); rb.delete(vidStr); saveSet(favsKey, rb);
       console.warn("Не удалось добавить в избранное:", err);
+      showToast("Не удалось добавить в избранное", 2000);
     }
   } else {
     // удалить из избранного
     const ok = await apiDeleteFavorite(vidNum, authToken);
     if (ok) {
       window.dispatchEvent(new Event("favorites:update"));
+      showToast("Товар удалён из избранного");
     } else {
       // откат
       setIsFavorite(true);
       const rb = loadSet(favsKey); rb.add(vidStr); saveSet(favsKey, rb);
       console.warn("Не удалось удалить из избранного");
+      showToast("Не удалось удалить из избранного", 2000);
     }
   }
 }, [variantId, isFavorite, authToken, favsKey]);
@@ -244,7 +260,7 @@ const handleToggleFavorite = useCallback(async (e) => {
       <HoverLift className="h-full">
         <div className="flex flex-col h-full overflow-hidden transition-shadow bg-white border border-gray-200 rounded-xl hover:shadow-lg">
           {/* Верхняя часть карточки */}
-          <div className="relative flex-shrink-0 p-4 bg-white border-b border-gray-200 sm:p-6 lg:p-8">
+          <div className="relative flex-shrink-0 p-2 bg-white border-b border-gray-200 sm:p-3 lg:p-4">
             {/* Избранное */}
             <button
               type="button"
@@ -272,7 +288,7 @@ const handleToggleFavorite = useCallback(async (e) => {
               <img
                 src={image}
                 alt={title}
-                className="object-contain w-24 mx-auto h-44 sm:h-56 sm:w-28 lg:h-64 lg:w-32"
+                className="object-contain w-32 mx-auto h-56 sm:h-72 sm:w-40 lg:h-80 lg:w-48"
                 loading="lazy"
               />
             </Link>
@@ -348,6 +364,7 @@ const handleToggleFavorite = useCallback(async (e) => {
           </div>
         </div>
       </HoverLift>
+      <ToastMotion show={!!toast}>{toast}</ToastMotion>
     </StaggerItem>
   );
 });

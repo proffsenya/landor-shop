@@ -11,7 +11,7 @@ import ProductCard from "@/components/ProductCard";
 import AccordionMotion from "@/utils/AccordionMotion";
 import { motion } from "framer-motion";
 import { ScrollFade, StaggerParent } from "@/utils/CatalogAnimations";
-import { PageFade } from "@/utils/PageAnimations";
+import { PageFade, ToastMotion } from "@/utils/PageAnimations";
 
 // -------- Вспомогательные блоки ----------
 const FilterSection = memo(({ title, children, isExpanded = true }) => {
@@ -126,6 +126,13 @@ export default function Catalog() {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [toast, setToast] = useState("");
+
+  // Функция для показа уведомлений
+  const showToast = (msg, ms = 1500) => {
+    setToast(msg);
+    setTimeout(() => setToast(""), ms);
+  };
 
   const [searchQuery, setSearchQuery] = useState("");
   const [priceFrom, setPriceFrom] = useState("");
@@ -255,7 +262,7 @@ export default function Catalog() {
       
       // Сохраняем исходные данные продуктов для поиска (не развернутые карточки)
       if (Array.isArray(data) && data.length > 0) {
-        sessionStorage.setItem("catalog:all", JSON.stringify(data));
+      sessionStorage.setItem("catalog:all", JSON.stringify(data));
       }
     } catch (e) {
       setProducts([]);

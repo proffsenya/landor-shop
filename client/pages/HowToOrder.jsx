@@ -17,7 +17,7 @@ export default function HowToOrder() {
         ]} />
         <div className="p-6 bg-white border border-gray-200 rounded-lg">
           <PageFade>
-            <h2 className=" text-[#6F2A2B] text-2xl sm:text-[28px] lg:text-3xl leading-none mb-6 sm:mb-7 lg:mb-15">Как сделать заказ</h2>
+          <h2 className=" text-[#6F2A2B] text-2xl sm:text-[28px] lg:text-3xl leading-none mb-6 sm:mb-7 lg:mb-15">Как сделать заказ</h2>
           </PageFade>
           <PageFade>
           <section className="mb-10">

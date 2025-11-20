@@ -37,27 +37,27 @@ const queryClient = new QueryClient();
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <BrowserRouter>
-        <ScrollToTop />
+              <BrowserRouter>
+              <ScrollToTop />
         <Suspense fallback={<PageLoader />}>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="/cart" element={<Cart />} />
-            <Route path="/catalog" element={<Catalog />} />
-            <Route path="/product/:id" element={<Product />} />
-            <Route path="/favorites" element={<Favorites />} />
-            <Route path="/deliverypayment" element={<DeliveryPayment />} />
-            <Route path="/exchangereturn" element={<ExchangeReturn />} />
-            <Route path="/howtoorder" element={<HowToOrder />} />
+                <Routes>
+                  <Route path="/" element={<Index />} />
+                  <Route path="/login" element={<Login />} />
+                  <Route path="/register" element={<Register />} />
+                  <Route path="/cart" element={<Cart />} />
+                  <Route path="/catalog" element={<Catalog />} />
+                  <Route path="/product/:id" element={<Product />} />
+                  <Route path="/favorites" element={<Favorites />} />
+                  <Route path="/deliverypayment" element={<DeliveryPayment />} />
+                  <Route path="/exchangereturn" element={<ExchangeReturn />} />
+                  <Route path="/howtoorder" element={<HowToOrder />} />
             <Route path="/breeders" element={<Breeders />} />
             <Route path="/cooperation" element={<Cooperation />} />
-            <Route path="/profile" element={<Profile />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+                  <Route path="/profile" element={<Profile />} />
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
         </Suspense>
-      </BrowserRouter>
+              </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
 );

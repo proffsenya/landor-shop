@@ -47,10 +47,10 @@ export default function HeroBanner() {
   };
 
   return (
-    <section className="relative overflow-hidden bg-[#FFF1DA] py-8 sm:py-10">
-      <div className="container mx-auto px-4">
+    <section className="relative overflow-hidden bg-[#FFF1DA]">
+      <div>
         {/* Баннер показывается только на lg и выше */}
-        <div className="relative hidden w-full lg:block rounded-2xl overflow-hidden">
+        <div className="relative hidden w-full overflow-hidden lg:block rounded-2xl">
           {/* Карусель */}
           <div className="relative h-[400px] xl:h-[500px]">
             {banners.map((banner, index) => (
@@ -96,7 +96,7 @@ export default function HeroBanner() {
           </div>
 
           {/* Индикаторы */}
-          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
+          <div className="absolute flex gap-2 -translate-x-1/2 bottom-4 left-1/2">
             {banners.map((_, index) => (
               <button
                 key={index}
