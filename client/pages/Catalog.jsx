@@ -1,5 +1,5 @@
 // client/pages/Catalog.jsx
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback, memo } from "react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import BreadcrumbNav from "@/components/BreadcrumbNav";
@@ -10,16 +10,18 @@ import { ChevronDown, ChevronUp, Filter, X } from "lucide-react";
 import ProductCard from "@/components/ProductCard";
 import AccordionMotion from "@/utils/AccordionMotion";
 import { motion } from "framer-motion";
-import { ScrollFade, SlideFade, StaggerParent } from "@/utils/CatalogAnimations";
+import { ScrollFade, StaggerParent } from "@/utils/CatalogAnimations";
+import { PageFade } from "@/utils/PageAnimations";
 
 // -------- Вспомогательные блоки ----------
-const FilterSection = ({ title, children, isExpanded = true }) => {
+const FilterSection = memo(({ title, children, isExpanded = true }) => {
   const [expanded, setExpanded] = useState(isExpanded);
+  const toggleExpanded = useCallback(() => setExpanded(prev => !prev), []);
 
   return (
     <div className="pb-4 mb-4 border-b border-gray-200">
       <button
-        onClick={() => setExpanded(!expanded)}
+        onClick={toggleExpanded}
         className="flex items-center justify-between w-full mb-3 font-medium text-left text-gray-900 select-none"
       >
         <span>{title}</span>
@@ -40,7 +42,8 @@ const FilterSection = ({ title, children, isExpanded = true }) => {
       </AccordionMotion>
     </div>
   );
-};
+});
+FilterSection.displayName = 'FilterSection';
 
 // ---------- Хелперы названий ----------
 const getProductName = (p) =>
@@ -189,7 +192,7 @@ export default function Catalog() {
   const [page, setPage] = useState(1);
 
   // ---------- Генерация query-строки для фильтров ----------
-  const generateQueryParams = () => {
+  const generateQueryParams = useCallback(() => {
     const queryParams = new URLSearchParams();
 
     Object.keys(categoryFilters).forEach((key) => {
@@ -224,7 +227,7 @@ export default function Catalog() {
     if (searchQuery) queryParams.append("search_query", searchQuery);
 
     return queryParams.toString(); // БЕЗ начального "?"
-  };
+  }, [categoryFilters, catFilters, dogFilters, minicatFilters, minidogFilters, countryFilters, flavorFilters, brandFilters, priceFrom, priceTo, searchQuery]);
 
   // ---------- API: /api/products/cards/search-by-url?filtersUrl=<строка> ----------
   const fetchCards = async (filtersUrlString = "") => {
@@ -301,9 +304,17 @@ export default function Catalog() {
     return filtered.slice(start, start + ITEMS_PER_PAGE);
   }, [filtered, page]);
 
-  const goto = (p) => setPage(Math.min(Math.max(1, p), totalPages));
+  const goto = (p) => {
+    const newPage = Math.min(Math.max(1, p), totalPages);
+    setPage(newPage);
+  };
 
-  const handleCategoryChange = (category) => {
+  // Прокручиваем вверх при смене страницы
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [page]);
+
+  const handleCategoryChange = useCallback((category) => {
     if (category === "all") {
       setCategoryFilters({
         all: true,
@@ -317,9 +328,9 @@ export default function Catalog() {
         [category]: !prev[category],
       }));
     }
-  };
+  }, []);
 
-  const handleApplyFilters = () => {
+  const handleApplyFilters = useCallback(() => {
     const queryParams = generateQueryParams(); // "category_dry=true&brand_landy=true"
     const filtersUrlString = queryParams ? `?${queryParams}` : "";
 
@@ -332,9 +343,11 @@ export default function Catalog() {
     // отправляем в бэк именно эту строку
     fetchCards(filtersUrlString);
     setMobileFiltersOpen(false);
-  };
+    // Прокручиваем вверх при применении фильтров
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [generateQueryParams]);
 
-  const handleResetFilters = () => {
+  const handleResetFilters = useCallback(() => {
     setCategoryFilters({
       all: true,
       dry: false,
@@ -396,7 +409,9 @@ export default function Catalog() {
     // отправляем пустую строку в filtersUrl
     fetchCards("");
     setMobileFiltersOpen(false);
-  };
+    // Прокручиваем вверх при сбросе фильтров
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, []);
 
   // Мобильные фильтры
   const MobileFilters = () => (
@@ -742,12 +757,8 @@ export default function Catalog() {
 
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-4">
           {/* Левая колонка — фильтры (десктоп) */}
-          <SlideFade
-            direction="left"
-            distance={36}
-            delay={0.05}
-            className="hidden lg:block lg:col-span-1"
-          >
+          <PageFade>
+            <div className="hidden lg:block lg:col-span-1">
             <div className="p-6 bg-white border border-gray-200 rounded-lg">
               <h2 className="mb-6 text-xl font-bold text-gray-900">Фильтры</h2>
 
@@ -1055,7 +1066,8 @@ export default function Catalog() {
                 Сбросить фильтры
               </Button>
             </div>
-          </SlideFade>
+            </div>
+          </PageFade>
 
           {/* Правая колонка — товары */}
           <div className="lg:col-span-3">
@@ -1122,7 +1134,7 @@ export default function Catalog() {
                   </div>
                 </StaggerParent>
 
-                <SlideFade direction="up" distance={20}>
+                <PageFade>
                   <div className="flex items-center justify-center space-x-2">
                     <Button
                       variant="outline"
@@ -1148,10 +1160,10 @@ export default function Catalog() {
                   </div>
 
                   <div className="mt-4 text-sm text-center text-gray-500">
-                    Показано {paged.length} из {filtered.length} товаров ·
+                    Показано {Math.min((page - 1) * ITEMS_PER_PAGE + paged.length, filtered.length)} из {filtered.length} товаров ·
                     Страница {page} из {totalPages}
                   </div>
-                </SlideFade>
+                </PageFade>
               </>
             )}
           </div>

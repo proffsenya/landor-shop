@@ -3,7 +3,6 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import BreadcrumbNav from "@/components/BreadcrumbNav";
 import { PageFade } from "@/utils/PageAnimations";
-import { SlideFade } from "@/utils/CatalogAnimations";
 import { Truck, Tag, Package, Paperclip } from "lucide-react";
 import {
   Dialog,
@@ -156,12 +155,12 @@ export default function Breeders() {
               { label: "Заводчикам" }
             ]} />
             <div className="p-6 bg-white border border-gray-200 rounded-lg">
-              <SlideFade delay={0.1}>
+              <PageFade>
                 <h2 className="text-[#6F2A2B] text-2xl sm:text-[28px] lg:text-3xl leading-none mb-6 sm:mb-7 lg:mb-15">
                   Заводчикам
                 </h2>
-              </SlideFade>
-              <SlideFade delay={0.2}>
+              </PageFade>
+              <PageFade>
               <section className="mb-6">
                 <h3 className="mb-2 text-xl font-semibold text-gray-900">
                   Мы предоставляем особые условия обслуживания заводчикам:
@@ -181,9 +180,9 @@ export default function Breeders() {
                   </li>
                 </ul>
               </section>
-              </SlideFade>
+              </PageFade>
               {/* Benefits with icons */}
-              <SlideFade delay={0.3}>
+              <PageFade>
               <section className="mb-6">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   {benefits.map((benefit, index) => {
@@ -207,9 +206,9 @@ export default function Breeders() {
                   })}
                 </div>
               </section>
-              </SlideFade>
+              </PageFade>
               {/* CTA Button */}
-              <SlideFade delay={0.4}>
+              <PageFade>
               <section className="mb-6">
                 <div className="text-center">
                   <button
@@ -220,7 +219,7 @@ export default function Breeders() {
                   </button>
                 </div>
               </section>
-              </SlideFade>
+              </PageFade>
             </div>
           </div>
         </div>

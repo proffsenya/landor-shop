@@ -51,7 +51,25 @@ const localSearchSimple = (query, dataset, maxResults = 5) => {
   return results.slice(0, maxResults);
 };
 
-const allProducts = JSON.parse(sessionStorage.getItem("catalog:all") || "[]");
+// Кэш для парсинга sessionStorage
+let cachedProducts = null;
+let cacheTimestamp = 0;
+const CACHE_DURATION = 1000; // 1 секунда
+
+const getAllProducts = () => {
+  const now = Date.now();
+  if (cachedProducts && (now - cacheTimestamp) < CACHE_DURATION) {
+    return cachedProducts;
+  }
+  try {
+    cachedProducts = JSON.parse(sessionStorage.getItem("catalog:all") || "[]");
+    cacheTimestamp = now;
+    return cachedProducts;
+  } catch {
+    cachedProducts = [];
+    return [];
+  }
+};
 
 export default function GlobalSearch({
   placeholder = "Искать здесь...",

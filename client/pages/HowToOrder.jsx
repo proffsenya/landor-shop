@@ -3,7 +3,6 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import BreadcrumbNav from "@/components/BreadcrumbNav";
 import { PageFade } from "@/utils/PageAnimations";
-import { SlideFade } from "@/utils/CatalogAnimations";
 import { Link } from "react-router-dom";
 
 export default function HowToOrder() {
@@ -17,10 +16,10 @@ export default function HowToOrder() {
           { label: "Как сделать заказ" }
         ]} />
         <div className="p-6 bg-white border border-gray-200 rounded-lg">
-          <SlideFade delay={0.1}>
+          <PageFade>
             <h2 className=" text-[#6F2A2B] text-2xl sm:text-[28px] lg:text-3xl leading-none mb-6 sm:mb-7 lg:mb-15">Как сделать заказ</h2>
-          </SlideFade>
-          <SlideFade delay={0.2}>
+          </PageFade>
+          <PageFade>
           <section className="mb-10">
             <h3 className="mb-2 text-xl font-semibold ">Выбор товара</h3>
             <ul className="pl-6 text-gray-700 list-decimal">
@@ -39,8 +38,8 @@ export default function HowToOrder() {
               </li>
             </ul>
           </section>
-          </SlideFade>
-          <SlideFade delay={0.3}>
+          </PageFade>
+          <PageFade>
           <section className="mb-6">
             <ul className="pl-6 text-gray-700 list-decimal">
               <li>
@@ -54,8 +53,8 @@ export default function HowToOrder() {
               </li>
             </ul>
           </section>
-          </SlideFade>
-          <SlideFade delay={0.4}>
+          </PageFade>
+          <PageFade>
           <section className="mb-6">
             <ul className="pl-6 text-gray-700 list-decimal">
               <li>
@@ -89,8 +88,8 @@ export default function HowToOrder() {
               </li>
             </ul>
           </section>
-          </SlideFade>
-          <SlideFade delay={0.5}>
+          </PageFade>
+          <PageFade>
           <section className="mb-6">
             <ul className="pl-6 text-gray-700 list-decimal">
               <li>
@@ -111,8 +110,8 @@ export default function HowToOrder() {
               </li>
             </ul>
           </section>
-          </SlideFade>
-          <SlideFade delay={0.6}>
+          </PageFade>
+          <PageFade>
           <section className="mb-6">
             <ul className="pl-6 text-gray-700 list-decimal">
               <li>
@@ -127,8 +126,8 @@ export default function HowToOrder() {
               </li>
             </ul>
           </section>
-          </SlideFade>
-          <SlideFade delay={0.7}>
+          </PageFade>
+          <PageFade>
           <section className="mb-6">
             <ul className="pl-6 text-gray-700 list-decimal">
               <p>
@@ -137,7 +136,7 @@ export default function HowToOrder() {
               </p>
             </ul>
           </section>
-          </SlideFade>
+          </PageFade>
         </div>
       </div>
       </PageFade>

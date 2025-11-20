@@ -495,10 +495,10 @@ async function moveFavoritesToCart(variantIdsRaw) {
                           </label>
                         </th>
                         <th className="px-5 py-3 font-normal text-left">Товар</th>
-                        <th className="px-5 py-3 font-normal text-left">Вес</th>
-                        <th className="px-5 py-3 font-normal text-left">Стоимость</th>
-                        <th className="px-5 py-3 font-normal text-left">Дата добавления</th>
-                        <th className="px-5 py-3 font-normal text-left">Статус</th>
+                        <th className="px-5 py-3 font-normal text-center">Вес</th>
+                        <th className="px-5 py-3 font-normal text-center">Стоимость</th>
+                        <th className="px-5 py-3 font-normal text-center">Дата добавления</th>
+                        <th className="px-5 py-3 font-normal text-center">Статус</th>
                       </tr>
                     </thead>
                     <motion.tbody initial={false}>
@@ -530,10 +530,10 @@ async function moveFavoritesToCart(variantIdsRaw) {
                                 </div>
                               </div>
                             </td>
-                            <td className="px-5 py-6">{item.weight}</td>
-                            <td className="px-5 py-6">{formatPrice(item.price)}</td>
-                            <td className="px-5 py-6 text-[#8B8B8B]">{item.dateAdded}</td>
-                            <td className="px-5 py-6">
+                            <td className="px-5 py-6 text-center">{item.weight}</td>
+                            <td className="px-5 py-6 text-center">{formatPrice(item.price)}</td>
+                            <td className="px-5 py-6 text-center text-[#8B8B8B]">{item.dateAdded}</td>
+                            <td className="px-5 py-6 text-center">
                               <span className={item.isInStock ? "text-green-600" : "text-red-600"}>
                                 {item.isInStock ? "В наличии" : "Нет в наличии"}
                               </span>

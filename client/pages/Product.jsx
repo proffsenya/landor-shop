@@ -1,5 +1,5 @@
 // client/pages/Product.jsx
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback, memo } from "react";
 import { Link, useParams, useLocation, useNavigate } from "react-router-dom";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -7,31 +7,35 @@ import BreadcrumbNav from "@/components/BreadcrumbNav";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Heart, Check } from "lucide-react";
 import { PageFade } from "@/utils/PageAnimations";
+import AccordionMotion from "@/utils/AccordionMotion";
 
 // ------------------ UI: секция-аккордеон ------------------
-function CardSection({ title, defaultOpen = false, children }) {
+const CardSection = memo(({ title, defaultOpen = false, children }) => {
   const [open, setOpen] = useState(defaultOpen);
+  const toggleOpen = useCallback(() => setOpen(v => !v), []);
+  
   return (
     <PageFade>
       <div className="rounded-lg border border-[#E6E6E6]">
         <button
-          onClick={() => setOpen((v) => !v)}
-          className="flex w-full items-center justify-between px-4 py-3 text-[15px] font-medium text-[#1E1E1E]"
+          onClick={toggleOpen}
+          className="flex w-full items-center justify-between px-4 py-3 text-[15px] font-medium text-[#1E1E1E] rounded-t-lg"
         >
           {title}
           <span className="inline-flex h-6 w-6 items-center justify-center text-[#6F2A2B] text-[18px]">
             {open ? "–" : "+"}
           </span>
         </button>
-        {open && (
+        <AccordionMotion isOpen={open}>
           <div className="px-4 pb-4 text-[14px] leading-relaxed text-[#2a2a2a]">
             {children}
           </div>
-        )}
+        </AccordionMotion>
       </div>
     </PageFade>
   );
-}
+});
+CardSection.displayName = 'CardSection';
 
 // ------------------ утилиты ------------------
 const pickName = (obj, fall = "") =>
@@ -59,6 +63,50 @@ function authHeaders(authToken, extra = {}) {
   const h = { ...extra };
   if (authToken && authToken !== "guest") h.Authorization = `Bearer ${authToken}`;
   return h;
+}
+
+async function apiDeleteFromCart(variantId, authToken) {
+  const headers = {
+    "Content-Type": "application/json",
+    ...(authToken !== "guest" ? { Authorization: `Bearer ${authToken}` } : {}),
+  };
+  const vId = Number(variantId);
+  
+  if (!Number.isFinite(vId)) {
+    console.warn("[cart] variantId невалиден:", variantId);
+    return false;
+  }
+
+  try {
+    const r = await fetch(`/api/cart/${encodeURIComponent(vId)}`, {
+      method: "DELETE",
+      headers,
+      body: JSON.stringify({
+        variantId: vId,
+        quantity: 1,
+      }),
+    });
+    if (r.ok) return true;
+    console.warn("DELETE /api/cart/:variantId ->", r.status, await safeText(r));
+  } catch (e) { console.warn("cart delete path err", e); }
+
+  try {
+    const r = await fetch(`/api/cart?variantId=${encodeURIComponent(vId)}`, { method: "DELETE", headers });
+    if (r.ok) return true;
+    console.warn("DELETE /api/cart?variantId ->", r.status, await safeText(r));
+  } catch (e) { console.warn("cart delete query err", e); }
+
+  try {
+    const r = await fetch(`/api/cart`, {
+      method: "DELETE",
+      headers,
+      body: JSON.stringify({ variantId: vId, quantity: 1 })
+    });
+    if (r.ok) return true;
+    console.warn("DELETE /api/cart body ->", r.status, await safeText(r));
+  } catch (e) { console.warn("cart delete body err", e); }
+
+  return false;
 }
 
 /** POST /api/favorites { variantId } */
@@ -405,7 +453,7 @@ export default function Product() {
   const guaranteedIndicators = product?.guaranteedIndicators ?? "—";
   const feedingNote = product?.feedingNote ?? "—";
 
-  const handleSelectWeight = (idx) => {
+  const handleSelectWeight = useCallback((idx) => {
     if (idx < 0 || idx >= variants.length) return;
     const nextVariantId = variants[idx].id;
     const sp = new URLSearchParams(location.search);
@@ -415,7 +463,7 @@ export default function Product() {
       { replace: false }
     );
     setSelectedImageIdx(0);
-  };
+  }, [variants, location.search, navigate, productId]);
 
   // ---------- синхронизация с сессией (кнопки) ----------
   useEffect(() => {
@@ -445,6 +493,7 @@ export default function Product() {
     };
   }, [selectedVariant?.id, cartKey, favKey]);
 
+
   // Функция для изменения количества товара в корзине
   const changeQuantityOnServer = async (variantId, newQuantity) => {
     const headers = {
@@ -453,17 +502,7 @@ export default function Product() {
     };
 
     try {
-      // Сначала удаляем товар из корзины, если он там есть
-      await fetch(`/api/cart/${encodeURIComponent(variantId)}`, {
-        method: "DELETE",
-        headers,
-        body: JSON.stringify({
-          variantId: Number(variantId),
-          quantity: 1,
-        }),
-      });
-
-      // Затем добавляем товар с нужным количеством
+      // Добавляем товар с нужным количеством
       const res = await fetch("/api/cart", {
         method: "POST",
         headers,
@@ -487,59 +526,61 @@ export default function Product() {
   };
 
   // ---------- добавление в корзину с выбранным количеством ----------
-  const handleAddToCart = async () => {
+  const handleAddToCart = useCallback(async () => {
     const vid = selectedVariant?.id;
-    if (!vid || adding) return;
+    if (!vid || adding || !available) return;
 
-    setAdding(true);
+    const vidStr = String(vid);
+    const vidNum = Number(vid);
 
-    // если уже в корзине → обновляем количество
-    if (inCart) {
+    if (!inCart) {
+      // ДОБАВИТЬ
+      setAdding(true);
       try {
-        const ok = await changeQuantityOnServer(vid, qty);
-        if (ok) {
-          console.log("✅ Количество товара обновлено:", vid, "Количество:", qty);
-          window.dispatchEvent(new Event("cart:update"));
-          try {
-            window.dispatchEvent(new Event("cart:changed"));
-          } catch {}
-        } else {
-          console.warn("Не удалось обновить количество товара");
-        }
-      } catch (e) {
-        console.warn("Ошибка обновления количества:", e);
+        const res = await fetch(`/api/cart`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${authToken}`,
+          },
+          body: JSON.stringify({ variantId: vidNum, quantity: qty }),
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status} ${await safeText(res)}`);
+
+        setInCart(true);
+        const cartSet = loadSet(cartKey);
+        cartSet.add(vidStr);
+        saveSet(cartKey, cartSet);
+        window.dispatchEvent(new Event("cart:update"));
+        try {
+          window.dispatchEvent(new Event("cart:changed"));
+        } catch {}
+        setQty(1);
+      } catch (err) {
+        console.warn("Ошибка при добавлении в корзину:", err);
       } finally {
         setAdding(false);
       }
-      return;
-    }
-
-    // если не в корзине → добавляем с нужным количеством
-    try {
-      const ok = await changeQuantityOnServer(vid, qty);
-      if (!ok) {
-        console.warn("Не удалось добавить товар в корзину");
-        return;
+    } else {
+      // УДАЛИТЬ (второй клик по кнопке «В корзине»)
+      setAdding(true);
+      const ok = await apiDeleteFromCart(vidNum, authToken);
+      if (ok) {
+        setInCart(false);
+        const cartSet = loadSet(cartKey);
+        cartSet.delete(vidStr);
+        saveSet(cartKey, cartSet);
+        setQty(1);
+        window.dispatchEvent(new Event("cart:update"));
+        try {
+          window.dispatchEvent(new Event("cart:changed"));
+        } catch {}
+      } else {
+        console.warn("Не удалось удалить из корзины");
       }
-
-      console.log("✅ Добавлено в корзину:", vid, "Количество:", qty);
-
-      const set = loadSet(cartKey);
-      set.add(String(vid));
-      saveSet(cartKey, set);
-      setInCart(true);
-      window.dispatchEvent(new Event("cart:update"));
-      try {
-        window.dispatchEvent(new Event("cart:changed"));
-      } catch {}
-    } catch (e) {
-      console.warn("Ошибка запроса:", e);
-    } finally {
       setAdding(false);
-      // Сбрасываем количество обратно к 1 после успешного добавления
-      setQty(1);
     }
-  };
+  }, [selectedVariant?.id, adding, inCart, qty, available, authToken, cartKey]);
 
   // ---------- избранное ----------
   const handleToggleFavorite = async () => {
@@ -693,28 +734,30 @@ export default function Product() {
                 {title}
               </h1>
 
-              <div className="flex flex-col items-start gap-4 mt-4 sm:flex-row sm:items-center">
-                <div className="text-[24px] font-semibold text-[#1E1E1E]">
+              <div className="flex flex-col items-start gap-0 mt-4 sm:flex-row sm:items-center">
+                <div className="text-[24px] font-semibold text-[#1E1E1E] whitespace-nowrap min-w-[120px]">
                   {priceStr}
                 </div>
                 {/* Счетчик количества */}
-                <div className="inline-flex h-9 items-center rounded-full border border-[#1E1E1E]">
-                  <button
-                    onClick={() => setQty((n) => Math.max(1, n - 1))}
-                    className="h-9 w-9 text-[18px] hover:bg-gray-100 rounded-l-full"
-                  >
-                    –
-                  </button>
-                  <span className="min-w-[36px] text-center text-[15px]">
-                    {qty}
-                  </span>
-                  <button
-                    onClick={() => setQty((n) => n + 1)}
-                    className="h-9 w-9 text-[18px] hover:bg-gray-100 rounded-r-full"
-                  >
-                    +
-                  </button>
-                </div>
+                {!inCart && available && (
+                  <div className="inline-flex h-9 items-center rounded-full border border-[#1E1E1E] overflow-hidden flex-shrink-0">
+                    <button
+                      onClick={() => setQty((n) => Math.max(1, n - 1))}
+                      className="h-9 w-9 text-[18px] font-semibold text-[#1E1E1E] rounded-l-full flex items-center justify-center"
+                    >
+                      –
+                    </button>
+                    <span className="min-w-[36px] text-center text-[15px] font-medium text-[#1E1E1E] px-2">
+                      {qty}
+                    </span>
+                    <button
+                      onClick={() => setQty((n) => n + 1)}
+                      className="h-9 w-9 text-[18px] font-semibold text-[#1E1E1E] rounded-r-full flex items-center justify-center"
+                    >
+                      +
+                    </button>
+                  </div>
+                )}
               </div>
 
               {variants.length > 0 && (
@@ -735,9 +778,9 @@ export default function Product() {
                               ? "bg-[#6F2A2B] text-white"
                               : "border border-[#D6D6D6] text-[#1E1E1E]"
                           } ${notAvail ? "opacity-50" : ""}`}
-                          title={notAvail ? "Нет в наличии" : ""}
+                          title={notAvail ? "Ожидает поступления" : ""}
                           aria-pressed={active}
-                          aria-label={notAvail ? `${opt.label} (нет в наличии)` : opt.label}
+                          aria-label={notAvail ? `${opt.label} (ожидает поступления)` : opt.label}
                         >
                           {opt.label}
                         </button>
@@ -749,28 +792,41 @@ export default function Product() {
 
               <div className="flex flex-col gap-3 mt-5 sm:flex-row">
                 {available ? (
-                  <Button
+                  <button
+                    type="button"
                     onClick={handleAddToCart}
                     disabled={adding}
-                    className={`h-11 rounded-lg px-6 text-[14px] w-full sm:w-auto ${
-                      inCart
-                        ? "bg-white border border-[#6F2A2B] text-[#6F2A2B]"
-                        : "bg-[#6F2A2B] text-white hover:bg-[#5a2223]"
-                    } ${adding ? "opacity-60 cursor-not-allowed" : ""}`}
+                    className={`
+                      flex items-center justify-center
+                      rounded-md text-sm sm:text-[15px]
+                      transition-colors
+                      px-3 py-[10px]
+                      h-11
+                      min-w-[110px]
+                      w-full sm:w-auto
+                      ${
+                        inCart
+                          ? "bg-white border border-[#6F2A2B] text-[#6F2A2B]"
+                          : "bg-[#6F2A2B] text-white hover:bg-[#5a2223]"
+                      }
+                      ${adding ? "opacity-60 cursor-not-allowed" : ""}
+                    `}
+                    aria-label={inCart ? "Убрать из корзины" : "Добавить в корзину"}
                   >
                     {inCart ? (
-                      <span className="flex items-center justify-center gap-1">
-                        <Check className="w-4 h-4" /> В корзине ({qty} шт.)
+                      <span className="flex items-center justify-center gap-1 leading-none whitespace-nowrap">
+                        <Check className="w-4 h-4" />
+                        <span>В корзине</span>
                       </span>
                     ) : adding ? (
                       "Добавление..."
                     ) : (
                       `Добавить в корзину ${qty > 1 ? `(${qty} шт.)` : ''}`
                     )}
-                  </Button>
+                  </button>
                 ) : (
                   <span className="h-11 inline-flex items-center justify-center rounded-lg px-6 text-[14px] w-full sm:w-auto bg-gray-100 text-gray-500">
-                    Нет в наличии
+                    Ожидает поступления
                   </span>
                 )}
 

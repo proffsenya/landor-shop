@@ -3,7 +3,6 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import BreadcrumbNav from "@/components/BreadcrumbNav";
 import { PageFade } from "@/utils/PageAnimations";
-import { SlideFade } from "@/utils/CatalogAnimations";
 
 export default function DeliveryPayment() {
   return (
@@ -16,10 +15,10 @@ export default function DeliveryPayment() {
           { label: "Доставка и оплата" }
         ]} />
         <div className="p-6 bg-white border border-gray-200 rounded-lg">
-          <SlideFade delay={0.1}>
+          <PageFade>
             <h2 className=" text-[#6F2A2B] text-2xl sm:text-[28px] lg:text-3xl leading-none mb-6 sm:mb-7 lg:mb-15">Условия доставки и оплаты</h2>
-          </SlideFade>
-          <SlideFade delay={0.2}>
+          </PageFade>
+          <PageFade>
           <section className="mb-6">
             <h3 className="mb-2 text-xl font-semibold text-gray-900">Условия доставки:</h3>
             <ul className="pl-6 text-gray-700 list-disc">
@@ -33,8 +32,8 @@ export default function DeliveryPayment() {
               <li>Минимальный заказ для регионов от 1000 рублей.</li>
             </ul>
           </section>
-          </SlideFade>
-          <SlideFade delay={0.3}>
+          </PageFade>
+          <PageFade>
           <section className="mb-6">
             <ul className="pl-6 text-gray-700 list-disc">
               <li>Наличными курьеру при получении заказа - только для Москвы и Московской области.</li>
@@ -42,16 +41,16 @@ export default function DeliveryPayment() {
               <li>По реквизитам на р/с ИП <a href="mailto:example@example.com" className="text-blue-600">реквизиты</a> – сделать ссылку</li>
             </ul>
           </section>
-          </SlideFade>
-          <SlideFade delay={0.4}>
+          </PageFade>
+          <PageFade>
           <section className="mb-6">
             <ul className="pl-6 text-gray-700 list-disc">
               <li>Бесплатно - для заказов на сумму более 3 000 рублей.</li>
               <li>300 рублей - для заказов на сумму менее 3 000 рублей.</li>
             </ul>
           </section>
-          </SlideFade>
-          <SlideFade delay={0.5}>
+          </PageFade>
+          <PageFade>
           <section className="mb-6">
             <ul className="pl-6 text-gray-700 list-disc">
               <li>Расстояние от МКАД до 10 км бесплатно от 4000руб, заказ менее 4000руб – 350руб</li>
@@ -60,14 +59,14 @@ export default function DeliveryPayment() {
               <li>Расстояние от МКАД от 30 км рассчитывается индивидуально менеджером при оформлении заказа.</li>
             </ul>
           </section>
-          </SlideFade>
-          <SlideFade delay={0.6}>
+          </PageFade>
+          <PageFade>
           <section className="mb-6">
             <ul className="pl-6 text-gray-700 list-disc">
               <li>В регионы России доставляем сторонними курьерскими службами и транспортными компаниями после 100% оплаты заказа. Услуга доставки не входит в стоимость товара. Стоимость зависит от объема и веса заказа и окончательно рассчитывается менеджером при его подтверждении.</li>
             </ul>
           </section>
-          </SlideFade>
+          </PageFade>
 
         </div>
       </div>

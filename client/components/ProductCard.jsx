@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, memo, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { Heart, Check } from "lucide-react";
 import { HoverLift, StaggerItem } from "../utils/CatalogAnimations";
@@ -46,15 +46,32 @@ async function apiDeleteFavorite(variantId, authToken) {
 }
 
 async function apiDeleteFromCart(variantId, authToken) {
-  const headers = authToken !== "guest" ? { Authorization: `Bearer ${authToken}` } : {};
+  const headers = {
+    "Content-Type": "application/json",
+    ...(authToken !== "guest" ? { Authorization: `Bearer ${authToken}` } : {}),
+  };
+  const vId = Number(variantId);
+  
+  if (!Number.isFinite(vId)) {
+    console.warn("[cart] variantId невалиден:", variantId);
+    return false;
+  }
+
   try {
-    const r = await fetch(`/api/cart/${encodeURIComponent(variantId)}`, { method: "DELETE", headers });
+    const r = await fetch(`/api/cart/${encodeURIComponent(vId)}`, {
+      method: "DELETE",
+      headers,
+      body: JSON.stringify({
+        variantId: vId,
+        quantity: 1,
+      }),
+    });
     if (r.ok) return true;
     console.warn("DELETE /api/cart/:variantId ->", r.status, await safeText(r));
   } catch (e) { console.warn("cart delete path err", e); }
 
   try {
-    const r = await fetch(`/api/cart?variantId=${encodeURIComponent(variantId)}`, { method: "DELETE", headers });
+    const r = await fetch(`/api/cart?variantId=${encodeURIComponent(vId)}`, { method: "DELETE", headers });
     if (r.ok) return true;
     console.warn("DELETE /api/cart?variantId ->", r.status, await safeText(r));
   } catch (e) { console.warn("cart delete query err", e); }
@@ -62,8 +79,8 @@ async function apiDeleteFromCart(variantId, authToken) {
   try {
     const r = await fetch(`/api/cart`, {
       method: "DELETE",
-      headers: { "Content-Type": "application/json", ...headers },
-      body: JSON.stringify({ variantId: Number(variantId), quantity: 1 })
+      headers,
+      body: JSON.stringify({ variantId: vId, quantity: 1 })
     });
     if (r.ok) return true;
     console.warn("DELETE /api/cart body ->", r.status, await safeText(r));
@@ -89,7 +106,7 @@ const saveSet = (key, set) => {
   } catch {}
 };
 
-export default function ProductCard({
+const ProductCard = memo(function ProductCard({
   productId,
   variantId,
   image,
@@ -124,7 +141,7 @@ export default function ProductCard({
   }, [variantId, cartKey, favsKey]);
 
   // ---- Добавить в корзину ----
-  const handleAddToCart = async (e) => {
+  const handleAddToCart = useCallback(async (e) => {
   e.preventDefault();
   e.stopPropagation();
   if (!variantId || !available) return;
@@ -166,12 +183,12 @@ export default function ProductCard({
       console.warn("Не удалось удалить из корзины");
     }
   }
-};
+}, [variantId, available, inCart, authToken, cartKey]);
 
 
   // ---- Избранное (POST /api/favorites при включении) ----
   // ---- Избранное: повторное нажатие удаляет из избранного И из корзины ----
-const handleToggleFavorite = async (e) => {
+const handleToggleFavorite = useCallback(async (e) => {
   e.preventDefault();
   e.stopPropagation();
   if (!variantId) return;
@@ -218,7 +235,7 @@ const handleToggleFavorite = async (e) => {
       console.warn("Не удалось удалить из избранного");
     }
   }
-};
+}, [variantId, isFavorite, authToken, favsKey]);
 
 
 
@@ -249,7 +266,7 @@ const handleToggleFavorite = async (e) => {
             {/* Переход по картинке */}
             <Link
               to={productUrl}
-              className="block focus:outline-none focus:ring-2 focus:ring-[#6F2A2B] rounded"
+              className="block focus:outline-none focus:ring-2 focus:ring-[#6F2A2B] rounded relative"
               aria-label={title || "Товар"}
             >
               <img
@@ -333,4 +350,8 @@ const handleToggleFavorite = async (e) => {
       </HoverLift>
     </StaggerItem>
   );
-}
+});
+
+ProductCard.displayName = 'ProductCard';
+
+export default ProductCard;
