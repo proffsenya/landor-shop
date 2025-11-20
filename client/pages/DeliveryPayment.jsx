@@ -3,6 +3,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import BreadcrumbNav from "@/components/BreadcrumbNav";
 import { PageFade } from "@/utils/PageAnimations";
+import { SlideFade } from "@/utils/CatalogAnimations";
 
 export default function DeliveryPayment() {
   return (
@@ -15,8 +16,10 @@ export default function DeliveryPayment() {
           { label: "Доставка и оплата" }
         ]} />
         <div className="p-6 bg-white border border-gray-200 rounded-lg">
-          <h2 className=" text-[#6F2A2B] text-2xl sm:text-[28px] lg:text-3xl leading-none mb-6 sm:mb-7 lg:mb-15">Условия доставки и оплаты</h2>
-
+          <SlideFade delay={0.1}>
+            <h2 className=" text-[#6F2A2B] text-2xl sm:text-[28px] lg:text-3xl leading-none mb-6 sm:mb-7 lg:mb-15">Условия доставки и оплаты</h2>
+          </SlideFade>
+          <SlideFade delay={0.2}>
           <section className="mb-6">
             <h3 className="mb-2 text-xl font-semibold text-gray-900">Условия доставки:</h3>
             <ul className="pl-6 text-gray-700 list-disc">
@@ -30,26 +33,26 @@ export default function DeliveryPayment() {
               <li>Минимальный заказ для регионов от 1000 рублей.</li>
             </ul>
           </section>
-
+          </SlideFade>
+          <SlideFade delay={0.3}>
           <section className="mb-6">
-            <h3 className="mb-2 text-xl font-semibold text-gray-900">Способ оплаты:</h3>
             <ul className="pl-6 text-gray-700 list-disc">
               <li>Наличными курьеру при получении заказа - только для Москвы и Московской области.</li>
               <li>Оплата по QR-коду через СБП</li>
               <li>По реквизитам на р/с ИП <a href="mailto:example@example.com" className="text-blue-600">реквизиты</a> – сделать ссылку</li>
             </ul>
           </section>
-
+          </SlideFade>
+          <SlideFade delay={0.4}>
           <section className="mb-6">
-            <h3 className="mb-2 text-xl font-semibold text-gray-900">Доставка и стоимость по Москве (в пределах МКАД):</h3>
             <ul className="pl-6 text-gray-700 list-disc">
               <li>Бесплатно - для заказов на сумму более 3 000 рублей.</li>
               <li>300 рублей - для заказов на сумму менее 3 000 рублей.</li>
             </ul>
           </section>
-
+          </SlideFade>
+          <SlideFade delay={0.5}>
           <section className="mb-6">
-            <h3 className="mb-2 text-xl font-semibold text-gray-900">Доставка и стоимость по Московской области:</h3>
             <ul className="pl-6 text-gray-700 list-disc">
               <li>Расстояние от МКАД до 10 км бесплатно от 4000руб, заказ менее 4000руб – 350руб</li>
               <li>Расстояние от МКАД от 10 до 20 км бесплатно от 6000руб, заказ менее 6000руб – 400руб</li>
@@ -57,13 +60,14 @@ export default function DeliveryPayment() {
               <li>Расстояние от МКАД от 30 км рассчитывается индивидуально менеджером при оформлении заказа.</li>
             </ul>
           </section>
-
+          </SlideFade>
+          <SlideFade delay={0.6}>
           <section className="mb-6">
-            <h3 className="mb-2 text-xl font-semibold text-gray-900">Доставка и стоимость по России:</h3>
             <ul className="pl-6 text-gray-700 list-disc">
               <li>В регионы России доставляем сторонними курьерскими службами и транспортными компаниями после 100% оплаты заказа. Услуга доставки не входит в стоимость товара. Стоимость зависит от объема и веса заказа и окончательно рассчитывается менеджером при его подтверждении.</li>
             </ul>
           </section>
+          </SlideFade>
 
         </div>
       </div>

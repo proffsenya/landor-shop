@@ -4,6 +4,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import BreadcrumbNav from "@/components/BreadcrumbNav";
 import { PageFade } from "@/utils/PageAnimations";
+import { ScrollFade } from "@/utils/CatalogAnimations";
 
 export default function Register() {
   const navigate = useNavigate();
@@ -225,10 +226,11 @@ export default function Register() {
 
           {/* Контейнер по центру */}
           <div className="relative z-10 flex justify-center items-center w-full max-w-[500px]">
-            <div className="bg-white rounded-[30px] shadow-[0_4px_15px_rgba(0,0,0,0.1)] p-12 w-full text-center border border-gray-100">
-              <h1 className="text-3xl text-[#6F2A2B] font-bold mb-8">
-                Регистрация
-              </h1>
+            <ScrollFade delay={0.2}>
+              <div className="bg-white rounded-[30px] shadow-[0_4px_15px_rgba(0,0,0,0.1)] p-12 w-full text-center border border-gray-100">
+                <h1 className="text-3xl text-[#6F2A2B] font-bold mb-8">
+                  Регистрация
+                </h1>
 
               {errorMsg && (
                 <div className="px-4 py-3 mb-4 text-sm text-red-700 border border-red-200 rounded-lg bg-red-50">
@@ -387,7 +389,8 @@ export default function Register() {
                   </Link>
                 </div>
               </form>
-            </div>
+              </div>
+            </ScrollFade>
           </div>
         </main>
       </PageFade>

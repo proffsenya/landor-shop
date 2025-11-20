@@ -4,6 +4,7 @@ import Footer from "@/components/Footer";
 import BreadcrumbNav from "@/components/BreadcrumbNav";
 import { Button } from "@/components/ui/button";
 import { PageFade } from "@/utils/PageAnimations";
+import { SlideFade } from "@/utils/CatalogAnimations";
 
 // Моки
 const mockUser = {
@@ -89,8 +90,10 @@ export default function Profile() {
           { label: "Главная", to: "/" },
           { label: "Профиль" }
         ]} />
+        <PageFade>
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-[0.9fr_1.1fr]">
           {/* Профиль — уменьшенный */}
+          <SlideFade delay={0.1}>
           <div className="border border-[#E8E8E8] rounded-xl p-4 sm:p-6">
             <h2 className="text-[18px] sm:text-[22px] font-semibold text-[#1E1E1E] text-center">
               Профиль
@@ -161,10 +164,12 @@ export default function Profile() {
               </div>
             </div>
           </div>
+          </SlideFade>
 
           {/* Правая колонка — меньше размеров */}
           <div className="flex flex-col gap-6">
             {/* Доставка */}
+            <SlideFade delay={0.2}>
             <div className="border border-[#E8E8E8] rounded-xl p-4 sm:p-6">
               <h2 className="text-[18px] sm:text-[22px] font-semibold text-[#1E1E1E]">
                 Данные для доставки
@@ -240,8 +245,10 @@ export default function Profile() {
                 </Button>
               </div>
             </div>
+            </SlideFade>
 
             {/* История заказов */}
+            <SlideFade delay={0.3}>
             <div className="border border-[#E8E8E8] rounded-xl p-4 sm:p-6">
               <h2 className="text-[18px] sm:text-[22px] font-semibold text-[#1E1E1E]">
                 История заказов
@@ -276,8 +283,10 @@ export default function Profile() {
               </div>
 
             </div>
+            </SlideFade>
           </div>
         </div>
+        </PageFade>
       </div>
       <Footer />
     </div>

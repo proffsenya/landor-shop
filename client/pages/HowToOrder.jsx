@@ -3,6 +3,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import BreadcrumbNav from "@/components/BreadcrumbNav";
 import { PageFade } from "@/utils/PageAnimations";
+import { SlideFade } from "@/utils/CatalogAnimations";
 import { Link } from "react-router-dom";
 
 export default function HowToOrder() {
@@ -16,7 +17,10 @@ export default function HowToOrder() {
           { label: "Как сделать заказ" }
         ]} />
         <div className="p-6 bg-white border border-gray-200 rounded-lg">
-          <h2 className=" text-[#6F2A2B] text-2xl sm:text-[28px] lg:text-3xl leading-none mb-6 sm:mb-7 lg:mb-15">Как сделать заказ</h2>
+          <SlideFade delay={0.1}>
+            <h2 className=" text-[#6F2A2B] text-2xl sm:text-[28px] lg:text-3xl leading-none mb-6 sm:mb-7 lg:mb-15">Как сделать заказ</h2>
+          </SlideFade>
+          <SlideFade delay={0.2}>
           <section className="mb-10">
             <h3 className="mb-2 text-xl font-semibold ">Выбор товара</h3>
             <ul className="pl-6 text-gray-700 list-decimal">
@@ -35,9 +39,9 @@ export default function HowToOrder() {
               </li>
             </ul>
           </section>
-
+          </SlideFade>
+          <SlideFade delay={0.3}>
           <section className="mb-6">
-            <h3 className="mb-2 text-xl font-semibold text-gray-900">Добавление товара в корзину</h3>
             <ul className="pl-6 text-gray-700 list-decimal">
               <li>
                 <strong>Выберите товар.</strong><br />
@@ -50,9 +54,9 @@ export default function HowToOrder() {
               </li>
             </ul>
           </section>
-
+          </SlideFade>
+          <SlideFade delay={0.4}>
           <section className="mb-6">
-            <h3 className="mb-2 text-xl font-semibold text-gray-900">Оформление заказа</h3>
             <ul className="pl-6 text-gray-700 list-decimal">
               <li>
                 <strong>Перейдите в корзину.</strong><br />
@@ -85,9 +89,9 @@ export default function HowToOrder() {
               </li>
             </ul>
           </section>
-
+          </SlideFade>
+          <SlideFade delay={0.5}>
           <section className="mb-6">
-            <h3 className="mb-2 text-xl font-semibold text-gray-900">Проверка и подтверждение заказа</h3>
             <ul className="pl-6 text-gray-700 list-decimal">
               <li>
                 <strong>Проверьте введенные данные.</strong><br />
@@ -107,9 +111,9 @@ export default function HowToOrder() {
               </li>
             </ul>
           </section>
-
+          </SlideFade>
+          <SlideFade delay={0.6}>
           <section className="mb-6">
-            <h3 className="mb-2 text-xl font-semibold text-gray-900">Что дальше?</h3>
             <ul className="pl-6 text-gray-700 list-decimal">
               <li>
                 <strong>Ожидание доставки.</strong><br />
@@ -123,9 +127,9 @@ export default function HowToOrder() {
               </li>
             </ul>
           </section>
-
+          </SlideFade>
+          <SlideFade delay={0.7}>
           <section className="mb-6">
-            <h3 className="mb-2 text-xl font-semibold text-gray-900">Подробнее</h3>
             <ul className="pl-6 text-gray-700 list-decimal">
               <p>
                 Для более подробной информации по оплате и доставке перейдите в соответствующий раздел
@@ -133,6 +137,7 @@ export default function HowToOrder() {
               </p>
             </ul>
           </section>
+          </SlideFade>
         </div>
       </div>
       </PageFade>

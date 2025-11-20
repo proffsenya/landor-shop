@@ -3,6 +3,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import BreadcrumbNav from "@/components/BreadcrumbNav";
 import { PageFade } from "@/utils/PageAnimations";
+import { SlideFade } from "@/utils/CatalogAnimations";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -103,10 +104,12 @@ export default function Cooperation() {
               { label: "Сотрудничество" }
             ]} />
             <div className="p-6 bg-white border border-gray-200 rounded-lg">
-              <h2 className="text-[#6F2A2B] text-2xl sm:text-[28px] lg:text-3xl leading-none mb-6 sm:mb-7 lg:mb-15">
-                Сотрудничество
-              </h2>
-
+              <SlideFade delay={0.1}>
+                <h2 className="text-[#6F2A2B] text-2xl sm:text-[28px] lg:text-3xl leading-none mb-6 sm:mb-7 lg:mb-15">
+                  Сотрудничество
+                </h2>
+              </SlideFade>
+              <SlideFade delay={0.2}>
               <section className="mb-6">
                 <ul className="pl-6 text-gray-700 space-y-2">
                   <li className="flex items-start">
@@ -129,8 +132,9 @@ export default function Cooperation() {
                   </li>
                 </ul>
               </section>
-
+              </SlideFade>
               {/* Плашка "Связаться с нами" */}
+              <SlideFade delay={0.3}>
               <section className="mb-6">
                 <div className="bg-[#6F2A2B] text-white rounded-lg p-6 text-center">
                   <h3 className="text-xl font-bold mb-2">Связаться с нами</h3>
@@ -139,8 +143,9 @@ export default function Cooperation() {
                   </p>
                 </div>
               </section>
-
+              </SlideFade>
               {/* Форма */}
+              <SlideFade delay={0.4}>
               <section className="mb-6">
                 <form onSubmit={handleSubmit}>
                   <div className="space-y-4">
@@ -267,6 +272,7 @@ export default function Cooperation() {
                   </div>
                 </form>
               </section>
+              </SlideFade>
             </div>
           </div>
         </div>
