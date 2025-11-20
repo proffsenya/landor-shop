@@ -3,6 +3,7 @@ import { useState, useEffect, useMemo } from "react";
 import { Link } from "react-router-dom";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import BreadcrumbNav from "@/components/BreadcrumbNav";
 import { ShoppingCart, ArrowLeft } from "lucide-react";
 import ProductsSection from "../components/ProductsSection";
 import { PageFade, ListMotion, ToastMotion } from "@/utils/PageAnimations";
@@ -343,6 +344,10 @@ async function moveFavoritesToCart(variantIdsRaw) {
       <Header />
       <PageFade>
         <div className="container mx-auto px-4 sm:px-6 lg:px-[80px] py-6 sm:py-8 lg:py-10">
+          <BreadcrumbNav items={[
+            { label: "Главная", to: "/" },
+            { label: "Избранное" }
+          ]} />
           <h1 className="text-[#6F2A2B] text-2xl sm:text-[28px] lg:text-3xl leading-none mb-6 sm:mb-10 lg:mb-20">
             Избранное
           </h1>

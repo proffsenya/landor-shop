@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import BreadcrumbNav from "@/components/BreadcrumbNav";
 import { PageFade } from "@/utils/PageAnimations";
 
 export default function Login() {
@@ -71,7 +72,15 @@ export default function Login() {
       <Header />
       <PageFade>
         {/* Основной контент с фоном лап - растягиваем на всю доступную высоту */}
-        <main className="flex-1 flex items-center justify-center min-h-[calc(100vh-140px)] py-20 bg-white relative overflow-hidden">
+        <main className="flex-1 flex flex-col items-center justify-center min-h-[calc(100vh-140px)] py-20 bg-white relative overflow-hidden">
+          {/* Breadcrumb */}
+          <div className="w-full max-w-[500px] mb-4 relative z-10">
+            <BreadcrumbNav items={[
+              { label: "Главная", to: "/" },
+              { label: "Войти" }
+            ]} />
+          </div>
+
           {/* Левая картинка */}
           <img
             src="/bitmap1.svg"

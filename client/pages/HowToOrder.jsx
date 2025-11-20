@@ -1,6 +1,7 @@
 import React from 'react';
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import BreadcrumbNav from "@/components/BreadcrumbNav";
 import { PageFade } from "@/utils/PageAnimations";
 import { Link } from "react-router-dom";
 
@@ -10,6 +11,10 @@ export default function HowToOrder() {
       <Header />
       <PageFade>
       <div className="container px-4 py-8 mx-auto">
+        <BreadcrumbNav items={[
+          { label: "Главная", to: "/" },
+          { label: "Как сделать заказ" }
+        ]} />
         <div className="p-6 bg-white border border-gray-200 rounded-lg">
           <h2 className=" text-[#6F2A2B] text-2xl sm:text-[28px] lg:text-3xl leading-none mb-6 sm:mb-7 lg:mb-15">Как сделать заказ</h2>
           <section className="mb-10">

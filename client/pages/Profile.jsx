@@ -1,6 +1,7 @@
 import { useState } from "react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import BreadcrumbNav from "@/components/BreadcrumbNav";
 import { Button } from "@/components/ui/button";
 import { PageFade } from "@/utils/PageAnimations";
 
@@ -84,6 +85,10 @@ export default function Profile() {
     <div className="min-h-screen bg-white">
       <Header />
       <div className="container mx-auto px-4 sm:px-6 lg:px-[64px] py-6 sm:py-8">
+        <BreadcrumbNav items={[
+          { label: "Главная", to: "/" },
+          { label: "Профиль" }
+        ]} />
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-[0.9fr_1.1fr]">
           {/* Профиль — уменьшенный */}
           <div className="border border-[#E8E8E8] rounded-xl p-4 sm:p-6">

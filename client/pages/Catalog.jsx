@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import BreadcrumbNav from "@/components/BreadcrumbNav";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -248,6 +249,11 @@ export default function Catalog() {
         : [];
       setProducts(cards);
       setPage(1);
+      
+      // Сохраняем исходные данные продуктов для поиска (не развернутые карточки)
+      if (Array.isArray(data) && data.length > 0) {
+        sessionStorage.setItem("catalog:all", JSON.stringify(data));
+      }
     } catch (e) {
       setProducts([]);
       setPage(1);
@@ -719,6 +725,10 @@ export default function Catalog() {
     <div className="min-h-screen bg-white">
       <Header />
       <div className="container px-4 py-8 mx-auto">
+        <BreadcrumbNav items={[
+          { label: "Главная", to: "/" },
+          { label: "Каталог" }
+        ]} />
         {/* Мобильная панель */}
         <div className="flex items-center gap-3 mb-6 lg:hidden">
           <Button
@@ -1078,7 +1088,7 @@ export default function Catalog() {
                   stagger={0.05}
                   key={page}
                 >
-                  <div className="grid grid-cols-1 gap-4 mb-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                  <div className="grid grid-cols-1 gap-4 mb-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 items-stretch">
                     {paged.map((product) => {
                       const isVariantCard =
                         !!product.parentId && product.parentId !== product.id;

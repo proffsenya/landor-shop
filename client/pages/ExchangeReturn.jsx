@@ -1,6 +1,7 @@
 import React from 'react';
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import BreadcrumbNav from "@/components/BreadcrumbNav";
 import { PageFade } from "@/utils/PageAnimations";
 
 export default function ExchangeReturn() {
@@ -10,6 +11,10 @@ export default function ExchangeReturn() {
       <PageFade>
         <div className="flex-1 flex items-center justify-center min-h-[calc(100vh-140px)] py-8">
           <div className="container w-full max-w-4xl px-4 mx-auto">
+            <BreadcrumbNav items={[
+              { label: "Главная", to: "/" },
+              { label: "Обмен и возврат" }
+            ]} />
             <div className="p-6 bg-white border border-gray-200 rounded-lg">
               <h2 className="text-[#6F2A2B] text-2xl sm:text-[28px] lg:text-3xl leading-none mb-6 sm:mb-7 lg:mb-15">Обмен и возврат</h2>
               

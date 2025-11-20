@@ -15,6 +15,8 @@ import NotFound from "./pages/NotFound";
 import DeliveryPayment from "./pages/DeliveryPayment";
 import ExchangeReturn from "./pages/ExchangeReturn";
 import HowToOrder from "./pages/HowToOrder";
+import Breeders from "./pages/Breeders";
+import Cooperation from "./pages/Cooperation";
 import ScrollToTop from "./lib/Scrolltotop";
 
 const queryClient = new QueryClient();
@@ -38,6 +40,8 @@ const App = () => (
                   <Route path="/deliverypayment" element={<DeliveryPayment />} />
                   <Route path="/exchangereturn" element={<ExchangeReturn />} />
                   <Route path="/howtoorder" element={<HowToOrder />} />
+                  <Route path="/breeders" element={<Breeders />} />
+                  <Route path="/cooperation" element={<Cooperation />} />
                   <Route path="/profile" element={<Profile />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>

@@ -25,9 +25,15 @@ export function localSearch(query, dataset = [], limit = 15) {
 
   const res = [];
   for (const item of dataset) {
+    // Проверяем наличие variants
+    const variants = Array.isArray(item?.variants) ? item.variants : [];
+    
+    // Если нет variants, пропускаем этот товар
+    if (variants.length === 0) continue;
+    
     // Преобразуем каждый вариант товара в результаты поиска
-    item.variants.forEach((variant) => {
-      const title = variant?.displayName || item?.productName || "";
+    variants.forEach((variant) => {
+      const title = variant?.displayName || variant?.display_name || item?.productName || item?.name || "";
       const desc = variant?.description || item?.brand || "";
       const combined = `${title} ${desc}`.toLowerCase();
 
@@ -43,16 +49,19 @@ export function localSearch(query, dataset = [], limit = 15) {
       );
 
       if (allWordsFound) {
+        const variantId = variant?.id ?? variant?.variantId;
+        const productId = item?.id ?? item?.productId ?? item?.parentId;
+        
         res.push({
-          id: String(variant?.id ?? Math.random()),
+          id: String(variantId ?? Math.random()),
           title: title || "Товар",
           subtitle: typeof variant?.price === "number" ? `${variant.price} ₽` : desc,
           image: variant?.imageUrl || item?.imageUrl || "/korm1.svg",
-          url:
-            variant?.url ||
-            (item?.parentId
-              ? `/product/${encodeURIComponent(item.parentId)}?variant=${encodeURIComponent(variant.id)}`
-              : `/product/${encodeURIComponent(variant.id)}`),
+          url: productId && variantId
+            ? `/product/${encodeURIComponent(productId)}?variant=${encodeURIComponent(variantId)}`
+            : variantId
+            ? `/product/${encodeURIComponent(variantId)}`
+            : "#",
           type: "product",
         });
       }

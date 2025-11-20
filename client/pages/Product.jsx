@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useParams, useLocation, useNavigate } from "react-router-dom";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import BreadcrumbNav from "@/components/BreadcrumbNav";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Heart, Check } from "lucide-react";
 import { PageFade } from "@/utils/PageAnimations";
@@ -347,10 +348,17 @@ export default function Product() {
     return `${p.toLocaleString("ru-RU")}₽`;
   }, [selectedVariant, product?.price]);
 
-  const brand = useMemo(
-    () => pickName(product?.brand, "—") || "—",
-    [product]
-  );
+  const brand = useMemo(() => {
+    // Проверяем brandDTO (как countryDTOs)
+    if (product?.brandDTO) {
+      return pickName(product.brandDTO, "—") || "—";
+    }
+    // Fallback на brand
+    if (product?.brand) {
+      return pickName(product.brand, "—") || "—";
+    }
+    return "—";
+  }, [product?.brandDTO, product?.brand]);
 
   const tastesText = useMemo(() => {
     const fl = Array.isArray(product?.flavorIds)
@@ -393,8 +401,7 @@ export default function Product() {
 
   const available = totalStock >= 1;
 
-  const composition = product?.composition ?? "—";
-  const nutritionalValue = product?.nutritionalValue ?? "—";
+  const description = product?.description ?? "—";
   const guaranteedIndicators = product?.guaranteedIndicators ?? "—";
   const feedingNote = product?.feedingNote ?? "—";
 
@@ -632,13 +639,11 @@ export default function Product() {
       <Header />
       <main className="flex-1">
         <div className="container mx-auto px-4 py-6 md:px-10 lg:px-[84px] md:py-8">
-          <Link
-            to={catalogLink}
-            className="mb-4 inline-flex items-center text-[14px] text-[#6B6B6B] hover:text-[#1E1E1E]"
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            В каталог
-          </Link>
+          <BreadcrumbNav items={[
+            { label: "Главная", to: "/" },
+            { label: "Каталог", to: "/catalog" },
+            { label: title || "Товар" }
+          ]} />
 
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2 md:gap-8">
             {/* Карусель изображений */}
@@ -788,9 +793,6 @@ export default function Product() {
                 <div className="text-[#6B6B6B]">Артикул (SKU):</div>
                 <div>{skuText}</div>
 
-                <div className="text-[#6B6B6B]">Бренд:</div>
-                <div>{brand}</div>
-
                 <div className="text-[#6B6B6B]">Страна производства:</div>
                 <div>{countryText}</div>
 
@@ -807,15 +809,18 @@ export default function Product() {
           </div>
 
           <div className="mt-8 space-y-3">
-            <CardSection title="Состав">{composition}</CardSection>
-            <CardSection title="Энергетическая ценность" defaultOpen>
-              {nutritionalValue}
+            <CardSection title="Описание" defaultOpen>
+              <p className="text-[13px] leading-relaxed text-[#1E1E1E] whitespace-pre-line">
+                {description}
+              </p>
             </CardSection>
             <CardSection title="Гарантируемые показатели" defaultOpen>
-              {guaranteedIndicators}
+              <p className="text-[13px] leading-relaxed text-[#1E1E1E] whitespace-pre-line">
+                {guaranteedIndicators}
+              </p>
             </CardSection>
             <CardSection title="Нормы кормления" defaultOpen>
-              <p className="text-[13px] leading-relaxed text-[#1E1E1E]">
+              <p className="text-[13px] leading-relaxed text-[#1E1E1E] whitespace-pre-line">
                 {feedingNote}
               </p>
             </CardSection>

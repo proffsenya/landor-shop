@@ -223,11 +223,11 @@ const handleToggleFavorite = async (e) => {
 
 
   return (
-    <StaggerItem>
-      <HoverLift>
-        <div className="overflow-hidden transition-shadow bg-white border border-gray-200 rounded-xl hover:shadow-lg">
+    <StaggerItem className="h-full">
+      <HoverLift className="h-full">
+        <div className="flex flex-col h-full overflow-hidden transition-shadow bg-white border border-gray-200 rounded-xl hover:shadow-lg">
           {/* Верхняя часть карточки */}
-          <div className="relative p-4 bg-white border-b border-gray-200 sm:p-6 lg:p-8">
+          <div className="relative flex-shrink-0 p-4 bg-white border-b border-gray-200 sm:p-6 lg:p-8">
             {/* Избранное */}
             <button
               type="button"
@@ -262,20 +262,20 @@ const handleToggleFavorite = async (e) => {
           </div>
 
           {/* Инфо-блок */}
-          <div className="p-3 sm:p-4">
+          <div className="flex flex-col flex-1 p-3 sm:p-4">
             <Link
               to={productUrl}
-              className="block focus:outline-none focus:ring-2 focus:ring-[#6F2A2B] rounded"
+              className="block flex-1 focus:outline-none focus:ring-2 focus:ring-[#6F2A2B] rounded"
               title={title}
               aria-label={title || "Товар"}
             >
-              <p className="text-[#1E1E1E] text-sm sm:text-base mb-6 line-clamp-2 lg:line-clamp-3">
+              <p className="text-[#1E1E1E] text-sm sm:text-base mb-6 line-clamp-3 h-[4.5rem] sm:h-[5rem]">
                 {title}
               </p>
             </Link>
 
             {/* Цена + кнопка */}
-            <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center justify-between gap-3 mt-auto">
               <span className="text-xl sm:text-2xl text-[#6F2A2B] font-normal whitespace-nowrap">
                 {price}
               </span>
