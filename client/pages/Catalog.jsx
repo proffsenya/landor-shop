@@ -135,28 +135,26 @@ export default function Catalog() {
     all: true,
     dry: false,
     wet: false,
-    litter: false,
-    goodies: false,
   });
   const [catFilters, setCatFilters] = useState({
-    sterilized: false,
-    skin: false,
-    digestion: false,
-    picky: false,
-    indoor: false,
+    "for-sterilized": false,
+    "for-skin-and-coat-health": false,
+    "for-sensitive-digestion": false,
+    "for-picky": false,
+    "for-indoor": false,
   });
   const [dogFilters, setDogFilters] = useState({
-    small: false,
-    medium: false,
-    large: false,
+    "for-small-breeds": false,
+    "for-medium-breeds": false,
+    "for-large-breeds": false,
   });
   const [minicatFilters, setMiniCatFilters] = useState({
     forKittens: false,
   });
   const [minidogFilters, setMiniDogFilters] = useState({
-    small: false,
-    medium: false,
-    large: false,
+    "for-small-breeds": false,
+    "for-medium-breeds": false,
+    "for-large-breeds": false,
   });
   const [countryFilters, setCountryFilters] = useState({
     spain: false,
@@ -165,7 +163,7 @@ export default function Catalog() {
     belarus: false,
     china: false,
   });
-  const [tasteFilters, setTasteFilters] = useState({
+  const [flavorFilters, setFlavorFilters] = useState({
     rabbit: false,
     chicken: false,
     partridge: false,
@@ -181,8 +179,8 @@ export default function Catalog() {
   const [brandFilters, setBrandFilters] = useState({
     landor: false,
     landy: false,
-    fresh: false,
-    clean: false,
+    "fresh-pet-profbalance": false,
+    "chistye-pushistye": false,
   });
 
   // пагинация
@@ -194,7 +192,9 @@ export default function Catalog() {
     const queryParams = new URLSearchParams();
 
     Object.keys(categoryFilters).forEach((key) => {
-      if (categoryFilters[key]) queryParams.append("category_" + key, "true");
+      if (key !== "all" && categoryFilters[key]) {
+        queryParams.append("category_" + key, "true");
+      }
     });
     Object.keys(catFilters).forEach((key) => {
       if (catFilters[key]) queryParams.append("cat_" + key, "true");
@@ -211,8 +211,8 @@ export default function Catalog() {
     Object.keys(countryFilters).forEach((key) => {
       if (countryFilters[key]) queryParams.append("country_" + key, "true");
     });
-    Object.keys(tasteFilters).forEach((key) => {
-      if (tasteFilters[key]) queryParams.append("taste_" + key, "true");
+    Object.keys(flavorFilters).forEach((key) => {
+      if (flavorFilters[key]) queryParams.append("flavor_" + key, "true");
     });
     Object.keys(brandFilters).forEach((key) => {
       if (brandFilters[key]) queryParams.append("brand_" + key, "true");
@@ -248,7 +248,6 @@ export default function Catalog() {
         : [];
       setProducts(cards);
       setPage(1);
-      sessionStorage.setItem("catalog:all", JSON.stringify(data));
     } catch (e) {
       setProducts([]);
       setPage(1);
@@ -260,7 +259,12 @@ export default function Catalog() {
 
   // первая загрузка: используем то, что уже есть в адресной строке
   useEffect(() => {
-    fetchCards(window.location.search || "");
+    const queryString = window.location.search || "";
+    fetchCards(queryString);
+    // сохраняем query параметры в sessionStorage при загрузке
+    if (queryString) {
+      sessionStorage.setItem("catalog:lastQuery", queryString);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -299,8 +303,6 @@ export default function Catalog() {
         all: true,
         dry: false,
         wet: false,
-        litter: false,
-        goodies: false,
       });
     } else {
       setCategoryFilters((prev) => ({
@@ -318,6 +320,9 @@ export default function Catalog() {
     // обновляем URL страницы
     window.history.pushState({}, "", filtersUrlString || window.location.pathname);
 
+    // сохраняем query параметры в sessionStorage для использования при возврате из страницы товара
+    sessionStorage.setItem("catalog:lastQuery", filtersUrlString);
+
     // отправляем в бэк именно эту строку
     fetchCards(filtersUrlString);
     setMobileFiltersOpen(false);
@@ -328,28 +333,26 @@ export default function Catalog() {
       all: true,
       dry: false,
       wet: false,
-      litter: false,
-      goodies: false,
     });
     setCatFilters({
-      sterilized: false,
-      skin: false,
-      digestion: false,
-      picky: false,
-      indoor: false,
+      "for-sterilized": false,
+      "for-skin-and-coat-health": false,
+      "for-sensitive-digestion": false,
+      "for-picky": false,
+      "for-indoor": false,
     });
     setDogFilters({
-      small: false,
-      medium: false,
-      large: false,
+      "for-small-breeds": false,
+      "for-medium-breeds": false,
+      "for-large-breeds": false,
     });
     setMiniCatFilters({
       forKittens: false,
     });
     setMiniDogFilters({
-      small: false,
-      medium: false,
-      large: false,
+      "for-small-breeds": false,
+      "for-medium-breeds": false,
+      "for-large-breeds": false,
     });
     setCountryFilters({
       spain: false,
@@ -358,7 +361,7 @@ export default function Catalog() {
       belarus: false,
       china: false,
     });
-    setTasteFilters({
+    setFlavorFilters({
       rabbit: false,
       chicken: false,
       partridge: false,
@@ -374,8 +377,8 @@ export default function Catalog() {
     setBrandFilters({
       landor: false,
       landy: false,
-      fresh: false,
-      clean: false,
+      "fresh-pet-profbalance": false,
+      "chistye-pushistye": false,
     });
     setPriceFrom("");
     setPriceTo("");
@@ -430,20 +433,6 @@ export default function Catalog() {
                   />
                   <span className="text-sm">Влажные корма</span>
                 </label>
-                <label className="flex items-center space-x-2">
-                  <Checkbox
-                    checked={categoryFilters.litter}
-                    onCheckedChange={() => handleCategoryChange("litter")}
-                  />
-                  <span className="text-sm">Наполнители</span>
-                </label>
-                <label className="flex items-center space-x-2">
-                  <Checkbox
-                    checked={categoryFilters.goodies}
-                    onCheckedChange={() => handleCategoryChange("goodies")}
-                  />
-                  <span className="text-sm">Лакомства</span>
-                </label>
               </div>
             </FilterSection>
 
@@ -487,18 +476,18 @@ export default function Catalog() {
               <div className="space-y-2">
                 <label className="flex items-center space-x-2">
                   <Checkbox
-                    checked={catFilters.sterilized}
+                    checked={catFilters["for-sterilized"]}
                     onCheckedChange={(c) =>
-                      setCatFilters((prev) => ({ ...prev, sterilized: c }))
+                      setCatFilters((prev) => ({ ...prev, "for-sterilized": c }))
                     }
                   />
                   <span className="text-sm">Для стерилизованных</span>
                 </label>
                 <label className="flex items-center space-x-2">
                   <Checkbox
-                    checked={catFilters.skin}
+                    checked={catFilters["for-skin-and-coat-health"]}
                     onCheckedChange={(c) =>
-                      setCatFilters((prev) => ({ ...prev, skin: c }))
+                      setCatFilters((prev) => ({ ...prev, "for-skin-and-coat-health": c }))
                     }
                   />
                   <span className="text-sm">
@@ -507,9 +496,9 @@ export default function Catalog() {
                 </label>
                 <label className="flex items-center space-x-2">
                   <Checkbox
-                    checked={catFilters.digestion}
+                    checked={catFilters["for-sensitive-digestion"]}
                     onCheckedChange={(c) =>
-                      setCatFilters((prev) => ({ ...prev, digestion: c }))
+                      setCatFilters((prev) => ({ ...prev, "for-sensitive-digestion": c }))
                     }
                   />
                   <span className="text-sm">
@@ -518,18 +507,18 @@ export default function Catalog() {
                 </label>
                 <label className="flex items-center space-x-2">
                   <Checkbox
-                    checked={catFilters.picky}
+                    checked={catFilters["for-picky"]}
                     onCheckedChange={(c) =>
-                      setCatFilters((prev) => ({ ...prev, picky: c }))
+                      setCatFilters((prev) => ({ ...prev, "for-picky": c }))
                     }
                   />
                   <span className="text-sm">Для привередливых</span>
                 </label>
                 <label className="flex items-center space-x-2">
                   <Checkbox
-                    checked={catFilters.indoor}
+                    checked={catFilters["for-indoor"]}
                     onCheckedChange={(c) =>
-                      setCatFilters((prev) => ({ ...prev, indoor: c }))
+                      setCatFilters((prev) => ({ ...prev, "for-indoor": c }))
                     }
                   />
                   <span className="text-sm">Для домашних</span>
@@ -542,27 +531,27 @@ export default function Catalog() {
               <div className="space-y-2">
                 <label className="flex items-center space-x-2">
                   <Checkbox
-                    checked={minidogFilters.small}
+                    checked={minidogFilters["for-small-breeds"]}
                     onCheckedChange={(c) =>
-                      setMiniDogFilters((prev) => ({ ...prev, small: c }))
+                      setMiniDogFilters((prev) => ({ ...prev, "for-small-breeds": c }))
                     }
                   />
                   <span className="text-sm">Для мелких пород</span>
                 </label>
                 <label className="flex items-center space-x-2">
                   <Checkbox
-                    checked={minidogFilters.medium}
+                    checked={minidogFilters["for-medium-breeds"]}
                     onCheckedChange={(c) =>
-                      setMiniDogFilters((prev) => ({ ...prev, medium: c }))
+                      setMiniDogFilters((prev) => ({ ...prev, "for-medium-breeds": c }))
                     }
                   />
                   <span className="text-sm">Для средних пород</span>
                 </label>
                 <label className="flex items-center space-x-2">
                   <Checkbox
-                    checked={minidogFilters.large}
+                    checked={minidogFilters["for-large-breeds"]}
                     onCheckedChange={(c) =>
-                      setMiniDogFilters((prev) => ({ ...prev, large: c }))
+                      setMiniDogFilters((prev) => ({ ...prev, "for-large-breeds": c }))
                     }
                   />
                   <span className="text-sm">Для крупных пород</span>
@@ -575,27 +564,27 @@ export default function Catalog() {
               <div className="space-y-2">
                 <label className="flex items-center space-x-2">
                   <Checkbox
-                    checked={dogFilters.small}
+                    checked={dogFilters["for-small-breeds"]}
                     onCheckedChange={(c) =>
-                      setDogFilters((prev) => ({ ...prev, small: c }))
+                      setDogFilters((prev) => ({ ...prev, "for-small-breeds": c }))
                     }
                   />
                   <span className="text-sm">Для мелких пород</span>
                 </label>
                 <label className="flex items-center space-x-2">
                   <Checkbox
-                    checked={dogFilters.medium}
+                    checked={dogFilters["for-medium-breeds"]}
                     onCheckedChange={(c) =>
-                      setDogFilters((prev) => ({ ...prev, medium: c }))
+                      setDogFilters((prev) => ({ ...prev, "for-medium-breeds": c }))
                     }
                   />
                   <span className="text-sm">Для средних пород</span>
                 </label>
                 <label className="flex items-center space-x-2">
                   <Checkbox
-                    checked={dogFilters.large}
+                    checked={dogFilters["for-large-breeds"]}
                     onCheckedChange={(c) =>
-                      setDogFilters((prev) => ({ ...prev, large: c }))
+                      setDogFilters((prev) => ({ ...prev, "for-large-breeds": c }))
                     }
                   />
                   <span className="text-sm">Для крупных пород</span>
@@ -672,9 +661,9 @@ export default function Catalog() {
                 ].map(([key, label]) => (
                   <label key={key} className="flex items-center space-x-2">
                     <Checkbox
-                      checked={tasteFilters[key]}
+                      checked={flavorFilters[key]}
                       onCheckedChange={(c) =>
-                        setTasteFilters((prev) => ({ ...prev, [key]: c }))
+                        setFlavorFilters((prev) => ({ ...prev, [key]: c }))
                       }
                     />
                     <span className="text-sm">{label}</span>
@@ -689,8 +678,8 @@ export default function Catalog() {
                 {[
                   ["landor", "LANDOR"],
                   ["landy", "LANDY"],
-                  ["fresh", "FRESH PET PROFBALANCE"],
-                  ["clean", "ЧИСТЫЕ ПУШИСТЫЕ"],
+                  ["fresh-pet-profbalance", "FRESH PET PROFBALANCE"],
+                  ["chistye-pushistye", "ЧИСТЫЕ ПУШИСТЫЕ"],
                 ].map(([key, label]) => (
                   <label key={key} className="flex items-center space-x-2">
                     <Checkbox
@@ -776,20 +765,6 @@ export default function Catalog() {
                     />
                     <span className="text-sm">Влажные корма</span>
                   </label>
-                  <label className="flex items-center space-x-2">
-                    <Checkbox
-                      checked={categoryFilters.litter}
-                      onCheckedChange={() => handleCategoryChange("litter")}
-                    />
-                    <span className="text-sm">Наполнители</span>
-                  </label>
-                  <label className="flex items-center space-x-2">
-                    <Checkbox
-                      checked={categoryFilters.goodies}
-                      onCheckedChange={() => handleCategoryChange("goodies")}
-                    />
-                    <span className="text-sm">Лакомства</span>
-                  </label>
                 </div>
               </FilterSection>
 
@@ -833,18 +808,18 @@ export default function Catalog() {
                 <div className="space-y-2">
                   <label className="flex items-center space-x-2">
                     <Checkbox
-                      checked={catFilters.sterilized}
+                      checked={catFilters["for-sterilized"]}
                       onCheckedChange={(c) =>
-                        setCatFilters((prev) => ({ ...prev, sterilized: c }))
+                        setCatFilters((prev) => ({ ...prev, "for-sterilized": c }))
                       }
                     />
                     <span className="text-sm">Для стерилизованных</span>
                   </label>
                   <label className="flex items-center space-x-2">
                     <Checkbox
-                      checked={catFilters.skin}
+                      checked={catFilters["for-skin-and-coat-health"]}
                       onCheckedChange={(c) =>
-                        setCatFilters((prev) => ({ ...prev, skin: c }))
+                        setCatFilters((prev) => ({ ...prev, "for-skin-and-coat-health": c }))
                       }
                     />
                     <span className="text-sm">
@@ -853,9 +828,9 @@ export default function Catalog() {
                   </label>
                   <label className="flex items-center space-x-2">
                     <Checkbox
-                      checked={catFilters.digestion}
+                      checked={catFilters["for-sensitive-digestion"]}
                       onCheckedChange={(c) =>
-                        setCatFilters((prev) => ({ ...prev, digestion: c }))
+                        setCatFilters((prev) => ({ ...prev, "for-sensitive-digestion": c }))
                       }
                     />
                     <span className="text-sm">
@@ -864,18 +839,18 @@ export default function Catalog() {
                   </label>
                   <label className="flex items-center space-x-2">
                     <Checkbox
-                      checked={catFilters.picky}
+                      checked={catFilters["for-picky"]}
                       onCheckedChange={(c) =>
-                        setCatFilters((prev) => ({ ...prev, picky: c }))
+                        setCatFilters((prev) => ({ ...prev, "for-picky": c }))
                       }
                     />
                     <span className="text-sm">Для привередливых</span>
                   </label>
                   <label className="flex items-center space-x-2">
                     <Checkbox
-                      checked={catFilters.indoor}
+                      checked={catFilters["for-indoor"]}
                       onCheckedChange={(c) =>
-                        setCatFilters((prev) => ({ ...prev, indoor: c }))
+                        setCatFilters((prev) => ({ ...prev, "for-indoor": c }))
                       }
                     />
                     <span className="text-sm">Для домашних</span>
@@ -888,27 +863,27 @@ export default function Catalog() {
                 <div className="space-y-2">
                   <label className="flex items-center space-x-2">
                     <Checkbox
-                      checked={minidogFilters.small}
+                      checked={minidogFilters["for-small-breeds"]}
                       onCheckedChange={(c) =>
-                        setMiniDogFilters((prev) => ({ ...prev, small: c }))
+                        setMiniDogFilters((prev) => ({ ...prev, "for-small-breeds": c }))
                       }
                     />
                     <span className="text-sm">Для мелких пород</span>
                   </label>
                   <label className="flex items-center space-x-2">
                     <Checkbox
-                      checked={minidogFilters.medium}
+                      checked={minidogFilters["for-medium-breeds"]}
                       onCheckedChange={(c) =>
-                        setMiniDogFilters((prev) => ({ ...prev, medium: c }))
+                        setMiniDogFilters((prev) => ({ ...prev, "for-medium-breeds": c }))
                       }
                     />
                     <span className="text-sm">Для средних пород</span>
                   </label>
                   <label className="flex items-center space-x-2">
                     <Checkbox
-                      checked={minidogFilters.large}
+                      checked={minidogFilters["for-large-breeds"]}
                       onCheckedChange={(c) =>
-                        setMiniDogFilters((prev) => ({ ...prev, large: c }))
+                        setMiniDogFilters((prev) => ({ ...prev, "for-large-breeds": c }))
                       }
                     />
                     <span className="text-sm">Для крупных пород</span>
@@ -921,27 +896,27 @@ export default function Catalog() {
                 <div className="space-y-2">
                   <label className="flex items-center space-x-2">
                     <Checkbox
-                      checked={dogFilters.small}
+                      checked={dogFilters["for-small-breeds"]}
                       onCheckedChange={(c) =>
-                        setDogFilters((prev) => ({ ...prev, small: c }))
+                        setDogFilters((prev) => ({ ...prev, "for-small-breeds": c }))
                       }
                     />
                     <span className="text-sm">Для мелких пород</span>
                   </label>
                   <label className="flex items-center space-x-2">
                     <Checkbox
-                      checked={dogFilters.medium}
+                      checked={dogFilters["for-medium-breeds"]}
                       onCheckedChange={(c) =>
-                        setDogFilters((prev) => ({ ...prev, medium: c }))
+                        setDogFilters((prev) => ({ ...prev, "for-medium-breeds": c }))
                       }
                     />
                     <span className="text-sm">Для средних пород</span>
                   </label>
                   <label className="flex items-center space-x-2">
                     <Checkbox
-                      checked={dogFilters.large}
+                      checked={dogFilters["for-large-breeds"]}
                       onCheckedChange={(c) =>
-                        setDogFilters((prev) => ({ ...prev, large: c }))
+                        setDogFilters((prev) => ({ ...prev, "for-large-breeds": c }))
                       }
                     />
                     <span className="text-sm">Для крупных пород</span>
@@ -1018,9 +993,9 @@ export default function Catalog() {
                   ].map(([key, label]) => (
                     <label key={key} className="flex items-center space-x-2">
                       <Checkbox
-                        checked={tasteFilters[key]}
+                        checked={flavorFilters[key]}
                         onCheckedChange={(c) =>
-                          setTasteFilters((prev) => ({
+                          setFlavorFilters((prev) => ({
                             ...prev,
                             [key]: c,
                           }))
@@ -1038,8 +1013,8 @@ export default function Catalog() {
                   {[
                     ["landor", "LANDOR"],
                     ["landy", "LANDY"],
-                    ["fresh", "FRESH PET PROFBALANCE"],
-                    ["clean", "ЧИСТЫЕ ПУШИСТЫЕ"],
+                    ["fresh-pet-profbalance", "FRESH PET PROFBALANCE"],
+                    ["chistye-pushistye", "ЧИСТЫЕ ПУШИСТЫЕ"],
                   ].map(([key, label]) => (
                     <label key={key} className="flex items-center space-x-2">
                       <Checkbox

@@ -23,37 +23,54 @@ function seededShuffle(arr, seed = 1) {
   return a;
 }
 
-// добиваем до 5 штук дублями (уникальные id для React)
-function fillToFiveVariants(cards, seed = 1) {
+// выбираем 5 случайных уникальных вариантов (без дубликатов)
+function selectFiveRandomVariants(cards, seed = 1) {
   if (!Array.isArray(cards) || cards.length === 0) return [];
-  if (cards.length >= 5) return cards.slice(0, 5);
-  const base = seededShuffle(cards, seed);
-  const out = [];
-  let i = 0, dup = 1;
-  while (out.length < 5) {
-    const src = base[i % base.length];
-    out.push({
-      ...src,
-      id: `${src.id}#dup${dup}-${out.length}`, // уникальный ключ
-    });
-    i++;
-    if (i % base.length === 0) dup++;
+  // перемешиваем и берем максимум 5 уникальных вариантов
+  const shuffled = seededShuffle(cards, seed);
+  // убираем дубликаты по комбинации productId:variantId
+  const unique = [];
+  const seen = new Set();
+  for (const card of shuffled) {
+    const key = `${card.productId}:${card.variantId}`;
+    if (!seen.has(key)) {
+      seen.add(key);
+      unique.push(card);
+      if (unique.length >= 5) break;
+    }
   }
-  return out;
+  return unique;
 }
 
-// безопасно достаём основной imageId и строим URL
-function resolveImageUrl(product, variant) {
-  // приоритет: variant.imageId -> product.mainImageId -> product.imageId -> первый из product.images
-  const pid = product?.id ?? product?.productId;
-  const vid = variant?.imageId ?? variant?.mainImageId;
-  const pMain =
-    product?.mainImageId ??
-    product?.imageId ??
-    (Array.isArray(product?.images) && product.images[0]?.id);
+// безопасно достаём картинку варианта (как в каталоге)
+function getFirstImage(product) {
+  const images =
+    (Array.isArray(product?.images) && product.images) ||
+    (Array.isArray(product?.productImageDTOs) && product.productImageDTOs) ||
+    [];
 
-  const imgId = vid ?? pMain;
-  return imgId ? `/api/products/${encodeURIComponent(pid)}/images/${encodeURIComponent(imgId)}` : "/korm1.svg";
+  const first =
+    images.find((img) => {
+      if (typeof img === "string") return true;
+      return img?.url || img?.path || img?.src;
+    }) || null;
+
+  if (!first) return "/korm1.svg";
+  if (typeof first === "string") return first;
+  return first.url || first.path || first.src || "/korm1.svg";
+}
+
+function resolveImageUrl(product, variant) {
+  // приоритет: variant.imageUrl -> первая картинка продукта (как в каталоге)
+  const firstImage = getFirstImage(product);
+  
+  // если у варианта есть своя картинка, используем её
+  if (variant?.imageUrl && typeof variant.imageUrl === "string" && variant.imageUrl.length > 0) {
+    return variant.imageUrl;
+  }
+  
+  // иначе используем первую картинку продукта
+  return firstImage;
 }
 
 // как в каталоге: разворачиваем продукт в карточки по каждому варианту
@@ -142,13 +159,12 @@ export default function ProductsSection({ title, linkText = "Все товары
       // 3) разворачиваем в варианты
       const allVariantCards = (Array.isArray(data) ? data : [])
         .flatMap(expandProductToVariantCards)
-        // фильтры на всякий
+        // фильтры на всякий - только валидные варианты
         .filter((x) => Number.isFinite(x.productId) && Number.isFinite(x.variantId));
 
-      // 4) рандом на день
+      // 4) выбираем 5 случайных уникальных вариантов
       const seed = Number(todayKey().slice(-8)) || 1;
-      const shuffled = seededShuffle(allVariantCards, seed);
-      const fresh = fillToFiveVariants(shuffled, seed);
+      const fresh = selectFiveRandomVariants(allVariantCards, seed);
 
       if (!mounted) return;
       setCards(fresh);

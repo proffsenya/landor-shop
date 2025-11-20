@@ -233,6 +233,12 @@ export default function Product() {
   const [inCart, setInCart] = useState(false);
   const [adding, setAdding] = useState(false);
 
+  // Сохраняем ссылку на каталог с последними фильтрами
+  const catalogLink = useMemo(() => {
+    const savedQuery = sessionStorage.getItem("catalog:lastQuery");
+    return savedQuery ? `/catalog${savedQuery}` : "/catalog";
+  }, []);
+
   // ---------- загрузка детали товара ----------
   useEffect(() => {
     let mounted = true;
@@ -602,7 +608,7 @@ export default function Product() {
         <main className="flex-1">
           <div className="container mx-auto px-4 py-10 md:px-10 lg:px-[84px]">
             <Link
-              to="/catalog"
+              to={catalogLink}
               className="mb-6 inline-flex items-center text-[14px] text-[#6B6B6B] hover:text-[#1E1E1E]"
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
@@ -627,7 +633,7 @@ export default function Product() {
       <main className="flex-1">
         <div className="container mx-auto px-4 py-6 md:px-10 lg:px-[84px] md:py-8">
           <Link
-            to="/catalog"
+            to={catalogLink}
             className="mb-4 inline-flex items-center text-[14px] text-[#6B6B6B] hover:text-[#1E1E1E]"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
