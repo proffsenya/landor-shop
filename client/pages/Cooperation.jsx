@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Building2, Truck, Users, CheckCircle2 } from "lucide-react";
 
 export default function Cooperation() {
   const [formData, setFormData] = useState({
@@ -20,6 +21,24 @@ export default function Cooperation() {
   });
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
+
+  const benefits = [
+    {
+      icon: Building2,
+      title: "Оптовые клиенты",
+      description: "Выгодные условия для крупных закупок"
+    },
+    {
+      icon: Truck,
+      title: "Доставка по России",
+      description: "Быстрая и надежная доставка в любой город"
+    },
+    {
+      icon: Users,
+      title: "Сетевые магазины",
+      description: "Специальные условия для розничных сетей"
+    }
+  ];
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -65,13 +84,6 @@ export default function Cooperation() {
       setLoading(true);
       
       // TODO: Заменить на реальный API endpoint
-      // const response = await fetch("/api/cooperation/contact", {
-      //   method: "POST",
-      //   headers: { "Content-Type": "application/json" },
-      //   body: JSON.stringify(formData),
-      // });
-
-      // Временная заглушка
       console.log("Form data:", formData);
       alert("Спасибо! Наш специалист свяжется с вами в ближайшее время.");
       
@@ -96,135 +108,163 @@ export default function Cooperation() {
     <div className="flex flex-col min-h-screen bg-white">
       <Header />
       <PageFade>
-        <div className="flex-1 flex items-center justify-center min-h-[calc(100vh-140px)] py-8">
-          <div className="container w-full max-w-4xl px-4 mx-auto">
+        <div className="flex-1 py-8 md:py-12">
+          <div className="container mx-auto px-4 sm:px-6 lg:px-[80px] max-w-7xl">
             <BreadcrumbNav items={[
               { label: "Главная", to: "/" },
               { label: "Сотрудничество" }
             ]} />
-            <div className="p-6 bg-white border border-gray-200 rounded-lg">
-              <PageFade>
-                <h2 className="text-[#6F2A2B] text-2xl sm:text-[28px] lg:text-3xl leading-none mb-6 sm:mb-7 lg:mb-15">
-                  Сотрудничество
-                </h2>
-              </PageFade>
-              <PageFade>
-              <section className="mb-6">
-                <ul className="pl-6 text-gray-700 space-y-2">
-                  <li className="flex items-start">
-                    <span className="text-[#6F2A2B] text-xl font-bold mr-2 mt-1">⏺</span>
-                    <span>
-                      Приглашаем к сотрудничеству оптовых клиентов и представителей розничной торговли, сетевые зоомагазины, интернет-магазины, питомники и ветеринарные клиники для развития и расширения своего бизнеса.
-                    </span>
-                  </li>
-                  <li className="flex items-start">
-                    <span className="text-[#6F2A2B] text-xl font-bold mr-2 mt-1">⏺</span>
-                    <span>
-                      Предлагаем приобрести корм для собак и кошек оптом от производителя с доставкой по Москве и России по выгодной цене. В наличии широкий ассортимент сухого и влажного корма для собак и кошек оптом.
-                    </span>
-                  </li>
-                  <li className="flex items-start">
-                    <span className="text-[#6F2A2B] text-xl font-bold mr-2 mt-1">⏺</span>
-                    <span>
-                      Для получения подробной информации об условиях сотрудничества, оставьте заявку.
-                    </span>
-                  </li>
-                </ul>
-              </section>
-              </PageFade>
-              {/* Плашка "Связаться с нами" */}
-              <PageFade>
-              <section className="mb-6">
-                <div className="bg-[#6F2A2B] text-white rounded-lg p-6 text-center">
-                  <h3 className="text-xl font-bold mb-2">Связаться с нами</h3>
-                  <p className="text-base opacity-90">
-                    Заполните форму и наш специалист свяжется с вами в ближайшее время!
+
+            {/* Hero Section */}
+            <div className="mb-12">
+              <h1 className="text-[#6F2A2B] text-2xl sm:text-[28px] lg:text-3xl leading-none mb-6">
+                Сотрудничество
+              </h1>
+              <p className="max-w-3xl text-gray-700">
+                Приглашаем к сотрудничеству оптовых клиентов и представителей розничной торговли, 
+                сетевые зоомагазины, интернет-магазины, питомники и ветеринарные клиники для развития и расширения своего бизнеса.
+              </p>
+            </div>
+
+            {/* Benefits Grid */}
+            <PageFade>
+              <div className="grid grid-cols-1 gap-6 mb-12 md:grid-cols-3">
+                {benefits.map((benefit, index) => {
+                  const IconComponent = benefit.icon;
+                  return (
+                    <div
+                      key={index}
+                      className="p-6 transition-shadow border border-gray-200 bg-gradient-to-br from-gray-50 to-white rounded-xl hover:shadow-lg"
+                    >
+                      <div className="w-14 h-14 bg-[#6F2A2B] rounded-full flex items-center justify-center mb-4">
+                        <IconComponent className="text-white w-7 h-7" />
+                      </div>
+                      <h3 className="mb-2 text-xl font-semibold text-gray-900">
+                        {benefit.title}
+                      </h3>
+                      <p className="text-gray-700">
+                        {benefit.description}
+                      </p>
+                    </div>
+                  );
+                })}
+              </div>
+            </PageFade>
+
+            {/* Info Section */}
+            <PageFade>
+              <div className="bg-gradient-to-r from-[#6F2A2B] to-[#8a3a3c] rounded-2xl p-8 md:p-12 text-white mb-12">
+                <div className="max-w-3xl">
+                  <h2 className="mb-4 text-xl font-semibold">
+                    Оптовые поставки корма для собак и кошек
+                  </h2>
+                  <p className="mb-6 opacity-95">
+                    Предлагаем приобрести корм для собак и кошек оптом от производителя с доставкой по Москве и России по выгодной цене. 
+                    В наличии широкий ассортимент сухого и влажного корма для собак и кошек оптом.
                   </p>
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="w-5 h-5" />
+                    <span>Для получения подробной информации об условиях сотрудничества, оставьте заявку.</span>
+                  </div>
                 </div>
-              </section>
-              </PageFade>
-              {/* Форма */}
-              <PageFade>
-              <section className="mb-6">
-                <form onSubmit={handleSubmit}>
-                  <div className="space-y-4">
-                    {/* Имя */}
-                    <div>
-                      <Label htmlFor="name" className="text-base font-medium text-gray-900 mb-2 block">
-                        Ваше имя
-                      </Label>
-                      <Input
-                        id="name"
-                        name="name"
-                        value={formData.name}
-                        onChange={handleInputChange}
-                        placeholder="Иван"
-                        className="w-full"
-                      />
-                      {errors.name && (
-                        <p className="text-red-500 text-sm mt-1">{errors.name}</p>
-                      )}
+              </div>
+            </PageFade>
+
+            {/* Form Section */}
+            <PageFade>
+              <div className="p-8 bg-white border-2 border-gray-200 shadow-lg rounded-2xl md:p-12">
+                <div className="max-w-2xl mx-auto">
+                  <div className="mb-8 text-center">
+                    <h2 className="text-xl font-semibold text-[#6F2A2B] mb-3">
+                      Связаться с нами
+                    </h2>
+                    <p className="text-gray-700">
+                      Заполните форму и наш специалист свяжется с вами в ближайшее время!
+                    </p>
+                  </div>
+
+                  <form onSubmit={handleSubmit} className="space-y-6">
+                    <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                      {/* Имя */}
+                      <div>
+                        <Label htmlFor="name" className="block mb-2 text-base font-medium text-gray-900">
+                          Ваше имя <span className="text-red-500">*</span>
+                        </Label>
+                        <Input
+                          id="name"
+                          name="name"
+                          value={formData.name}
+                          onChange={handleInputChange}
+                          placeholder="Иван"
+                          className="w-full h-12"
+                        />
+                        {errors.name && (
+                          <p className="mt-1 text-sm text-red-500">{errors.name}</p>
+                        )}
+                      </div>
+
+                      {/* Телефон */}
+                      <div>
+                        <Label htmlFor="phone" className="block mb-2 text-base font-medium text-gray-900">
+                          Ваш телефон <span className="text-red-500">*</span>
+                        </Label>
+                        <Input
+                          id="phone"
+                          name="phone"
+                          type="tel"
+                          value={formData.phone}
+                          onChange={handleInputChange}
+                          placeholder="+7 (000) 000-00-00"
+                          className="w-full h-12"
+                        />
+                        {errors.phone && (
+                          <p className="mt-1 text-sm text-red-500">{errors.phone}</p>
+                        )}
+                      </div>
                     </div>
 
-                    {/* Телефон */}
-                    <div>
-                      <Label htmlFor="phone" className="text-base font-medium text-gray-900 mb-2 block">
-                        Ваш телефон
-                      </Label>
-                      <Input
-                        id="phone"
-                        name="phone"
-                        type="tel"
-                        value={formData.phone}
-                        onChange={handleInputChange}
-                        placeholder="+7 (000) 000-00-00"
-                        className="w-full"
-                      />
-                      {errors.phone && (
-                        <p className="text-red-500 text-sm mt-1">{errors.phone}</p>
-                      )}
-                    </div>
+                    <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                      {/* Email */}
+                      <div>
+                        <Label htmlFor="email" className="block mb-2 text-base font-medium text-gray-900">
+                          Ваш Email <span className="text-red-500">*</span>
+                        </Label>
+                        <Input
+                          id="email"
+                          name="email"
+                          type="email"
+                          value={formData.email}
+                          onChange={handleInputChange}
+                          placeholder="ivanov555@mail.ru"
+                          className="w-full h-12"
+                        />
+                        {errors.email && (
+                          <p className="mt-1 text-sm text-red-500">{errors.email}</p>
+                        )}
+                      </div>
 
-                    {/* Email */}
-                    <div>
-                      <Label htmlFor="email" className="text-base font-medium text-gray-900 mb-2 block">
-                        Ваш Email
-                      </Label>
-                      <Input
-                        id="email"
-                        name="email"
-                        type="email"
-                        value={formData.email}
-                        onChange={handleInputChange}
-                        placeholder="ivanov555@mail.ru"
-                        className="w-full"
-                      />
-                      {errors.email && (
-                        <p className="text-red-500 text-sm mt-1">{errors.email}</p>
-                      )}
-                    </div>
-
-                    {/* Город */}
-                    <div>
-                      <Label htmlFor="city" className="text-base font-medium text-gray-900 mb-2 block">
-                        Город
-                      </Label>
-                      <Input
-                        id="city"
-                        name="city"
-                        value={formData.city}
-                        onChange={handleInputChange}
-                        placeholder="Москва"
-                        className="w-full"
-                      />
-                      {errors.city && (
-                        <p className="text-red-500 text-sm mt-1">{errors.city}</p>
-                      )}
+                      {/* Город */}
+                      <div>
+                        <Label htmlFor="city" className="block mb-2 text-base font-medium text-gray-900">
+                          Город <span className="text-red-500">*</span>
+                        </Label>
+                        <Input
+                          id="city"
+                          name="city"
+                          value={formData.city}
+                          onChange={handleInputChange}
+                          placeholder="Москва"
+                          className="w-full h-12"
+                        />
+                        {errors.city && (
+                          <p className="mt-1 text-sm text-red-500">{errors.city}</p>
+                        )}
+                      </div>
                     </div>
 
                     {/* Комментарий */}
                     <div>
-                      <Label htmlFor="comment" className="text-base font-medium text-gray-900 mb-2 block">
+                      <Label htmlFor="comment" className="block mb-2 text-base font-medium text-gray-900">
                         Комментарий
                       </Label>
                       <Textarea
@@ -250,12 +290,12 @@ export default function Cooperation() {
                         }}
                         className="mt-1"
                       />
-                      <Label htmlFor="consent" className="text-sm text-gray-700 cursor-pointer flex-1">
-                        Нажимая на кнопку, вы даете согласие на обработку персональных данных и соглашаетесь с политикой конфиденциальности.
+                      <Label htmlFor="consent" className="flex-1 text-sm text-gray-700 cursor-pointer">
+                        Нажимая на кнопку, вы даете согласие на обработку персональных данных и соглашаетесь с политикой конфиденциальности. <span className="text-red-500">*</span>
                       </Label>
                     </div>
                     {errors.consent && (
-                      <p className="text-red-500 text-sm">{errors.consent}</p>
+                      <p className="text-sm text-red-500">{errors.consent}</p>
                     )}
 
                     {/* Кнопка отправки */}
@@ -263,16 +303,15 @@ export default function Cooperation() {
                       <Button
                         type="submit"
                         disabled={loading}
-                        className="w-full bg-[#6F2A2B] hover:bg-[#5a2223] text-white py-3 text-base md:text-lg font-semibold"
+                        className="w-full bg-[#6F2A2B] hover:bg-[#5a2223] text-white py-4 text-lg font-semibold rounded-xl h-14"
                       >
-                        {loading ? "Отправка..." : "Отправить"}
+                        {loading ? "Отправка..." : "Отправить заявку"}
                       </Button>
                     </div>
-                  </div>
-                </form>
-              </section>
-              </PageFade>
-            </div>
+                  </form>
+                </div>
+              </div>
+            </PageFade>
           </div>
         </div>
       </PageFade>
@@ -280,4 +319,3 @@ export default function Cooperation() {
     </div>
   );
 }
-

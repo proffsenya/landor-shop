@@ -4,7 +4,6 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import BreadcrumbNav from "@/components/BreadcrumbNav";
 import { PageFade } from "@/utils/PageAnimations";
-import { ScrollFade } from "@/utils/CatalogAnimations";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -98,8 +97,7 @@ export default function Login() {
 
           {/* Контейнер по центру */}
           <div className="relative z-10 flex justify-center items-center w-full max-w-[500px]">
-            <ScrollFade delay={0.2}>
-              <div className="bg-white rounded-[30px] shadow-[0_4px_15px_rgba(0,0,0,0.1)] p-12 w-full text-center border border-gray-100">
+            <div className="bg-white rounded-[30px] shadow-[0_4px_15px_rgba(0,0,0,0.1)] p-12 w-full text-center border border-gray-100">
                 <h1 className="text-3xl text-[#6F2A2B] font-bold mb-8">Войти</h1>
 
               <form className="space-y-6 text-left" onSubmit={onSubmit}>
@@ -156,7 +154,6 @@ export default function Login() {
                 </div>
               </form>
               </div>
-            </ScrollFade>
           </div>
         </main>
       </PageFade>

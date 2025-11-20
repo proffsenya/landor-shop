@@ -3,7 +3,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import BreadcrumbNav from "@/components/BreadcrumbNav";
 import { PageFade } from "@/utils/PageAnimations";
-import { Truck, Tag, Package, Paperclip } from "lucide-react";
+import { Truck, Tag, Package, Paperclip, CheckCircle2 } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -104,7 +104,6 @@ export default function Breeders() {
       return;
     }
 
-    // Здесь будет отправка формы на сервер
     try {
       const formDataToSend = new FormData();
       formDataToSend.append("kennelName", formData.kennelName);
@@ -117,12 +116,6 @@ export default function Breeders() {
       }
 
       // TODO: Заменить на реальный API endpoint
-      // const response = await fetch("/api/breeders/application", {
-      //   method: "POST",
-      //   body: formDataToSend,
-      // });
-
-      // Временная заглушка
       console.log("Form data:", formData);
       alert("Заявка отправлена! Менеджер свяжется с вами в ближайшее время.");
       
@@ -148,79 +141,80 @@ export default function Breeders() {
     <div className="flex flex-col min-h-screen bg-white">
       <Header />
       <PageFade>
-        <div className="flex-1 flex items-center justify-center min-h-[calc(100vh-140px)] py-8">
-          <div className="container w-full max-w-4xl px-4 mx-auto">
+        <div className="flex-1 py-8 md:py-12">
+          <div className="container mx-auto px-4 sm:px-6 lg:px-[80px] max-w-7xl">
             <BreadcrumbNav items={[
               { label: "Главная", to: "/" },
               { label: "Заводчикам" }
             ]} />
-            <div className="p-6 bg-white border border-gray-200 rounded-lg">
-              <PageFade>
-                <h2 className="text-[#6F2A2B] text-2xl sm:text-[28px] lg:text-3xl leading-none mb-6 sm:mb-7 lg:mb-15">
-                  Заводчикам
-                </h2>
-              </PageFade>
-              <PageFade>
-              <section className="mb-6">
-                <h3 className="mb-2 text-xl font-semibold text-gray-900">
-                  Мы предоставляем особые условия обслуживания заводчикам:
-                </h3>
-                <ul className="pl-6 text-gray-700 space-y-2">
-                  <li className="flex items-start">
-                    <span className="text-[#6F2A2B] text-xl font-bold mr-2 mt-1">⏺</span>
-                    <span>Бесплатная доставка</span>
-                  </li>
-                  <li className="flex items-start">
-                    <span className="text-[#6F2A2B] text-xl font-bold mr-2 mt-1">⏺</span>
-                    <span>Специальные цены</span>
-                  </li>
-                  <li className="flex items-start">
-                    <span className="text-[#6F2A2B] text-xl font-bold mr-2 mt-1">⏺</span>
-                    <span>Скидки от объёма</span>
-                  </li>
-                </ul>
-              </section>
-              </PageFade>
-              {/* Benefits with icons */}
-              <PageFade>
-              <section className="mb-6">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  {benefits.map((benefit, index) => {
-                    const IconComponent = benefit.icon;
-                    return (
-                      <div
-                        key={index}
-                        className="flex flex-col items-center text-center p-6 bg-gray-50 rounded-lg border border-gray-200"
-                      >
-                        <div className="w-20 h-20 bg-[#6F2A2B] rounded-full flex items-center justify-center mb-4">
-                          <IconComponent className="w-10 h-10 text-white" />
-                        </div>
-                        <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                          {benefit.title}
-                        </h3>
-                        <p className="text-sm text-gray-600">
-                          {benefit.description}
-                        </p>
-                      </div>
-                    );
-                  })}
-                </div>
-              </section>
-              </PageFade>
-              {/* CTA Button */}
-              <PageFade>
-              <section className="mb-6">
-                <div className="text-center">
-                  <button
-                    onClick={() => setIsDialogOpen(true)}
-                    className="bg-[#6F2A2B] text-white px-8 py-4 rounded-lg text-base md:text-lg font-semibold hover:bg-[#5a2223] transition-colors"
-                  >
-                    УЧАСТВОВАТЬ В ПРОГРАММЕ ЗАВОДЧИК
-                  </button>
-                </div>
-              </section>
-              </PageFade>
+
+            {/* Hero Section */}
+            <div className="mb-12">
+              <h1 className="text-[#6F2A2B] text-2xl sm:text-[28px] lg:text-3xl leading-none mb-6">
+                Заводчикам
+              </h1>
+              <p className="max-w-3xl text-gray-700">
+                Мы предоставляем особые условия обслуживания заводчикам для развития вашего питомника и заботы о ваших питомцах.
+              </p>
             </div>
+
+            {/* Benefits List */}
+            <PageFade>
+              <div className="bg-gradient-to-r from-[#6F2A2B] to-[#8a3a3c] rounded-2xl p-8 md:p-12 text-white mb-12">
+                <h2 className="mb-6 text-xl font-semibold">
+                  Особые условия для заводчиков:
+                </h2>
+                <ul className="space-y-4">
+                  {[
+                    "Бесплатная доставка",
+                    "Специальные цены",
+                    "Скидки от объёма"
+                  ].map((item, index) => (
+                    <li key={index} className="flex items-center gap-3">
+                      <CheckCircle2 className="flex-shrink-0 w-5 h-5" />
+                      <span>{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </PageFade>
+
+            {/* Benefits Grid */}
+            <PageFade>
+              <div className="grid grid-cols-1 gap-6 mb-12 md:grid-cols-3">
+                {benefits.map((benefit, index) => {
+                  const IconComponent = benefit.icon;
+                  return (
+                    <div
+                      key={index}
+                      className="p-8 transition-all border border-gray-200 bg-gradient-to-br from-gray-50 to-white rounded-xl hover:shadow-lg hover:-translate-y-1"
+                    >
+                      <div className="w-16 h-16 bg-[#6F2A2B] rounded-full flex items-center justify-center mb-6">
+                        <IconComponent className="w-8 h-8 text-white" />
+                      </div>
+                      <h3 className="mb-3 text-xl font-semibold text-gray-900">
+                        {benefit.title}
+                      </h3>
+                      <p className="text-gray-700">
+                        {benefit.description}
+                      </p>
+                    </div>
+                  );
+                })}
+              </div>
+            </PageFade>
+
+            {/* CTA Button */}
+            <PageFade>
+              <div className="text-center">
+                <button
+                  onClick={() => setIsDialogOpen(true)}
+                  className="bg-[#6F2A2B] text-white px-8 py-4 rounded-lg text-base md:text-lg font-semibold hover:bg-[#5a2223] transition-all hover:shadow-xl hover:-translate-y-1"
+                >
+                  Участвовать в программе заводчик
+                </button>
+              </div>
+            </PageFade>
           </div>
         </div>
       </PageFade>
@@ -233,15 +227,15 @@ export default function Breeders() {
             <DialogTitle className="text-2xl md:text-3xl font-bold text-[#6F2A2B]">
               Заявка на вступление в программу «Заводчик»
             </DialogTitle>
-            <DialogDescription className="text-base text-gray-600 mt-2">
+            <DialogDescription className="mt-2 text-base text-gray-600">
               Заполните форму, и наш менеджер свяжется с вами для уточнения деталей
             </DialogDescription>
           </DialogHeader>
 
-          <form onSubmit={handleSubmit} className="space-y-6 mt-4">
+          <form onSubmit={handleSubmit} className="mt-4 space-y-6">
             {/* Название питомника */}
             <div>
-              <Label htmlFor="kennelName" className="text-base">
+              <Label htmlFor="kennelName" className="text-base font-medium">
                 Название питомника или заводской приставки
               </Label>
               <Input
@@ -249,14 +243,14 @@ export default function Breeders() {
                 name="kennelName"
                 value={formData.kennelName}
                 onChange={handleInputChange}
-                className="mt-2"
+                className="h-12 mt-2"
                 placeholder="Введите название питомника"
               />
             </div>
 
             {/* ФИО */}
             <div>
-              <Label htmlFor="fullName" className="text-base">
+              <Label htmlFor="fullName" className="text-base font-medium">
                 Ваши ФИО <span className="text-red-500">*</span>
               </Label>
               <Input
@@ -264,18 +258,18 @@ export default function Breeders() {
                 name="fullName"
                 value={formData.fullName}
                 onChange={handleInputChange}
-                className="mt-2"
+                className="h-12 mt-2"
                 placeholder="Иванов Иван Иванович"
                 required
               />
               {errors.fullName && (
-                <p className="text-red-500 text-sm mt-1">{errors.fullName}</p>
+                <p className="mt-1 text-sm text-red-500">{errors.fullName}</p>
               )}
             </div>
 
             {/* Город */}
             <div>
-              <Label htmlFor="city" className="text-base">
+              <Label htmlFor="city" className="text-base font-medium">
                 Город, в котором находится ваш питомник <span className="text-red-500">*</span>
               </Label>
               <Input
@@ -283,18 +277,18 @@ export default function Breeders() {
                 name="city"
                 value={formData.city}
                 onChange={handleInputChange}
-                className="mt-2"
+                className="h-12 mt-2"
                 placeholder="Москва"
                 required
               />
               {errors.city && (
-                <p className="text-red-500 text-sm mt-1">{errors.city}</p>
+                <p className="mt-1 text-sm text-red-500">{errors.city}</p>
               )}
             </div>
 
             {/* Email */}
             <div>
-              <Label htmlFor="email" className="text-base">
+              <Label htmlFor="email" className="text-base font-medium">
                 Ваш e-mail <span className="text-red-500">*</span>
               </Label>
               <Input
@@ -303,18 +297,18 @@ export default function Breeders() {
                 type="email"
                 value={formData.email}
                 onChange={handleInputChange}
-                className="mt-2"
+                className="h-12 mt-2"
                 placeholder="mail@domen.com"
                 required
               />
               {errors.email && (
-                <p className="text-red-500 text-sm mt-1">{errors.email}</p>
+                <p className="mt-1 text-sm text-red-500">{errors.email}</p>
               )}
             </div>
 
             {/* Телефон */}
             <div>
-              <Label htmlFor="phone" className="text-base">
+              <Label htmlFor="phone" className="text-base font-medium">
                 Ваш телефон (менеджер позвонит вам и уточнит детали) <span className="text-red-500">*</span>
               </Label>
               <Input
@@ -323,18 +317,18 @@ export default function Breeders() {
                 type="tel"
                 value={formData.phone}
                 onChange={handleInputChange}
-                className="mt-2"
+                className="h-12 mt-2"
                 placeholder="+7 (999) 999-99-99"
                 required
               />
               {errors.phone && (
-                <p className="text-red-500 text-sm mt-1">{errors.phone}</p>
+                <p className="mt-1 text-sm text-red-500">{errors.phone}</p>
               )}
             </div>
 
             {/* Файл */}
             <div>
-              <Label className="text-base">
+              <Label className="text-base font-medium">
                 Прикрепите копию свидетельства о регистрации питомника или заводской приставки <span className="text-red-500">*</span>
               </Label>
               <div className="mt-2">
@@ -352,17 +346,17 @@ export default function Breeders() {
                   />
                 </label>
                 {errors.file && (
-                  <p className="text-red-500 text-sm mt-1">{errors.file}</p>
+                  <p className="mt-1 text-sm text-red-500">{errors.file}</p>
                 )}
               </div>
             </div>
 
             {/* reCAPTCHA */}
             <div>
-              <Label className="text-base">
+              <Label className="text-base font-medium">
                 Подтвердите, что вы не робот <span className="text-red-500">*</span>
               </Label>
-              <div className="mt-2 flex items-center gap-3 p-4 border border-gray-300 rounded-lg">
+              <div className="flex items-center gap-3 p-4 mt-2 border border-gray-300 rounded-lg">
                 <Checkbox
                   id="isRobot"
                   checked={formData.isRobot}
@@ -378,7 +372,7 @@ export default function Breeders() {
                 </Label>
               </div>
               {errors.isRobot && (
-                <p className="text-red-500 text-sm mt-1">{errors.isRobot}</p>
+                <p className="mt-1 text-sm text-red-500">{errors.isRobot}</p>
               )}
             </div>
 
@@ -400,7 +394,7 @@ export default function Breeders() {
               </Label>
             </div>
             {errors.consent && (
-              <p className="text-red-500 text-sm">{errors.consent}</p>
+              <p className="text-sm text-red-500">{errors.consent}</p>
             )}
 
             {/* Кнопки */}
@@ -409,13 +403,13 @@ export default function Breeders() {
                 type="button"
                 variant="outline"
                 onClick={() => setIsDialogOpen(false)}
-                className="flex-1"
+                className="flex-1 h-12"
               >
                 Отмена
               </Button>
               <Button
                 type="submit"
-                className="flex-1 bg-[#6F2A2B] hover:bg-[#5a2223] text-white"
+                className="flex-1 bg-[#6F2A2B] hover:bg-[#5a2223] text-white h-12"
               >
                 Отправить заявку
               </Button>
@@ -426,4 +420,3 @@ export default function Breeders() {
     </div>
   );
 }
-
