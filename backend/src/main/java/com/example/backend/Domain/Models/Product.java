@@ -6,7 +6,9 @@ import jakarta.validation.constraints.Size;
 import org.hibernate.annotations.ColumnDefault;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Set;
 
 @Entity
@@ -42,7 +44,8 @@ public class Product {
     private BigDecimal rating;
 
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
-    private Set<ProductImage> images = new LinkedHashSet<>();
+    @OrderBy("id ASC")
+    private List<ProductImage> images = new ArrayList<>();
 
     @ManyToMany
     @JoinTable(
@@ -91,7 +94,31 @@ public class Product {
     private Set<Flavor> flavors = new LinkedHashSet<>();
 
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
-    private Set<ProductVariant> productVariants = new LinkedHashSet<>();
+    private List<ProductVariant> productVariants = new ArrayList<>();
+
+    @Size(max = 500)
+    @Column(name = "guaranteed_indicators", length = 500)
+    private String guaranteedIndicators;
+
+    @Size(max = 1000)
+    @Column(name = "feeding_note", length = 1000)
+    private String feedingNote;
+
+    public String getFeedingNote() {
+        return feedingNote;
+    }
+
+    public void setFeedingNote(String feedingNote) {
+        this.feedingNote = feedingNote;
+    }
+
+    public String getGuaranteedIndicators() {
+        return guaranteedIndicators;
+    }
+
+    public void setGuaranteedIndicators(String guaranteedIndicators) {
+        this.guaranteedIndicators = guaranteedIndicators;
+    }
 
     public Long getId() {
         return id;
@@ -181,12 +208,14 @@ public class Product {
         this.typeoffoods = typeoffoods;
     }
 
-    public Set<ProductImage> getImages() {
+    public List<ProductImage> getImages() {
         return images;
     }
-    public void setImages(Set<ProductImage> images) {
+
+    public void setImages(List<ProductImage> images) {
         this.images = images;
     }
+
     public void addImage(ProductImage img) {
         img.setProduct(this);
         this.images.add(img);
@@ -219,11 +248,11 @@ public class Product {
         this.flavors = flavors;
     }
 
-    public Set<ProductVariant> getProductVariants() {
+    public List<ProductVariant> getProductVariants() {
         return productVariants;
     }
 
-    public void setProductVariants(Set<ProductVariant> productVariants) {
+    public void setProductVariants(List<ProductVariant> productVariants) {
         this.productVariants = productVariants;
     }
 

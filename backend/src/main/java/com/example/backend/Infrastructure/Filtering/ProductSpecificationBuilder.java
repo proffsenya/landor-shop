@@ -24,9 +24,9 @@ public class ProductSpecificationBuilder {
         if (!f.categories.isEmpty()) {
             Set<String> lowered = f.categories.stream().map(String::toLowerCase).collect(Collectors.toSet());
             specs.add((root, query, cb) -> {
-                query.distinct(true);
-                Join<Object, Object> join = root.join("categories", JoinType.LEFT); // имя связи в Product
-                Expression<String> expr = cb.lower(join.get("name"));
+                if (query != null) query.distinct(true);
+                Join<Object, Object> join = root.join("categories", JoinType.LEFT);
+                Expression<String> expr = cb.lower(join.get("slug"));
                 return expr.in(lowered);
             });
         }
@@ -34,9 +34,9 @@ public class ProductSpecificationBuilder {
         if (!f.breeds.isEmpty()) {
             Set<String> lowered = f.breeds.stream().map(String::toLowerCase).collect(Collectors.toSet());
             specs.add((root, query, cb) -> {
-                query.distinct(true);
-                Join<Object, Object> join = root.join("breeds", JoinType.LEFT); // поправь имя связи
-                Expression<String> expr = cb.lower(join.get("name"));
+                if (query != null) query.distinct(true);
+                Join<Object, Object> join = root.join("breeds", JoinType.LEFT);
+                Expression<String> expr = cb.lower(join.get("slug"));
                 return expr.in(lowered);
             });
         }
@@ -44,9 +44,9 @@ public class ProductSpecificationBuilder {
         if (!f.countries.isEmpty()) {
             Set<String> lowered = f.countries.stream().map(String::toLowerCase).collect(Collectors.toSet());
             specs.add((root, query, cb) -> {
-                query.distinct(true);
+                if (query != null) query.distinct(true);
                 Join<Object, Object> join = root.join("countries", JoinType.LEFT);
-                Expression<String> expr = cb.lower(join.get("name"));
+                Expression<String> expr = cb.lower(join.get("slug"));
                 return expr.in(lowered);
             });
         }
@@ -54,9 +54,9 @@ public class ProductSpecificationBuilder {
         if (!f.typeOfFood.isEmpty()) {
             Set<String> lowered = f.typeOfFood.stream().map(String::toLowerCase).collect(Collectors.toSet());
             specs.add((root, query, cb) -> {
-                query.distinct(true);
-                Join<Object, Object> join = root.join("typeOfFood", JoinType.LEFT);
-                Expression<String> expr = cb.lower(join.get("name"));
+                if (query != null) query.distinct(true);
+                Join<Object, Object> join = root.join("typeoffoods", JoinType.LEFT);
+                Expression<String> expr = cb.lower(join.get("slug"));
                 return expr.in(lowered);
             });
         }
@@ -64,9 +64,9 @@ public class ProductSpecificationBuilder {
         if (!f.flavors.isEmpty()) {
             Set<String> lowered = f.flavors.stream().map(String::toLowerCase).collect(Collectors.toSet());
             specs.add((root, query, cb) -> {
-                query.distinct(true);
+                if (query != null) query.distinct(true);
                 Join<Object, Object> join = root.join("flavors", JoinType.LEFT);
-                Expression<String> expr = cb.lower(join.get("name"));
+                Expression<String> expr = cb.lower(join.get("canonicalName"));
                 return expr.in(lowered);
             });
         }
@@ -74,25 +74,25 @@ public class ProductSpecificationBuilder {
         if (!f.brands.isEmpty()) {
             Set<String> lowered = f.brands.stream().map(String::toLowerCase).collect(Collectors.toSet());
             specs.add((root, query, cb) -> {
-                query.distinct(true);
+                if (query != null) query.distinct(true);
                 Join<Object, Object> join = root.join("brand", JoinType.LEFT);
-                Expression<String> expr = cb.lower(join.get("name"));
+                Expression<String> expr = cb.lower(join.get("slug"));
                 return expr.in(lowered);
             });
         }
 
         if (!f.variantColors.isEmpty() || !f.variantScents.isEmpty()) {
             specs.add((root, query, cb) -> {
-                query.distinct(true);
-                Join<Object, Object> vjoin = root.join("variants", JoinType.LEFT);
+                if (query != null) query.distinct(true);
+                Join<Object, Object> vjoin = root.join("productVariants", JoinType.LEFT);
                 Predicate p = cb.conjunction();
                 if (!f.variantColors.isEmpty()) {
                     Set<String> lowered = f.variantColors.stream().map(String::toLowerCase).collect(Collectors.toSet());
-                    p = cb.and(p, cb.lower(vjoin.get("color")).in(lowered));
+                    p = cb.and(p, cb.lower(vjoin.get("colors")).in(lowered));
                 }
                 if (!f.variantScents.isEmpty()) {
                     Set<String> lowered = f.variantScents.stream().map(String::toLowerCase).collect(Collectors.toSet());
-                    p = cb.and(p, cb.lower(vjoin.get("scent")).in(lowered));
+                    p = cb.and(p, cb.lower(vjoin.get("scents")).in(lowered));
                 }
                 return p;
             });

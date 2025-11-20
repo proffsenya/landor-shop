@@ -30,6 +30,18 @@ public class Breed {
     @ManyToMany(mappedBy = "breeds")
     private Set<Product> products = new LinkedHashSet<>();
 
+    @Size(max = 100)
+    @Column(name = "slug", length = 100)
+    private String slug;
+
+    public String getSlug() {
+        return slug;
+    }
+
+    public void setSlug(String slug) {
+        this.slug = slug;
+    }
+
     public Integer getId() {
         return id;
     }

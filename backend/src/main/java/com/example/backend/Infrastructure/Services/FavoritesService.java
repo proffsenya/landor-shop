@@ -83,7 +83,7 @@ public class FavoritesService {
                 .orElseGet(() -> v.getProduct().getImages().stream()
                         .findFirst().map(img -> "/api/products/" + v.getProduct().getId() + "/images/" + img.getId()).orElse(null));
 
-        return new VariantCardDTO(v.getId(), display, v.getPrice(), v.getStock(), imageUrl);
+        return new VariantCardDTO(v.getId(), display, v.getPrice(), v.getStock(), v.getWeight(), imageUrl);
     }
 
     public static record MoveResult(List<Long> moved, List<Long> skipped, List<String> errors) {}

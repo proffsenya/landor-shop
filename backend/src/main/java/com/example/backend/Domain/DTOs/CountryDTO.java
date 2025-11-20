@@ -8,5 +8,5 @@ import java.io.Serializable;
 /**
  * DTO for {@link com.example.backend.Domain.Models.Country}
  */
-public record CountryDTO(Integer id, @NotNull @Size(max = 100) String name) implements Serializable {
+public record CountryDTO(Integer id, @NotNull @Size(max = 100) String name, @NotNull @Size(max = 100) String slug) implements Serializable {
 }

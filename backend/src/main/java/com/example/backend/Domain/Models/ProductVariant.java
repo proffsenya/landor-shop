@@ -88,6 +88,17 @@ public class ProductVariant {
     @JoinColumn(name = "product_variant_id")
     private Set<Favorite> favorites = new LinkedHashSet<>();
 
+    @OneToMany(mappedBy = "productVariant")
+    private Set<ProductImage> productImages = new LinkedHashSet<>();
+
+    public Set<ProductImage> getProductImages() {
+        return productImages;
+    }
+
+    public void setProductImages(Set<ProductImage> productImages) {
+        this.productImages = productImages;
+    }
+
     public Set<Favorite> getFavorites() {
         return favorites;
     }

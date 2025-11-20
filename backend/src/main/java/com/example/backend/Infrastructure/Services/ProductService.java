@@ -94,7 +94,7 @@ public class ProductService {
             if (pv.getSku() != null) existingBySku.put(pv.getSku(), pv);
         }
 
-        Set<ProductVariant> updatedVariants = new LinkedHashSet<>();
+        List<ProductVariant> updatedVariants = new ArrayList<>();
 
         if (updatedproduct.variants() != null) {
             for (ResponseVariantDTO vDto : updatedproduct.variants()) {
@@ -147,6 +147,8 @@ public class ProductService {
 
         currentproduct.setName(updatedproduct.name());
         currentproduct.setDescription(updatedproduct.description());
+        currentproduct.setFeedingNote(updatedproduct.feedingNote());
+        currentproduct.setGuaranteedIndicators(updatedproduct.guaranteedIndicators());
         currentproduct.setSlug(updatedproduct.slug());
         currentproduct.setIsActive(updatedproduct.isActive());
         currentproduct.setRating(updatedproduct.rating());
@@ -167,6 +169,8 @@ public class ProductService {
         Product product = new Product();
         product.setName(createProductDTO.name());
         product.setDescription(createProductDTO.description());
+        product.setFeedingNote(createProductDTO.feedingNote());
+        product.setGuaranteedIndicators(createProductDTO.guaranteedIndicators());
         product.setSlug(createProductDTO.slug());
         product.setIsActive(true);
         product.setIsFeatured(false);
@@ -246,7 +250,7 @@ public class ProductService {
     }
 
     private void setProductVariants(Product product, CreateProductDTO dto) {
-        Set<ProductVariant> productVariants = new LinkedHashSet<>();
+        List<ProductVariant> productVariants = new ArrayList<>();
         for (CreateVariantDTO v : dto.variants()){
             ProductVariant variant = new ProductVariant();
             variant.setProduct(product);
@@ -360,30 +364,43 @@ public class ProductService {
     }
 
     private ProductCardDTO toProductCardDTO(Product product) {
-        String productMain = product.getImages().stream()
-                .filter(img -> Boolean.TRUE.equals(img.getIsMain()))
-                .findFirst()
-                .map(img -> "/api/products/" + product.getId() + "/images/" + img.getId())
-                .orElseGet(() -> product.getImages().stream()
-                        .findFirst()
-                        .map(img -> "/api/products/" + product.getId() + "/images/" + img.getId())
-                        .orElse(null));
+        List<ProductImage> images = product.getImages() == null ? List.of() : new ArrayList<>(product.getImages());
 
-        List<VariantCardDTO> variantCards = product.getProductVariants().stream().map(v -> {
-            String variantImage = product.getImages().stream()
-                    .filter(img -> img.getProductVariant() != null && img.getProductVariant().getId().equals(v.getId()))
-                    .findFirst()
-                    .map(img -> "/api/products/" + product.getId() + "/images/" + img.getId())
-                    .orElse(productMain);
+        Optional<ProductImage> mainImageOpt = product.getImages().stream()
+                .filter(img -> img.getProductVariant() == null && img.getIsMain())
+                .findFirst();
 
-            return new VariantCardDTO(
+        Long productMainId = mainImageOpt.map(ProductImage::getId)
+                .orElse(null);
+
+        String productMainUrl = productMainId == null ? null : "/api/products/" + product.getId() + "/images/" + productMainId;
+
+        List<VariantCardDTO> variantCards = product.getProductVariants().stream()
+                .sorted(Comparator.comparing(ProductVariant::getId))
+                .map(v -> {
+                    Optional<ProductImage> variantImageOpt = images.stream()
+                            .filter(img -> img.getProductVariant() != null &&
+                                    img.getProductVariant().getId().equals(v.getId()))
+                            .findFirst();
+                    Long imageId;
+                    if (variantImageOpt.isPresent()) {
+                        imageId = variantImageOpt.get().getId();
+                    } else {
+                        imageId = productMainId;
+                    }
+
+                    String imageUrl = imageId == null ? null :
+                            "/api/products/" + product.getId() + "/images/" + imageId;
+
+                    return new VariantCardDTO(
                     v.getId(),
                     v.getDisplayName() != null && !v.getDisplayName().isBlank()
                             ? v.getDisplayName()
                             : (product.getName() + (v.getWeight() != null ? (", " + v.getWeight() + " кг") : "")),
                     v.getPrice(),
                     v.getStock(),
-                    variantImage
+                    v.getWeight(),
+                    imageUrl
             );
         }).toList();
 

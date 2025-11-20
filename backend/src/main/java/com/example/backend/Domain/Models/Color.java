@@ -23,6 +23,18 @@ public class Color {
     @ManyToMany(mappedBy = "colors")
     private Set<ProductVariant> productVariants = new LinkedHashSet<>();
 
+    @Size(max = 100)
+    @Column(name = "slug", length = 100)
+    private String slug;
+
+    public String getSlug() {
+        return slug;
+    }
+
+    public void setSlug(String slug) {
+        this.slug = slug;
+    }
+
     public Long getId() {
         return id;
     }

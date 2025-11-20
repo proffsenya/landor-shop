@@ -8,6 +8,6 @@ import java.math.BigDecimal;
 /**
  * DTO for {@link com.example.backend.Domain.Models.ProductVariant}
  */
-public record VariantCardDTO(Long id, @Size(max = 500) String displayName, BigDecimal price, Integer stock,
+public record VariantCardDTO(Long id, @Size(max = 500) String displayName, BigDecimal price, Integer stock, BigDecimal weight,
                              String imageUrl) implements Serializable {
 }

@@ -96,50 +96,23 @@ class ProductController {
         return ResponseEntity.noContent().build();
     }
 
-    private ProductCardDTO toProductCardDTO(Product product) {
-        String mainImageUrl = product.getImages().stream()
-                .filter(img -> Boolean.TRUE.equals(img.getIsMain()))
-                .findFirst()
-                .map(img -> "/api/products/" + product.getId() + "/images/" + img.getId())
-                .orElseGet(() -> product.getImages().stream()
-                        .findFirst()
-                        .map(img -> "/api/products/" + product.getId() + "/images/" + img.getId())
-                        .orElse(null));
-
-        List<VariantCardDTO> variantCards = product.getProductVariants().stream()
-                .map(v -> new VariantCardDTO(
-                        v.getId(),
-                        v.getDisplayName() != null && !v.getDisplayName().isBlank()
-                                ? v.getDisplayName()
-                                : (product.getName() + (v.getWeight() != null ? (", " + v.getWeight() + " кг") : "")),
-                        v.getPrice(),
-                        v.getStock(),
-                        mainImageUrl
-                ))
-                .toList();
-
-        return new ProductCardDTO(
-                product.getId(),
-                product.getName(),
-                variantCards
-        );
-    }
-
     private ProductResponseDTO toProductResponseDTO(Product product) {
         return new ProductResponseDTO(
                 product.getId(),
                 product.getName(),
                 product.getDescription(),
+                product.getFeedingNote(),
+                product.getGuaranteedIndicators(),
                 product.getSlug(),
                 product.getIsActive(),
                 product.getIsFeatured(),
                 product.getRating(),
 
 
-                product.getBreeds().stream().map(b -> new BreedDTO(b.getId(), b.getName())).toList(),
-                product.getCategories().stream().map(c -> new CategoryDTO(c.getId(), c.getName())).toList(),
-                product.getCountries().stream().map(c -> new CountryDTO(c.getId(), c.getName())).toList(),
-                product.getTypeoffoods().stream().map(t -> new TypeOfFoodDTO(t.getId(), t.getName())).toList(),
+                product.getBreeds().stream().map(b -> new BreedDTO(b.getId(), b.getName(), b.getSlug())).toList(),
+                product.getCategories().stream().map(c -> new CategoryDTO(c.getId(), c.getName(), c.getSlug())).toList(),
+                product.getCountries().stream().map(c -> new CountryDTO(c.getId(), c.getName(), c.getSlug())).toList(),
+                product.getTypeoffoods().stream().map(t -> new TypeOfFoodDTO(t.getId(), t.getName(), t.getSlug())).toList(),
 
                 product.getImages().stream()
                         .map(img -> new ProductImageDTO(

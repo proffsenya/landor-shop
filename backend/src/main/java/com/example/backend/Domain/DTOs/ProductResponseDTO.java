@@ -10,6 +10,8 @@ import java.util.List;
  * DTO for {@link com.example.backend.Domain.Models.Product}
  */
 public record ProductResponseDTO(Long id, @Size(max = 100) String name, @Size(max = 1000) String description,
+                                 @Size(max = 500) String guaranteedIndicators,
+                                 @Size(max = 100) String feedingNote,
                                  @Size(max = 100) String slug,
                                  Boolean isActive, Boolean isFeatured, BigDecimal rating,
                                  List<BreedDTO> breedsDTOs,

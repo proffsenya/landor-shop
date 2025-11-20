@@ -11,6 +11,8 @@ import java.util.List;
  * DTO for {@link com.example.backend.Domain.Models.Product}
  */
 public record UpdateProductDTO(@Size(max = 100) String name, @Size(max = 1000) String description,
+                               @Size(max = 500) String guaranteedIndicators,
+                               @Size(max = 100) String feedingNote,
                                @Size(max = 100) String slug, @NotNull Integer quantityInStock,
                                Boolean isActive, Boolean isFeatured, BigDecimal rating,
                                List<Integer> breedIds,

@@ -55,63 +55,111 @@ public class ProductImagesService {
 //    }
 
     @Transactional
-    public void addImagesToProduct(Product product, List<MultipartFile> files, Long variantId) throws IOException {
+    public List<ProductImage> addImagesToProduct(Product product, List<MultipartFile> files, Long variantId) throws IOException {
         if (product == null) throw new InvalidRequestException("Product is empty");
         if (files == null || files.isEmpty()) throw new InvalidRequestException("Files is empty");
 
         List<ProductVariant> variants = new ArrayList<>(product.getProductVariants());
-
+        List<ProductImage> createdImages = new ArrayList<>();
         boolean productMain = product.getImages().stream().anyMatch(img -> Boolean.TRUE.equals(img.getIsMain()));
-        boolean first = true;
 
-        if (!variants.isEmpty() && files.size() == variants.size()) {
+        ProductVariant forcedVariant = null;
+        if(variantId != null){
+            Optional<ProductVariant> forcedVariantOptional = productVariantRepository.findById(variantId);
+            if (forcedVariantOptional.isPresent()) {
+                forcedVariant = forcedVariantOptional.get();
+            }
+            else  {
+                throw new InvalidRequestException("Variant not found with id" + variantId);
+            }
+        }
+        boolean first = true;
+        if (forcedVariant != null) {
+            for (MultipartFile file : files) {
+                if (file == null || file.isEmpty()) continue;
+                boolean setMain = !productMain && first;
+                ProductImage img = createAndSaveImage(file, product, forcedVariant, setMain);
+                if (setMain) clearOtherMains(product, img.getId());
+                product.getImages().add(img);
+                createdImages.add(img);
+                first = false;
+            }
+        }
+        else if (!variants.isEmpty() && files.size() == variants.size()) {
             for (int i = 0; i < files.size(); i++) {
                 MultipartFile file = files.get(i);
                 if (file == null || file.isEmpty()) continue;
                 ProductVariant targetVariant = variants.get(i);
-                setAndAttach(targetVariant, file, product, !productMain && first);
+                boolean setMain = !productMain && first;
+                ProductImage img = createAndSaveImage(file, product, targetVariant, setMain);
+                if (setMain) clearOtherMains(product, img.getId());
+                product.getImages().add(img);
+                createdImages.add(img);
+                first = false;
             }
         }
+        else {
+            for (MultipartFile file : files) {
+                if (file == null || file.isEmpty()) continue;
+                boolean setMain = !productMain && first;
+                ProductImage img = createAndSaveImage(file, product, null, setMain);
+                if (setMain) clearOtherMains(product, img.getId());
+                product.getImages().add(img);
+                createdImages.add(img);
+                first = false;
+            }
+        }
+        productRepository.save(product);
+        return createdImages;
     }
 
     @Transactional
-    public void setAndAttach(ProductVariant linkedVariant, MultipartFile file, Product product, boolean setIsMain) throws IOException {
+    public ProductImage createAndSaveImage(MultipartFile file, Product product, ProductVariant linkedVariant, boolean setIsMain) throws IOException {
         String ct = file.getContentType();
-                boolean ok = false;
-                if (ct != null) ok = ct.toLowerCase().startsWith("image/");
-                if (!ok) {
-                    String filename = file.getOriginalFilename();
-                    if (filename != null) {
-                        String lower = filename.toLowerCase();
-                        ok = lower.endsWith(".jpg") || lower.endsWith(".jpeg") || lower.endsWith(".png") || lower.endsWith(".webp");
-                    }
+        boolean ok = false;
+        if (ct != null) ok = ct.toLowerCase().startsWith("image/");
+        if (!ok) {
+            String filename = file.getOriginalFilename();
+            if (filename != null) {
+                String lower = filename.toLowerCase();
+                ok = lower.endsWith(".jpg") || lower.endsWith(".jpeg") || lower.endsWith(".png") || lower.endsWith(".webp");
                 }
-                if (!ok) throw new InvalidRequestException("Unsupported file type: " + ct + " filename=" + file.getOriginalFilename());
+            }
+        if (!ok) throw new InvalidRequestException("Unsupported file type: " + ct + " filename=" + file.getOriginalFilename());
 
-                long maxBytes = 2 * 1024 * 1024;
-                if (file.getSize() > maxBytes) throw new InvalidRequestException("File too large: " + file.getOriginalFilename());
+        long maxBytes = 2 * 1024 * 1024;
+        if (file.getSize() > maxBytes) throw new InvalidRequestException("File too large: " + file.getOriginalFilename());
 
-                ProductImage img = new ProductImage();
-                img.setFileName(file.getOriginalFilename());
-                img.setContentType(ct);
-                img.setSize(file.getSize());
-                img.setIsMain(setIsMain);
-                img.setAltText(product.getName());
-                img.setProduct(product);
-                img.setData(file.getBytes());
+        ProductImage img = new ProductImage();
+        img.setFileName(file.getOriginalFilename());
+        img.setContentType(ct);
+        img.setSize(file.getSize());
+        img.setIsMain(setIsMain);
+        img.setAltText(product.getName());
+        img.setProduct(product);
+        img.setData(file.getBytes());
 
-                if (linkedVariant != null) {
-                    img.setProductVariant(linkedVariant);
-                }
+        if (linkedVariant != null) {
+            img.setProductVariant(linkedVariant);
+        }
 
-                productImageRepository.save(img);
-                product.getImages().add(img);
+        ProductImage saved = productImageRepository.save(img);
+        return saved;
 
     }
 
     @Transactional
     public void addImagesToProduct(Product product, List<MultipartFile> files) throws IOException {
         addImagesToProduct(product, files, null);
+    }
+
+    private void clearOtherMains(Product product, Long productId) {
+        for (ProductImage img : product.getImages()) {
+            if (img.getId() != null && !img.getId().equals(productId) && Boolean.TRUE.equals(img.getIsMain())) {
+                img.setIsMain(false);
+                productImageRepository.save(img);
+            }
+        }
     }
 //
 //    @Transactional
