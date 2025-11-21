@@ -88,15 +88,37 @@ public class ProductSpecificationBuilder {
                 Predicate p = cb.conjunction();
                 if (!f.variantColors.isEmpty()) {
                     Set<String> lowered = f.variantColors.stream().map(String::toLowerCase).collect(Collectors.toSet());
-                    p = cb.and(p, cb.lower(vjoin.get("colors")).in(lowered));
+                    Join<Object, Object> colorsJoin = vjoin.join("colors", JoinType.LEFT);
+                    p = cb.and(p, cb.lower(colorsJoin.get("slug")).in(lowered));
                 }
                 if (!f.variantScents.isEmpty()) {
                     Set<String> lowered = f.variantScents.stream().map(String::toLowerCase).collect(Collectors.toSet());
-                    p = cb.and(p, cb.lower(vjoin.get("scents")).in(lowered));
+                    Join<Object, Object> scentsJoin = vjoin.join("scents", JoinType.LEFT);
+                    p = cb.and(p, cb.lower(scentsJoin.get("slug")).in(lowered));
                 }
                 return p;
             });
         }
+
+        if (f.maxPrice != null || f.minPrice != null) {
+            specs.add((root, query, cb) -> {
+                if (query != null) query.distinct(true);
+                Join<Object, Object> join = root.join("productVariants", JoinType.LEFT);
+                Predicate p = cb.conjunction();
+                if (f.minPrice != null && f.maxPrice != null) {
+                    p = cb.between(join.get("price"), f.minPrice, f.maxPrice);
+                }
+                else if (f.minPrice != null) {
+                    p = cb.greaterThanOrEqualTo(join.get("price"), f.minPrice);
+                }
+                else{
+                    p = cb.lessThan(join.get("price"), f.maxPrice);
+                }
+                return p;
+            });
+        }
+
+
 
         return specs.isEmpty() ? null : Specification.allOf(specs.toArray(new Specification[0]));
     }

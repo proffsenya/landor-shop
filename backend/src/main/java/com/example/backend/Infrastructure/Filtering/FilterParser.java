@@ -4,6 +4,7 @@ import com.example.backend.Domain.DTOs.ProductFilter;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import java.math.BigDecimal;
 import java.net.URI;
 import java.util.List;
 import java.util.Map;
@@ -28,6 +29,22 @@ public class FilterParser {
 
     public static ProductFilter parseFromParams(MultiValueMap<String, String> params) {
         ProductFilter filter = new ProductFilter();
+
+        if (params.containsKey("minPrice")) {
+            try {
+                filter.minPrice = new BigDecimal(params.getFirst("minPrice"));
+            } catch (NumberFormatException e) {
+                // игнорируем невалидные значения
+            }
+        }
+
+        if (params.containsKey("maxPrice")) {
+            try {
+                filter.maxPrice = new BigDecimal(params.getFirst("maxPrice"));
+            } catch (NumberFormatException e) {
+                // игнорируем невалидные значения
+            }
+        }
 
         for (Map.Entry<String, List<String>> e : params.entrySet()) {
             String key = e.getKey();
@@ -59,4 +76,6 @@ public class FilterParser {
         MultiValueMap<String, String> params = UriComponentsBuilder.fromUri(uri).build().getQueryParams();
         return parseFromParams(params);
     }
+
+
 }

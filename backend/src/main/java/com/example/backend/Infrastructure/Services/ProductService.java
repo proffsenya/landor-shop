@@ -364,6 +364,58 @@ public class ProductService {
     }
 
     private ProductCardDTO toProductCardDTO(Product product) {
+        List<VariantCardDTO> variantCards = product.getProductVariants().stream()
+                .sorted(Comparator.comparing(ProductVariant::getId))
+                .map(variant -> toVariantCardDTO(variant, product)).toList();
+
+        return new ProductCardDTO(product.getId(), product.getName(), variantCards);
+    }
+
+//    private ProductCardDTO toProductCardDTO(Product product) {
+//        List<ProductImage> images = product.getImages() == null ? List.of() : new ArrayList<>(product.getImages());
+//
+//        Optional<ProductImage> mainImageOpt = product.getImages().stream()
+//                .filter(img -> img.getProductVariant() == null && img.getIsMain())
+//                .findFirst();
+//
+//        Long productMainId = mainImageOpt.map(ProductImage::getId)
+//                .orElse(null);
+//
+//        String productMainUrl = productMainId == null ? null : "/api/products/" + product.getId() + "/images/" + productMainId;
+//
+//        List<VariantCardDTO> variantCards = product.getProductVariants().stream()
+//                .sorted(Comparator.comparing(ProductVariant::getId))
+//                .map(v -> {
+//                    Optional<ProductImage> variantImageOpt = images.stream()
+//                            .filter(img -> img.getProductVariant() != null &&
+//                                    img.getProductVariant().getId().equals(v.getId()))
+//                            .findFirst();
+//                    Long imageId;
+//                    if (variantImageOpt.isPresent()) {
+//                        imageId = variantImageOpt.get().getId();
+//                    } else {
+//                        imageId = productMainId;
+//                    }
+//
+//                    String imageUrl = imageId == null ? null :
+//                            "/api/products/" + product.getId() + "/images/" + imageId;
+//
+//                    return new VariantCardDTO(
+//                    v.getId(),
+//                    v.getDisplayName() != null && !v.getDisplayName().isBlank()
+//                            ? v.getDisplayName()
+//                            : (product.getName() + (v.getWeight() != null ? (", " + v.getWeight() + " кг") : "")),
+//                    v.getPrice(),
+//                    v.getStock(),
+//                    v.getWeight(),
+//                    imageUrl
+//            );
+//        }).toList();
+//
+//        return new ProductCardDTO(product.getId(), product.getName(), variantCards);
+//    }
+
+    public VariantCardDTO toVariantCardDTO(ProductVariant v, Product product) {
         List<ProductImage> images = product.getImages() == null ? List.of() : new ArrayList<>(product.getImages());
 
         Optional<ProductImage> mainImageOpt = product.getImages().stream()
@@ -373,37 +425,29 @@ public class ProductService {
         Long productMainId = mainImageOpt.map(ProductImage::getId)
                 .orElse(null);
 
-        String productMainUrl = productMainId == null ? null : "/api/products/" + product.getId() + "/images/" + productMainId;
+        Optional<ProductImage> variantImageOpt = images.stream()
+                .filter(img -> img.getProductVariant() != null &&
+                        img.getProductVariant().getId().equals(v.getId()))
+                .findFirst();
+        Long imageId;
+        if (variantImageOpt.isPresent()) {
+            imageId = variantImageOpt.get().getId();
+        } else {
+            imageId = productMainId;
+        }
 
-        List<VariantCardDTO> variantCards = product.getProductVariants().stream()
-                .sorted(Comparator.comparing(ProductVariant::getId))
-                .map(v -> {
-                    Optional<ProductImage> variantImageOpt = images.stream()
-                            .filter(img -> img.getProductVariant() != null &&
-                                    img.getProductVariant().getId().equals(v.getId()))
-                            .findFirst();
-                    Long imageId;
-                    if (variantImageOpt.isPresent()) {
-                        imageId = variantImageOpt.get().getId();
-                    } else {
-                        imageId = productMainId;
-                    }
+        String imageUrl = imageId == null ? null :
+                "/api/products/" + product.getId() + "/images/" + imageId;
 
-                    String imageUrl = imageId == null ? null :
-                            "/api/products/" + product.getId() + "/images/" + imageId;
-
-                    return new VariantCardDTO(
-                    v.getId(),
-                    v.getDisplayName() != null && !v.getDisplayName().isBlank()
-                            ? v.getDisplayName()
-                            : (product.getName() + (v.getWeight() != null ? (", " + v.getWeight() + " кг") : "")),
-                    v.getPrice(),
-                    v.getStock(),
-                    v.getWeight(),
-                    imageUrl
-            );
-        }).toList();
-
-        return new ProductCardDTO(product.getId(), product.getName(), variantCards);
+        return new VariantCardDTO(
+                v.getId(),
+                v.getDisplayName() != null && !v.getDisplayName().isBlank()
+                        ? v.getDisplayName()
+                        : (product.getName() + (v.getWeight() != null ? (", " + v.getWeight() + " кг") : "")),
+                v.getPrice(),
+                v.getStock(),
+                v.getWeight(),
+                imageUrl
+        );
     }
 }

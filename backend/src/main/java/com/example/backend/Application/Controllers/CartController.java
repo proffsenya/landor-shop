@@ -102,7 +102,7 @@ public class CartController {
                 cartItem.getQuantity(),
                 cartItem.getPriceAtAdded(),
                 cartItem.getCreatedAt(),
-                cartItem.getProductVariant().getId(),
+                cartItem.getProductVariant().getProduct().getId(),
                 cartItem.getDisplayNameAtAdded(),
                 cartItem.getPriceAtAdded()
         );

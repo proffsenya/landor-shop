@@ -1,9 +1,7 @@
 package com.example.backend.Infrastructure.Services;
 
 import com.example.backend.Domain.DTOs.VariantCardDTO;
-import com.example.backend.Domain.Models.Favorite;
-import com.example.backend.Domain.Models.ProductVariant;
-import com.example.backend.Domain.Models.User;
+import com.example.backend.Domain.Models.*;
 import com.example.backend.Infrastructure.Exceptions.InvalidResourseException;
 import com.example.backend.Infrastructure.Repos.FavoriteRepository;
 import com.example.backend.Infrastructure.Repos.ProductVariantRepository;
@@ -14,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.nio.file.attribute.UserPrincipalNotFoundException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class FavoritesService {
@@ -21,13 +20,15 @@ public class FavoritesService {
     private final ProductVariantRepository productVariantRepository;
     private final UserRepository userRepository;
     private final CartService cartService;
+    private final ProductService productService;
 
     public FavoritesService(FavoriteRepository favoriteRepository, ProductVariantRepository productVariantRepository,
-                            UserRepository userRepository, CartService cartService) {
+                            UserRepository userRepository, CartService cartService, ProductService productService) {
         this.favoriteRepository = favoriteRepository;
         this.productVariantRepository = productVariantRepository;
         this.userRepository = userRepository;
         this.cartService = cartService;
+        this.productService = productService;
     }
 
     @Transactional
@@ -71,19 +72,8 @@ public class FavoritesService {
     }
 
     private VariantCardDTO toVariantCardDTO(ProductVariant v) {
-        String display = v.getDisplayName();
-        if (display == null || display.isBlank()) {
-            display = v.getProduct().getName()
-                    + (v.getWeight() != null ? (", " + v.getWeight() + " кг") : "");
-        }
-        String imageUrl = v.getProduct().getImages().stream()
-                .filter(img -> Boolean.TRUE.equals(img.getIsMain()))
-                .findFirst()
-                .map(img -> "/api/products/" + v.getProduct().getId() + "/images/" + img.getId())
-                .orElseGet(() -> v.getProduct().getImages().stream()
-                        .findFirst().map(img -> "/api/products/" + v.getProduct().getId() + "/images/" + img.getId()).orElse(null));
-
-        return new VariantCardDTO(v.getId(), display, v.getPrice(), v.getStock(), v.getWeight(), imageUrl);
+        Product product = v.getProduct();
+        return productService.toVariantCardDTO(v, product);
     }
 
     public static record MoveResult(List<Long> moved, List<Long> skipped, List<String> errors) {}
