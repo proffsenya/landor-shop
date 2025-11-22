@@ -229,8 +229,8 @@ export default function Catalog() {
       if (brandFilters[key]) queryParams.append("brand_" + key, "true");
     });
 
-    if (priceFrom) queryParams.append("minprice", priceFrom);
-    if (priceTo) queryParams.append("maxprice", priceTo);
+    if (priceFrom) queryParams.append("minPrice", priceFrom);
+    if (priceTo) queryParams.append("maxPrice", priceTo);
     if (searchQuery) queryParams.append("search_query", searchQuery);
 
     return queryParams.toString(); // БЕЗ начального "?"
