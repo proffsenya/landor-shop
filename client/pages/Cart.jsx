@@ -116,6 +116,11 @@ export default function Cart() {
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
   const [toast, setToast] = useState("");
+  const [errors, setErrors] = useState({
+    receiver: "",
+    phone: "",
+    address: "",
+  });
 
   const allSelected = selected.size === items.length && items.length > 0;
   const isEmpty = !loading && items.length === 0;
@@ -329,10 +334,169 @@ export default function Cart() {
     return { totalCount: count, totalPrice: price };
   }, [items]);
 
+  // Форматирование ФИО: первая буква каждого слова заглавная
+  const formatReceiver = (value) => {
+    // Разбиваем на слова, сохраняя пробелы
+    const words = value.split(/(\s+)/);
+    return words
+      .map((word) => {
+        // Если это пробелы, возвращаем как есть
+        if (/^\s+$/.test(word)) return word;
+        // Если слово не пустое, делаем первую букву заглавной
+        if (word.length > 0) {
+          return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+        }
+        return word;
+      })
+      .join("");
+  };
+
+  // Валидация ФИО
+  const validateReceiver = (value) => {
+    const trimmed = value.trim();
+    if (!trimmed) {
+      return "ФИО обязательно для заполнения";
+    }
+    // Разбиваем на слова, убирая лишние пробелы
+    const words = trimmed.split(/\s+/).filter((w) => w.length > 0);
+    if (words.length < 2) {
+      return "Укажите полное ФИО (минимум фамилия и имя)";
+    }
+    if (words.length > 3) {
+      return "ФИО должно содержать не более 3 слов (фамилия, имя, отчество)";
+    }
+    // Проверяем, что каждое слово содержит только русские буквы, дефисы и апострофы
+    const namePattern = /^[А-ЯЁа-яё\-']+$/;
+    for (const word of words) {
+      if (!namePattern.test(word)) {
+        return "ФИО должно содержать только русские буквы, дефисы и апострофы";
+      }
+      if (word.length < 2) {
+        return "Каждое слово в ФИО должно содержать минимум 2 символа";
+      }
+    }
+    return "";
+  };
+
+  // Форматирование телефона при вводе
+  const formatPhone = (value) => {
+    // Убираем все нецифровые символы
+    const digits = value.replace(/\D/g, "");
+    
+    // Если начинается с 8, заменяем на 7
+    let formatted = digits.startsWith("8") ? "7" + digits.slice(1) : digits;
+    
+    // Ограничиваем до 11 цифр
+    if (formatted.length > 11) {
+      formatted = formatted.slice(0, 11);
+    }
+    
+    // Форматируем: +7 (999) 123-45-67
+    if (formatted.length === 0) return "";
+    if (formatted.length <= 1) return `+${formatted}`;
+    if (formatted.length <= 4) return `+${formatted.slice(0, 1)} (${formatted.slice(1)}`;
+    if (formatted.length <= 7) return `+${formatted.slice(0, 1)} (${formatted.slice(1, 4)}) ${formatted.slice(4)}`;
+    if (formatted.length <= 9) return `+${formatted.slice(0, 1)} (${formatted.slice(1, 4)}) ${formatted.slice(4, 7)}-${formatted.slice(7)}`;
+    return `+${formatted.slice(0, 1)} (${formatted.slice(1, 4)}) ${formatted.slice(4, 7)}-${formatted.slice(7, 9)}-${formatted.slice(9, 11)}`;
+  };
+
+  // Валидация телефона
+  const validatePhone = (value) => {
+    const trimmed = value.trim();
+    if (!trimmed) {
+      return "Номер телефона обязателен для заполнения";
+    }
+    // Убираем все пробелы, дефисы, скобки и плюсы для проверки
+    const cleaned = trimmed.replace(/[\s\-()\+]/g, "");
+    // Проверяем российский формат: начинается с 7 или 8, затем 10 цифр
+    const phonePattern = /^(7|8)?\d{10}$/;
+    if (!phonePattern.test(cleaned)) {
+      return "Введите корректный номер телефона (например: +7 999 123 45 67 или 8 999 123 45 67)";
+    }
+    return "";
+  };
+
+  // Валидация адреса
+  const validateAddress = (value) => {
+    const trimmed = value.trim();
+    if (!trimmed) {
+      return "Адрес доставки обязателен для заполнения";
+    }
+    if (trimmed.length < 20) {
+      return "Адрес слишком короткий. Укажите полный адрес (город, улица, дом, квартира)";
+    }
+    // Проверяем наличие города
+    const cityKeywords = [
+      "г.", "г ", "город", "г,",
+      "поселок", "пос.", "пос ", "пос,",
+      "село", "с.", "с ",
+      "деревня", "д.", "д ",
+    ];
+    const hasCity = cityKeywords.some((keyword) =>
+      trimmed.toLowerCase().includes(keyword.toLowerCase())
+    );
+    if (!hasCity) {
+      return "Укажите город (г.)";
+    }
+    // Проверяем наличие типа улицы (улица, проспект, переулок и т.д.)
+    const streetTypes = [
+      "улица", "ул.", "ул ", "ул,",
+      "проспект", "пр.", "пр ", "пр,",
+      "переулок", "пер.", "пер ", "пер,",
+      "бульвар", "б-р", "б ",
+      "проезд", "пр-д",
+      "шоссе", "ш.", "ш ",
+      "набережная", "наб.", "наб ",
+      "площадь", "пл.", "пл ",
+      "микрорайон", "мкр.", "мкр ",
+    ];
+    const hasStreetType = streetTypes.some((type) => 
+      trimmed.toLowerCase().includes(type.toLowerCase())
+    );
+    if (!hasStreetType) {
+      return "Укажите тип улицы (улица, проспект, переулок и т.д.)";
+    }
+    // Проверяем наличие номера дома (цифры в адресе)
+    const hasHouseNumber = /\d/.test(trimmed);
+    if (!hasHouseNumber) {
+      return "Укажите номер дома";
+    }
+    // Проверяем наличие квартиры (обязательно)
+    const apartmentKeywords = [
+      "квартира", "кв.", "кв ", "кв,",
+      "офис", "оф.", "оф ", "оф,",
+      "помещение", "пом.", "пом ",
+    ];
+    const hasApartment = apartmentKeywords.some((keyword) =>
+      trimmed.toLowerCase().includes(keyword.toLowerCase())
+    );
+    if (!hasApartment) {
+      return "Укажите квартиру (кв.) или офис";
+    }
+    return "";
+  };
+
+  // Валидация всех полей
+  const validateForm = () => {
+    const newErrors = {
+      receiver: validateReceiver(receiver),
+      phone: validatePhone(phone),
+      address: validateAddress(address),
+    };
+    setErrors(newErrors);
+    return !newErrors.receiver && !newErrors.phone && !newErrors.address;
+  };
+
   const onPay = () => {
     // Проверяем, есть ли выбранные товары
     if (selected.size === 0) {
       showToast("Выберите товары для оформления заказа");
+      return;
+    }
+
+    // Валидируем форму
+    if (!validateForm()) {
+      showToast("Пожалуйста, исправьте ошибки в форме");
       return;
     }
 
@@ -668,24 +832,80 @@ export default function Cart() {
 
                   <div className="mt-5 sm:mt-6">
                     <p className="text-[#6F2A2B] mb-3">Доставка</p>
-                    <input
-                      value={receiver}
-                      onChange={(e) => setReceiver(e.target.value)}
-                      placeholder="ФИО получателя"
-                      className="w-full h-[40px] border border-[#E2E2E2] rounded px-3 text-[14px] mb-3 placeholder:text-[#B0B0B0]"
-                    />
-                    <input
-                      value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
-                      placeholder="Номер телефона"
-                      className="w-full h-[40px] border border-[#E2E2E2] rounded px-3 text-[14px] mb-3 placeholder:text-[#B0B0B0]"
-                    />
-                    <input
-                      value={address}
-                      onChange={(e) => setAddress(e.target.value)}
-                      placeholder="Адрес доставки"
-                      className="w-full h-[40px] border border-[#E2E2E2] rounded px-3 text-[14px] mb-4 placeholder:text-[#B0B0B0]"
-                    />
+                    <div className="mb-3">
+                      <input
+                        value={receiver}
+                        onChange={(e) => {
+                          const formatted = formatReceiver(e.target.value);
+                          setReceiver(formatted);
+                          if (errors.receiver) {
+                            setErrors((prev) => ({ ...prev, receiver: validateReceiver(formatted) }));
+                          }
+                        }}
+                        onBlur={() => {
+                          const formatted = formatReceiver(receiver);
+                          setReceiver(formatted);
+                          setErrors((prev) => ({ ...prev, receiver: validateReceiver(formatted) }));
+                        }}
+                        placeholder="Иванов Иван Иванович"
+                        className={`w-full h-[40px] border rounded px-3 text-[14px] placeholder:text-[#B0B0B0] ${
+                          errors.receiver ? "border-red-500" : "border-[#E2E2E2]"
+                        }`}
+                      />
+                      {errors.receiver ? (
+                        <p className="text-red-500 text-xs mt-1">{errors.receiver}</p>
+                      ) : !receiver.trim() ? (
+                        <p className="text-gray-500 text-xs mt-1">Пример: Иванов Иван Иванович</p>
+                      ) : null}
+                    </div>
+                    <div className="mb-3">
+                      <input
+                        type="tel"
+                        value={phone}
+                        onChange={(e) => {
+                          const formatted = formatPhone(e.target.value);
+                          setPhone(formatted);
+                          if (errors.phone) {
+                            setErrors((prev) => ({ ...prev, phone: validatePhone(formatted) }));
+                          }
+                        }}
+                        onBlur={() => {
+                          setErrors((prev) => ({ ...prev, phone: validatePhone(phone) }));
+                        }}
+                        placeholder="+7 (999) 123-45-67"
+                        className={`w-full h-[40px] border rounded px-3 text-[14px] placeholder:text-[#B0B0B0] ${
+                          errors.phone ? "border-red-500" : "border-[#E2E2E2]"
+                        }`}
+                      />
+                      {errors.phone ? (
+                        <p className="text-red-500 text-xs mt-1">{errors.phone}</p>
+                      ) : !phone.trim() ? (
+                        <p className="text-gray-500 text-xs mt-1">Пример: +7 (999) 123-45-67 или 8 (999) 123-45-67</p>
+                      ) : null}
+                    </div>
+                    <div className="mb-4">
+                      <input
+                        value={address}
+                        onChange={(e) => {
+                          setAddress(e.target.value);
+                          if (errors.address) {
+                            setErrors((prev) => ({ ...prev, address: validateAddress(e.target.value) }));
+                          }
+                        }}
+                        onBlur={() => {
+                          setErrors((prev) => ({ ...prev, address: validateAddress(address) }));
+                        }}
+                        placeholder="г. Москва, ул. Ленина, д. 10, кв. 25"
+                        className={`w-full h-[40px] border rounded px-3 text-[14px] placeholder:text-[#B0B0B0] ${
+                          errors.address ? "border-red-500" : "border-[#E2E2E2]"
+                        }`}
+                      />
+                      {errors.address ? (
+                        <p className="text-red-500 text-xs mt-1">{errors.address}</p>
+                      ) : !address.trim() ? (
+                        <p className="text-gray-500 text-xs mt-1">Пример: г. Москва, ул. Ленина, д. 10, кв. 25</p>
+                      ) : null}
+                    </div>
                     <button
                       onClick={onPay}
                       className="w-full h-[48px] sm:h-[50px] rounded bg-[#6F2A2B] text-white text-[15px] sm:text-[16px] hover:bg-[#5a2223]"

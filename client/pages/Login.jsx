@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import BreadcrumbNav from "@/components/BreadcrumbNav";
@@ -12,18 +12,59 @@ export default function Login() {
   const [passwordHash, setPasswordHash] = useState("");
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState("");
+  const [errors, setErrors] = useState({
+    email: "",
+    password: ""
+  });
+
+  const validateField = (name, value) => {
+    let error = "";
+
+    switch (name) {
+      case "email":
+        if (!value) {
+          error = "Почта обязательна";
+        } else if (!/^\S+@\S+\.\S+$/.test(value)) {
+          error = "Укажите корректный e-mail (example@mail.ru)";
+        }
+        break;
+
+      case "password":
+        if (!value) {
+          error = "Пароль обязателен";
+        }
+        break;
+
+      default:
+        break;
+    }
+
+    setErrors(prev => ({ ...prev, [name]: error }));
+    return !error;
+  };
+
+  const validateForm = () => {
+    const emailValid = validateField("email", email);
+    const passwordValid = validateField("password", passwordHash);
+    return emailValid && passwordValid;
+  };
+
+  const handleBlur = (e) => {
+    const { name, value } = e.target;
+    validateField(name, value);
+  };
 
   const onSubmit = async (e) => {
     e.preventDefault();
     setErr("");
 
-    const trimmedEmail = email.trim();
-    const trimmedPass = passwordHash.trim();
-
-    if (!trimmedEmail || !trimmedPass) {
-      setErr("Заполните почту и пароль.");
+    // Валидация формы
+    if (!validateForm()) {
       return;
     }
+
+    const trimmedEmail = email.trim();
+    const trimmedPass = passwordHash.trim();
 
     try {
       setLoading(true);
@@ -104,29 +145,53 @@ export default function Login() {
                 {/* Почта */}
                 <div>
                   <label className="block mb-2 text-sm font-medium text-gray-700">
-                    Почта/Номер телефона
+                    Почта *
                   </label>
                   <input
-                    type="text"
+                    type="email"
                     placeholder="example@mail.ru"
                     value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="w-full px-0 py-3 border-0 border-b-2 border-[#6F2A2B] bg-transparent focus:outline-none focus:border-[#5a2223] text-gray-900"
+                    onChange={(e) => {
+                      setEmail(e.target.value);
+                      if (errors.email) {
+                        validateField("email", e.target.value);
+                      }
+                    }}
+                    onBlur={handleBlur}
+                    name="email"
+                    className={`w-full px-0 py-3 border-0 border-b-2 bg-transparent focus:outline-none text-gray-900 ${
+                      errors.email ? "border-red-500" : "border-[#6F2A2B] focus:border-[#5a2223]"
+                    }`}
                   />
+                  {errors.email && (
+                    <div className="mt-1 text-xs text-red-500">{errors.email}</div>
+                  )}
                 </div>
 
                 {/* Пароль */}
                 <div>
                   <label className="block mb-2 text-sm font-medium text-gray-700">
-                    Пароль
+                    Пароль *
                   </label>
                   <input
                     type="password"
                     placeholder="**********"
                     value={passwordHash}
-                    onChange={(e) => setPasswordHash(e.target.value)}
-                    className="w-full px-0 py-3 border-0 border-b-2 border-[#6F2A2B] bg-transparent focus:outline-none focus:border-[#5a2223] text-gray-900"
+                    onChange={(e) => {
+                      setPasswordHash(e.target.value);
+                      if (errors.password) {
+                        validateField("password", e.target.value);
+                      }
+                    }}
+                    onBlur={handleBlur}
+                    name="password"
+                    className={`w-full px-0 py-3 border-0 border-b-2 bg-transparent focus:outline-none text-gray-900 ${
+                      errors.password ? "border-red-500" : "border-[#6F2A2B] focus:border-[#5a2223]"
+                    }`}
                   />
+                  {errors.password && (
+                    <div className="mt-1 text-xs text-red-500">{errors.password}</div>
+                  )}
                 </div>
 
                 {/* Ошибка */}
@@ -145,12 +210,12 @@ export default function Login() {
 
                 {/* Ссылка на регистрацию */}
                 <div className="text-center">
-                  <a
-                    href="/register"
+                  <Link
+                    to="/register"
                     className="text-[#6F2A2B] hover:opacity-70 transition-opacity"
                   >
                     Регистрация
-                  </a>
+                  </Link>
                 </div>
               </form>
             </div>

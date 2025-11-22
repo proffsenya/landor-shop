@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import BreadcrumbNav from "@/components/BreadcrumbNav";
@@ -15,18 +16,17 @@ const mockUser = {
   avatar: null,
 };
 
-const mockDelivery = {
-  city: "",
-  address: "",
-  apartment: "",
-  entrance: "",
-  floor: "",
-};
-
 const mockOrders = [
   { id: "134534", date: "01.09.2025" },
-  { id: "134534", date: "01.09.2025" },
-  { id: "134534", date: "01.09.2025" },
+  { id: "134535", date: "02.09.2025" },
+  { id: "134536", date: "03.09.2025" },
+  { id: "134537", date: "04.09.2025" },
+  { id: "134538", date: "05.09.2025" },
+  { id: "134539", date: "06.09.2025" },
+  { id: "134540", date: "07.09.2025" },
+  { id: "134541", date: "08.09.2025" },
+  { id: "134542", date: "09.09.2025" },
+  { id: "134543", date: "10.09.2025" },
 ];
 
 // Ряд с инпутом и маленькой кнопкой справа (адаптив)
@@ -66,8 +66,8 @@ function RowWithButton({
 }
 
 export default function Profile() {
+  const navigate = useNavigate();
   const [user, setUser] = useState(mockUser);
-  const [delivery, setDelivery] = useState(mockDelivery);
   const [orders] = useState(mockOrders);
 
   const [editing, setEditing] = useState({
@@ -76,10 +76,20 @@ export default function Profile() {
     middleName: false,
     email: false,
     phone: false,
-    delivery: false,
   });
 
   const toggle = (key) => setEditing((s) => ({ ...s, [key]: !s[key] }));
+
+  const handleLogout = () => {
+    // Очищаем localStorage
+    localStorage.clear();
+    // Очищаем sessionStorage
+    sessionStorage.clear();
+    // Перенаправляем на главную страницу
+    navigate("/");
+    // Перезагружаем страницу для полной очистки состояния
+    window.location.reload();
+  };
 
   return (
     <div className="min-h-screen bg-white">
@@ -90,7 +100,7 @@ export default function Profile() {
           { label: "Профиль" }
         ]} />
         <PageFade>
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[0.9fr_1.1fr]">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_1.2fr]">
           {/* Профиль — уменьшенный */}
           <PageFade>
           <div className="border border-[#E8E8E8] rounded-xl p-4 sm:p-6">
@@ -161,91 +171,23 @@ export default function Profile() {
                   Изменить
                 </Button>
               </div>
+
+              {/* Кнопка выхода */}
+              <div className="mt-6 pt-4 border-t border-[#E8E8E8]">
+                <Button
+                  type="button"
+                  onClick={handleLogout}
+                  className="w-full h-[40px] rounded-lg bg-red-600 text-white text-[14px] hover:bg-red-700"
+                >
+                  Выйти из аккаунта
+                </Button>
+              </div>
             </div>
           </div>
           </PageFade>
 
-          {/* Правая колонка — меньше размеров */}
+          {/* Правая колонка — история заказов */}
           <div className="flex flex-col gap-6">
-            {/* Доставка */}
-            <PageFade>
-            <div className="border border-[#E8E8E8] rounded-xl p-4 sm:p-6">
-              <h2 className="text-[18px] sm:text-[22px] font-semibold text-[#1E1E1E]">
-                Данные для доставки
-              </h2>
-
-              <div className="flex flex-col gap-2 mt-3 sm:mt-4 sm:flex-row sm:items-center sm:gap-3">
-                <input
-                  className="w-full h-10 rounded-lg border border-[#E8E8E8] bg-white px-3 text-[14px] placeholder:text-[#B9B9B9] outline-none"
-                  placeholder="Город, адрес"
-                  value={
-                    delivery.city || delivery.address
-                      ? [delivery.city, delivery.address].filter(Boolean).join(", ")
-                      : ""
-                  }
-                  disabled={!editing.delivery}
-                  onChange={(e) =>
-                    setDelivery((s) => {
-                      const val = e.target.value;
-                      const [city, ...rest] = val.split(",");
-                      return {
-                        ...s,
-                        city: city?.trim() || "",
-                        address: rest.join(",").trim(),
-                      };
-                    })
-                  }
-                />
-                <button
-                  type="button"
-                  className="text-[#6F2A2B] text-[14px] whitespace-nowrap hover:opacity-80 sm:self-auto self-start"
-                >
-                  Показать на карте
-                </button>
-              </div>
-
-              <div className="grid grid-cols-1 gap-2 mt-3 sm:grid-cols-3 sm:gap-3">
-                <input
-                  className="h-10 rounded-lg border border-[#E8E8E8] bg-white px-3 text-[14px] placeholder:text-[#B9B9B9] outline-none"
-                  placeholder="Квартира"
-                  value={delivery.apartment}
-                  disabled={!editing.delivery}
-                  onChange={(e) =>
-                    setDelivery((s) => ({ ...s, apartment: e.target.value }))
-                  }
-                />
-                <input
-                  className="h-10 rounded-lg border border-[#E8E8E8] bg-white px-3 text-[14px] placeholder:text-[#B9B9B9] outline-none"
-                  placeholder="Подъезд"
-                  value={delivery.entrance}
-                  disabled={!editing.delivery}
-                  onChange={(e) =>
-                    setDelivery((s) => ({ ...s, entrance: e.target.value }))
-                  }
-                />
-                <input
-                  className="h-10 rounded-lg border border-[#E8E8E8] bg-white px-3 text-[14px] placeholder:text-[#B9B9B9] outline-none"
-                  placeholder="Этаж"
-                  value={delivery.floor}
-                  disabled={!editing.delivery}
-                  onChange={(e) =>
-                    setDelivery((s) => ({ ...s, floor: e.target.value }))
-                  }
-                />
-              </div>
-
-              <div className="mt-4">
-                <Button
-                  type="button"
-                  onClick={() => toggle("delivery")}
-                  className="h-[38px] px-4 rounded-lg bg-[#6F2A2B] text-white text-[14px] hover:bg-[#5a2223] w-full sm:w-auto"
-                >
-                  {editing.delivery ? "Сохранить" : "Изменить"}
-                </Button>
-              </div>
-            </div>
-            </PageFade>
-
             {/* История заказов */}
             <PageFade>
             <div className="border border-[#E8E8E8] rounded-xl p-4 sm:p-6">

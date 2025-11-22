@@ -1,40 +1,42 @@
+import { Link } from "react-router-dom";
 import { HoverLift, StaggerItem } from "../utils/CatalogAnimations";
+
 export default function Categories() {
   const categories = [
     {
       name: "Кошка",
       count: "1 товар",
       bgColor: "#FFF4D8",
-      image:
-        "/categories/cat1.svg",
+      image: "/categories/cat1.svg",
+      categoryParam: "cat",
     },
     {
       name: "Котенок",
       count: "1 товар",
       bgColor: "#E7F4D8",
-      image:
-        "/categories/minicat.svg",
-      },
+      image: "/categories/minicat.svg",
+      categoryParam: "minicat",
+    },
     {
       name: "Наполнители",
       count: "1 товар",
       bgColor: "#E4EEF7",
-      image:
-        "/categories/napolnitel.svg",
+      image: "/categories/napolnitel.svg",
+      categoryParam: "filler",
     },
     {
       name: "Собака",
       count: "1 товар",
       bgColor: "#FCE4FA",
-      image:
-        "/categories/dog1.svg",
+      image: "/categories/dog1.svg",
+      categoryParam: "dog",
     },
     {
       name: "Щенок",
       count: "1 товар",
       bgColor: "#EFE2E0",
-      image:
-        "/categories/minidog1.svg",
+      image: "/categories/minidog1.svg",
+      categoryParam: "minidog",
     },
   ];
 
@@ -61,11 +63,11 @@ export default function Categories() {
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5 sm:gap-6 justify-items-center">
           
           {categories.map((category, index) => (
-            <StaggerItem key= {index}>
+            <StaggerItem key={index}>
             <HoverLift>
-            <div
-              key={index}
-              className="relative w-[160px] sm:w-[200px] lg:w-[220px] flex flex-col items-center"
+            <Link
+              to={`/catalog?category=${category.categoryParam}`}
+              className="relative w-[160px] sm:w-[200px] lg:w-[220px] flex flex-col items-center cursor-pointer"
             >
               {/* Фото */}
               <div
@@ -91,7 +93,7 @@ export default function Categories() {
                   {category.count}
                 </p>
               </div>
-            </div>
+            </Link>
             </HoverLift>
           </StaggerItem>
           ))}

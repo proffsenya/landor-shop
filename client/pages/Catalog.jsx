@@ -146,6 +146,7 @@ export default function Catalog() {
     all: true,
     dry: false,
     wet: false,
+    filler: false,
   });
   const [catFilters, setCatFilters] = useState({
     "for-sterilized": false,
@@ -193,6 +194,18 @@ export default function Catalog() {
     "fresh-pet-profbalance": false,
     "chistye-pushistye": false,
   });
+  const [scentFilters, setScentFilters] = useState({
+    classic: false,
+    vanilla: false,
+    banana: false,
+    coconut: false,
+    "green-tea": false,
+    rose: false,
+    apple: false,
+    lemon: false,
+    "no-flavor": false,
+    milk: false,
+  });
 
   // пагинация
   const ITEMS_PER_PAGE = 12;
@@ -228,13 +241,16 @@ export default function Catalog() {
     Object.keys(brandFilters).forEach((key) => {
       if (brandFilters[key]) queryParams.append("brand_" + key, "true");
     });
+    Object.keys(scentFilters).forEach((key) => {
+      if (scentFilters[key]) queryParams.append("scent_" + key, "true");
+    });
 
     if (priceFrom) queryParams.append("minPrice", priceFrom);
     if (priceTo) queryParams.append("maxPrice", priceTo);
     if (searchQuery) queryParams.append("search_query", searchQuery);
 
     return queryParams.toString(); // БЕЗ начального "?"
-  }, [categoryFilters, catFilters, dogFilters, minicatFilters, minidogFilters, countryFilters, flavorFilters, brandFilters, priceFrom, priceTo, searchQuery]);
+  }, [categoryFilters, catFilters, dogFilters, minicatFilters, minidogFilters, countryFilters, flavorFilters, brandFilters, scentFilters, priceFrom, priceTo, searchQuery]);
 
   // ---------- API: /api/products/cards/search-by-url?filtersUrl=<строка> ----------
   const fetchCards = async (filtersUrlString = "") => {
@@ -276,10 +292,131 @@ export default function Catalog() {
   // первая загрузка: используем то, что уже есть в адресной строке
   useEffect(() => {
     const queryString = window.location.search || "";
-    fetchCards(queryString);
-    // сохраняем query параметры в sessionStorage при загрузке
-    if (queryString) {
-      sessionStorage.setItem("catalog:lastQuery", queryString);
+    const urlParams = new URLSearchParams(queryString);
+    const categoryParam = urlParams.get("category");
+
+    // Если есть параметр category, генерируем соответствующие query параметры
+    if (categoryParam) {
+      const categoryQueryParams = new URLSearchParams();
+      
+      // Маппинг категорий на query параметры API
+      // Формат параметров: "cat_<key>", "minicat_<key>", "dog_<key>", "minidog_<key>"
+      const categoryMapping = {
+        cat: () => {
+          // Для кошек - активируем ВСЕ подфильтры кошек
+          categoryQueryParams.append("cat_for-sterilized", "true");
+          categoryQueryParams.append("cat_for-skin-and-coat-health", "true");
+          categoryQueryParams.append("cat_for-sensitive-digestion", "true");
+          categoryQueryParams.append("cat_for-picky", "true");
+          categoryQueryParams.append("cat_for-indoor", "true");
+        },
+        minicat: () => {
+          // Для котят - используем ключ forKittens
+          categoryQueryParams.append("minicat_forKittens", "true");
+        },
+        dog: () => {
+          // Для собак - активируем ВСЕ подфильтры собак
+          categoryQueryParams.append("dog_for-small-breeds", "true");
+          categoryQueryParams.append("dog_for-medium-breeds", "true");
+          categoryQueryParams.append("dog_for-large-breeds", "true");
+        },
+        minidog: () => {
+          // Для щенков - активируем ВСЕ подфильтры щенков
+          categoryQueryParams.append("minidog_for-small-breeds", "true");
+          categoryQueryParams.append("minidog_for-medium-breeds", "true");
+          categoryQueryParams.append("minidog_for-large-breeds", "true");
+        },
+        filler: () => {
+          // Для наполнителей - используем category_filler и активируем ВСЕ запахи
+          categoryQueryParams.append("category_filler", "true");
+          categoryQueryParams.append("scent_classic", "true");
+          categoryQueryParams.append("scent_vanilla", "true");
+          categoryQueryParams.append("scent_banana", "true");
+          categoryQueryParams.append("scent_coconut", "true");
+          categoryQueryParams.append("scent_green-tea", "true");
+          categoryQueryParams.append("scent_rose", "true");
+          categoryQueryParams.append("scent_apple", "true");
+          categoryQueryParams.append("scent_lemon", "true");
+          categoryQueryParams.append("scent_no-flavor", "true");
+          categoryQueryParams.append("scent_milk", "true");
+        },
+      };
+
+      // Применяем соответствующий фильтр
+      if (categoryMapping[categoryParam]) {
+        categoryMapping[categoryParam]();
+      }
+
+      // Добавляем остальные параметры из URL (если есть)
+      urlParams.forEach((value, key) => {
+        if (key !== "category") {
+          categoryQueryParams.append(key, value);
+        }
+      });
+
+      // Устанавливаем фильтры в состояние для отображения в UI
+      if (categoryParam === "cat") {
+        // Активируем ВСЕ фильтры для кошек
+        setCatFilters({
+          "for-sterilized": true,
+          "for-skin-and-coat-health": true,
+          "for-sensitive-digestion": true,
+          "for-picky": true,
+          "for-indoor": true,
+        });
+      } else if (categoryParam === "minicat") {
+        setMiniCatFilters({ forKittens: true });
+      } else if (categoryParam === "dog") {
+        // Активируем ВСЕ фильтры для собак
+        setDogFilters({
+          "for-small-breeds": true,
+          "for-medium-breeds": true,
+          "for-large-breeds": true,
+        });
+      } else if (categoryParam === "minidog") {
+        // Активируем ВСЕ фильтры для щенков
+        setMiniDogFilters({
+          "for-small-breeds": true,
+          "for-medium-breeds": true,
+          "for-large-breeds": true,
+        });
+      } else if (categoryParam === "filler") {
+        // Для наполнителей устанавливаем фильтр категории и ВСЕ запахи
+        setCategoryFilters((prev) => ({
+          ...prev,
+          all: false,
+          filler: true,
+        }));
+        setScentFilters({
+          classic: true,
+          vanilla: true,
+          banana: true,
+          coconut: true,
+          "green-tea": true,
+          rose: true,
+          apple: true,
+          lemon: true,
+          "no-flavor": true,
+          milk: true,
+        });
+      }
+
+      // Вызываем fetchCards с правильными параметрами
+      const finalQueryString = categoryQueryParams.toString() ? `?${categoryQueryParams.toString()}` : "";
+      
+      // Обновляем URL без перезагрузки страницы
+      window.history.pushState({}, "", finalQueryString || window.location.pathname);
+      
+      fetchCards(finalQueryString);
+      if (finalQueryString) {
+        sessionStorage.setItem("catalog:lastQuery", finalQueryString);
+      }
+    } else {
+      // Если нет параметра category, используем обычную логику
+      fetchCards(queryString);
+      if (queryString) {
+        sessionStorage.setItem("catalog:lastQuery", queryString);
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -322,6 +459,7 @@ export default function Catalog() {
         all: true,
         dry: false,
         wet: false,
+        filler: false,
       });
     } else {
       setCategoryFilters((prev) => ({
@@ -354,6 +492,7 @@ export default function Catalog() {
       all: true,
       dry: false,
       wet: false,
+      filler: false,
     });
     setCatFilters({
       "for-sterilized": false,
@@ -400,6 +539,18 @@ export default function Catalog() {
       landy: false,
       "fresh-pet-profbalance": false,
       "chistye-pushistye": false,
+    });
+    setScentFilters({
+      classic: false,
+      vanilla: false,
+      banana: false,
+      coconut: false,
+      "green-tea": false,
+      rose: false,
+      apple: false,
+      lemon: false,
+      "no-flavor": false,
+      milk: false,
     });
     setPriceFrom("");
     setPriceTo("");
@@ -455,6 +606,13 @@ export default function Catalog() {
                     onCheckedChange={() => handleCategoryChange("wet")}
                   />
                   <span className="text-sm">Влажные корма</span>
+                </label>
+                <label className="flex items-center space-x-2">
+                  <Checkbox
+                    checked={categoryFilters.filler}
+                    onCheckedChange={() => handleCategoryChange("filler")}
+                  />
+                  <span className="text-sm">Наполнитель</span>
                 </label>
               </div>
             </FilterSection>
@@ -695,6 +853,34 @@ export default function Catalog() {
               </div>
             </FilterSection>
 
+            {/* Запахи */}
+            <FilterSection title="Запахи">
+              <div className="grid grid-cols-2 gap-2">
+                {[
+                  ["classic", "Классический"],
+                  ["vanilla", "Ваниль"],
+                  ["banana", "Банан"],
+                  ["coconut", "Кокос"],
+                  ["green-tea", "Зеленый чай"],
+                  ["rose", "Роза"],
+                  ["apple", "Яблоко"],
+                  ["lemon", "Лимон"],
+                  ["no-flavor", "Без ароматизатора"],
+                  ["milk", "Молочный"],
+                ].map(([key, label]) => (
+                  <label key={key} className="flex items-center space-x-2">
+                    <Checkbox
+                      checked={scentFilters[key]}
+                      onCheckedChange={(c) =>
+                        setScentFilters((prev) => ({ ...prev, [key]: c }))
+                      }
+                    />
+                    <span className="text-sm">{label}</span>
+                  </label>
+                ))}
+              </div>
+            </FilterSection>
+
             {/* Бренд */}
             <FilterSection title="Бренд">
               <div className="space-y-2">
@@ -787,6 +973,13 @@ export default function Catalog() {
                       onCheckedChange={() => handleCategoryChange("wet")}
                     />
                     <span className="text-sm">Влажные корма</span>
+                  </label>
+                  <label className="flex items-center space-x-2">
+                    <Checkbox
+                      checked={categoryFilters.filler}
+                      onCheckedChange={() => handleCategoryChange("filler")}
+                    />
+                    <span className="text-sm">Наполнитель</span>
                   </label>
                 </div>
               </FilterSection>
@@ -1022,6 +1215,34 @@ export default function Catalog() {
                             ...prev,
                             [key]: c,
                           }))
+                        }
+                      />
+                      <span className="text-sm">{label}</span>
+                    </label>
+                  ))}
+                </div>
+              </FilterSection>
+
+              {/* Запахи */}
+              <FilterSection title="Запахи">
+                <div className="grid grid-cols-2 gap-2">
+                  {[
+                    ["classic", "Классический"],
+                    ["vanilla", "Ваниль"],
+                    ["banana", "Банан"],
+                    ["coconut", "Кокос"],
+                    ["green-tea", "Зеленый чай"],
+                    ["rose", "Роза"],
+                    ["apple", "Яблоко"],
+                    ["lemon", "Лимон"],
+                    ["no-flavor", "Без ароматизатора"],
+                    ["milk", "Молочный"],
+                  ].map(([key, label]) => (
+                    <label key={key} className="flex items-center space-x-2">
+                      <Checkbox
+                        checked={scentFilters[key]}
+                        onCheckedChange={(c) =>
+                          setScentFilters((prev) => ({ ...prev, [key]: c }))
                         }
                       />
                       <span className="text-sm">{label}</span>

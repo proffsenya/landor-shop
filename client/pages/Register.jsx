@@ -12,7 +12,6 @@ export default function Register() {
   const [email, setEmail] = useState("");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
-  const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [password2, setPassword2] = useState("");
 
@@ -26,7 +25,6 @@ export default function Register() {
     email: "",
     firstName: "",
     lastName: "",
-    phone: "",
     password: "",
     password2: ""
   });
@@ -60,12 +58,6 @@ export default function Register() {
           error = "Фамилия должна быть не короче 2 символов";
         } else if (!/^[a-zA-Zа-яА-ЯёЁ\s-]+$/.test(value)) {
           error = "Фамилия может содержать только буквы, пробелы и дефисы";
-        }
-        break;
-
-      case "phone":
-        if (value && !/^(\+7|8)?[\s-]?\(?[0-9]{3}\)?[\s-]?[0-9]{3}[\s-]?[0-9]{2}[\s-]?[0-9]{2}$/.test(value)) {
-          error = "Укажите корректный номер телефона (+79999999999)";
         }
         break;
 
@@ -106,7 +98,6 @@ export default function Register() {
       { name: "email", value: email },
       { name: "firstName", value: firstName },
       { name: "lastName", value: lastName },
-      { name: "phone", value: phone },
       { name: "password", value: password },
       { name: "password2", value: password2 }
     ];
@@ -119,29 +110,6 @@ export default function Register() {
     });
 
     return isValid;
-  };
-
-  const formatPhone = (value) => {
-    // Удаляем все нецифровые символы кроме +
-    const numbers = value.replace(/[^\d+]/g, '');
-    
-    if (numbers.startsWith('+7')) {
-      return numbers;
-    } else if (numbers.startsWith('8')) {
-      return '+7' + numbers.slice(1);
-    } else if (numbers.startsWith('7')) {
-      return '+' + numbers;
-    } else if (numbers) {
-      return '+7' + numbers;
-    }
-    return numbers;
-  };
-
-  const handlePhoneChange = (e) => {
-    const value = e.target.value;
-    const formatted = formatPhone(value);
-    setPhone(formatted);
-    validateField("phone", formatted);
   };
 
   const handleBlur = (e) => {
@@ -165,7 +133,6 @@ export default function Register() {
           email: email.trim(),
           firstName: firstName.trim(),
           lastName: lastName.trim(),
-          phone: phone || undefined,
           passwordHash: password,
         }),
       });
@@ -185,10 +152,9 @@ export default function Register() {
 
       if (data?.token) localStorage.setItem("token", data.token);
       if (data?.email) localStorage.setItem("email", data.email);
-      if (phone) localStorage.setItem("phone", phone);
 
       setSuccessMsg("Регистрация прошла успешно!");
-      setTimeout(() => navigate("/"), 800);
+      setTimeout(() => navigate("/login"), 800);
     } catch {
       setErrorMsg("Сетевая ошибка. Повторите попытку.");
     } finally {
@@ -302,27 +268,6 @@ export default function Register() {
                   />
                   {errors.email && (
                     <div className="mt-1 text-xs text-red-500">{errors.email}</div>
-                  )}
-                </div>
-
-                {/* Телефон */}
-                <div>
-                  <label className="block mb-2 text-sm font-medium text-gray-700">
-                    Номер телефона
-                  </label>
-                  <input
-                    type="tel"
-                    placeholder="+79999999999"
-                    value={phone}
-                    onChange={handlePhoneChange}
-                    onBlur={handleBlur}
-                    name="phone"
-                    className={`w-full px-0 py-3 border-0 border-b-2 bg-transparent focus:outline-none text-gray-900 ${
-                      errors.phone ? "border-red-500" : "border-[#6F2A2B] focus:border-[#5a2223]"
-                    }`}
-                  />
-                  {errors.phone && (
-                    <div className="mt-1 text-xs text-red-500">{errors.phone}</div>
                   )}
                 </div>
 

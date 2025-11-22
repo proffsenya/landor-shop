@@ -17,7 +17,6 @@ export default function Index() {
             <Benefits />
             <Categories />
             <ProductsSection title="Рекомендовано для Вас" />
-            <ProductsSection title="Популярные товары" />
             <FAQ />
           </main>
         </PageFade>
