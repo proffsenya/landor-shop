@@ -36,6 +36,43 @@ const saveSet = (key, set) => {
   } catch {}
 };
 
+// Кэш для изображений
+const imageCache = new Map();
+
+// Функция для получения изображения через API
+async function fetchImageUrl(productId, variantId, token) {
+  if (!productId || !variantId) return null;
+  const cacheKey = `${productId}:${variantId}`;
+  if (imageCache.has(cacheKey)) return imageCache.get(cacheKey);
+
+  try {
+    const res = await fetch(
+      `/api/products/${encodeURIComponent(productId)}/images/${encodeURIComponent(variantId)}`,
+      {
+        headers: token && token !== "guest" ? { Authorization: `Bearer ${token}` } : {},
+      }
+    );
+    if (!res.ok) {
+      console.warn("[Cart images]", res.status, res.url);
+      return null;
+    }
+    const blob = await res.blob();
+    const ct = res.headers.get("content-type") || blob.type || "";
+    if (!ct.startsWith("image/")) {
+      console.warn(
+        `[Cart images] not image content for variantId=${variantId}, content-type=${ct}`
+      );
+      return null;
+    }
+    const url = URL.createObjectURL(blob);
+    imageCache.set(cacheKey, url);
+    return url;
+  } catch (e) {
+    console.warn("[Cart images] error", e);
+    return null;
+  }
+}
+
 // ---- утилиты отображения ----
 const fmtMoney = (n) =>
   new Intl.NumberFormat("ru-RU", {
@@ -71,6 +108,7 @@ export default function Cart() {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [imageUrls, setImageUrls] = useState(new Map()); // Map<itemId, imageUrl>
 
   const [selected, setSelected] = useState(new Set());
   const [payMethod, setPayMethod] = useState("cash");
@@ -109,6 +147,20 @@ export default function Cart() {
       const mapped = mapCartResponse(data);
       setItems(mapped);
       setSelected(new Set(mapped.map((i) => i.id))); // выбрать всё по умолчанию
+
+      // Загружаем изображения через API
+      const imageMap = new Map();
+      await Promise.all(
+        mapped.map(async (item) => {
+          if (item.productId && item.variantId) {
+            const imageUrl = await fetchImageUrl(item.productId, item.variantId, authToken);
+            if (imageUrl) {
+              imageMap.set(item.id, imageUrl);
+            }
+          }
+        })
+      );
+      setImageUrls(imageMap);
 
       // синхронизируем локальный набор вариантов «в корзине», чтобы кнопки на карточках были актуальны
       const setCart = new Set(
@@ -411,9 +463,12 @@ export default function Cart() {
 
                             <div className="pl-4">
                               <img
-                                src={i.image}
+                                src={imageUrls.get(i.id) || i.image || "/korm1.svg"}
                                 alt={i.name}
                                 className="w-[80px] h-[110px] object-contain"
+                                onError={(e) => {
+                                  e.currentTarget.src = "/korm1.svg";
+                                }}
                               />
                             </div>
 
@@ -488,9 +543,12 @@ export default function Cart() {
                             <div className="flex gap-3">
                               <div className="flex-shrink-0 w-16 h-24">
                                 <img
-                                  src={i.image}
+                                  src={imageUrls.get(i.id) || i.image || "/korm1.svg"}
                                   alt={i.name}
                                   className="object-contain w-full h-full"
+                                  onError={(e) => {
+                                    e.currentTarget.src = "/korm1.svg";
+                                  }}
                                 />
                               </div>
                               <div className="flex-1">

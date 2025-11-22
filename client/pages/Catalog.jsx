@@ -229,8 +229,8 @@ export default function Catalog() {
       if (brandFilters[key]) queryParams.append("brand_" + key, "true");
     });
 
-    if (priceFrom) queryParams.append("price_from", priceFrom);
-    if (priceTo) queryParams.append("price_to", priceTo);
+    if (priceFrom) queryParams.append("minprice", priceFrom);
+    if (priceTo) queryParams.append("maxprice", priceTo);
     if (searchQuery) queryParams.append("search_query", searchQuery);
 
     return queryParams.toString(); // БЕЗ начального "?"
@@ -284,21 +284,16 @@ export default function Catalog() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // клиентская фильтрация по поиску/цене (можно оставить)
+  // клиентская фильтрация по поиску (фильтрация по цене работает через API)
   const filtered = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
-    const from = priceFrom ? Number(priceFrom) : null;
-    const to = priceTo ? Number(priceTo) : null;
 
     return products.filter((p) => {
       const title = (p.title ?? p.name ?? "").toString().toLowerCase();
-      const price = Number(p.price ?? 0);
       const byQuery = q ? title.includes(q) : true;
-      const byFrom = from !== null ? price >= from : true;
-      const byTo = to !== null ? price <= to : true;
-      return byQuery && byFrom && byTo;
+      return byQuery;
     });
-  }, [products, searchQuery, priceFrom, priceTo]);
+  }, [products, searchQuery]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE));
 
