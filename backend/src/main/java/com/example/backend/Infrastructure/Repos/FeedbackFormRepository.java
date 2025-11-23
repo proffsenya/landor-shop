@@ -7,5 +7,4 @@ import org.springframework.data.repository.Repository;
 import java.util.List;
 
 public interface FeedbackFormRepository extends JpaRepository<FeedbackForm, Integer> {
-    List<FeedbackForm> findByFormId(Integer formId);
 }

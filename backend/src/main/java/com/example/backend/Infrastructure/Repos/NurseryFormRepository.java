@@ -7,6 +7,5 @@ import org.springframework.data.repository.Repository;
 import java.util.List;
 
 public interface NurseryFormRepository extends JpaRepository<NurseryForm, Integer> {
-    List<NurseryForm> findByFormId(Integer formId);
     List<NurseryForm> findAll();
 }
