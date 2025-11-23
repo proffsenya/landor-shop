@@ -334,39 +334,41 @@ public class ProductService {
     }
 
     @Transactional(readOnly = true)
-    public List<ProductCardDTO> filterProductCardsByParams(MultiValueMap<String, String> queryParams) {
+    public List<VariantCardDTO> filterProductCardsByParams(MultiValueMap<String, String> queryParams) {
         ProductFilter filter = FilterParser.parseFromParams(queryParams);
-        Specification<Product> spec = ProductSpecificationBuilder.build(filter);
+        Specification<ProductVariant> spec = ProductSpecificationBuilder.build(filter);
 
-        List<Product> products;
+        List<ProductVariant> products;
         if (spec == null) {
-            products = productRepository.findAll(Sort.by(Sort.Direction.ASC, "id")); // можно убрать сорт или поменять
+            products = productVariantRepository.findAll(Sort.by(Sort.Direction.ASC, "id"));
+
+            // можно убрать сорт или поменять
         } else {
-            products = productRepository.findAll(spec);
+            products = productVariantRepository.findAll((Sort) spec);
         }
 
-        return products.stream().map(this::toProductCardDTO).toList();
+        return products.stream().map(this::toVariantCardDTO).toList();
     }
 
     @Transactional(readOnly = true)
-    public List<ProductCardDTO> filterProductCardsByUrl(String filtersUrl) {
+    public List<VariantCardDTO> filterProductCardsByUrl(String filtersUrl) {
         ProductFilter filter = FilterParser.parseFromUrlString(filtersUrl);
-        Specification<Product> spec = ProductSpecificationBuilder.build(filter);
+        Specification<ProductVariant> spec = ProductSpecificationBuilder.build(filter);
 
-        List<Product> products;
+        List<ProductVariant> products;
         if (spec == null) {
-            products = productRepository.findAll();
+            products = productVariantRepository.findAll();
         } else {
-            products = productRepository.findAll(spec);
+            products = productVariantRepository.findAll((Sort) spec);
         }
 
-        return products.stream().map(this::toProductCardDTO).toList();
+        return products.stream().map(this::toVariantCardDTO).toList();
     }
 
     private ProductCardDTO toProductCardDTO(Product product) {
         List<VariantCardDTO> variantCards = product.getProductVariants().stream()
                 .sorted(Comparator.comparing(ProductVariant::getId))
-                .map(variant -> toVariantCardDTO(variant, product)).toList();
+                .map(this::toVariantCardDTO).toList();
 
         return new ProductCardDTO(product.getId(), product.getName(), variantCards);
     }
@@ -415,7 +417,8 @@ public class ProductService {
 //        return new ProductCardDTO(product.getId(), product.getName(), variantCards);
 //    }
 
-    public VariantCardDTO toVariantCardDTO(ProductVariant v, Product product) {
+    public VariantCardDTO toVariantCardDTO(ProductVariant v) {
+        Product product = v.getProduct();
         List<ProductImage> images = product.getImages() == null ? List.of() : new ArrayList<>(product.getImages());
 
         Optional<ProductImage> mainImageOpt = product.getImages().stream()

@@ -65,6 +65,30 @@ public class User {
     @JoinColumn(name = "user_id")
     private Set<Favorite> favorites = new LinkedHashSet<>();
 
+    @Size(max = 20)
+    @Column(name = "phone", length = 20)
+    private String phone;
+
+    @Size(max = 100)
+    @Column(name = "middle_name", length = 100)
+    private String middleName;
+
+    public String getMiddleName() {
+        return middleName;
+    }
+
+    public void setMiddleName(String middleName) {
+        this.middleName = middleName;
+    }
+
+    public String getPhone() {
+        return phone;
+    }
+
+    public void setPhone(String phone) {
+        this.phone = phone;
+    }
+
     public Set<Favorite> getFavorites() {
         return favorites;
     }

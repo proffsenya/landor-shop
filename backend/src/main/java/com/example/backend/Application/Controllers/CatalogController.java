@@ -1,6 +1,7 @@
 package com.example.backend.Application.Controllers;
 
 import com.example.backend.Domain.DTOs.ProductCardDTO;
+import com.example.backend.Domain.DTOs.VariantCardDTO;
 import com.example.backend.Infrastructure.Services.ProductService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.MultiValueMap;
@@ -20,18 +21,18 @@ class CatalogController {
     }
 
     @GetMapping("/search-by-params")
-    public ResponseEntity<List<ProductCardDTO>> searchProductCardsByParams(
+    public ResponseEntity<List<VariantCardDTO>> searchProductCardsByParams(
             @RequestParam MultiValueMap<String, String> params
     ) {
-        List<ProductCardDTO> cards = productService.filterProductCardsByParams(params);
+        List<VariantCardDTO> cards = productService.filterProductCardsByParams(params);
         return ResponseEntity.ok(cards);
     }
 
     @GetMapping("/search-by-url")
-    public  ResponseEntity<List<ProductCardDTO>> searchProductCardsByUrl(
+    public  ResponseEntity<List<VariantCardDTO>> searchProductCardsByUrl(
             @RequestParam("filtersUrl") String filtersUrl
     ){
-        List<ProductCardDTO> cards = productService.filterProductCardsByUrl(filtersUrl);
+        List<VariantCardDTO> cards = productService.filterProductCardsByUrl(filtersUrl);
         return ResponseEntity.ok(cards);
     }
 }
