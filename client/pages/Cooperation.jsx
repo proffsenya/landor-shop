@@ -10,6 +10,11 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Building2, Truck, Users, CheckCircle2 } from "lucide-react";
 
+const getAuthToken = () => {
+  if (typeof window === "undefined") return "guest";
+  return localStorage.getItem("authToken") || "guest";
+};
+
 export default function Cooperation() {
   const [formData, setFormData] = useState({
     name: "",
@@ -83,10 +88,31 @@ export default function Cooperation() {
     try {
       setLoading(true);
       
-      // TODO: Заменить на реальный API endpoint
-      console.log("Form data:", formData);
-      alert("Спасибо! Наш специалист свяжется с вами в ближайшее время.");
+      const authToken = getAuthToken();
+      const headers = {
+        "Content-Type": "application/json",
+      };
       
+      if (authToken && authToken !== "guest") {
+        headers.Authorization = `Bearer ${authToken}`;
+      }
+      
+      const response = await fetch("/api/forms/feedbackform", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          name: formData.name,
+          phone: formData.phone,
+          email: formData.email,
+          city: formData.city,
+          comment: formData.comment,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+
       // Сброс формы
       setFormData({
         name: "",
@@ -96,6 +122,8 @@ export default function Cooperation() {
         comment: "",
         consent: false,
       });
+      
+      alert("Спасибо! Наш специалист свяжется с вами в ближайшее время.");
     } catch (error) {
       console.error("Error submitting form:", error);
       alert("Произошла ошибка при отправке формы. Попробуйте позже.");
