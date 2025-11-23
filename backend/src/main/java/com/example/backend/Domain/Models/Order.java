@@ -67,11 +67,23 @@ public class Order {
     @Column(name = "updated_at")
     private Instant updatedAt;
 
-    @OneToMany(mappedBy = "order")
+    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<OrderItem> orderItems = new LinkedHashSet<>();
 
     @OneToMany(mappedBy = "order")
     private Set<PaymentTransaction> paymentTransactions = new LinkedHashSet<>();
+
+    @Column(name = "customer_snapshot")
+    @JdbcTypeCode(SqlTypes.JSON)
+    private Map<String, Object> customerSnapshot;
+
+    public Map<String, Object> getCustomerSnapshot() {
+        return customerSnapshot;
+    }
+
+    public void setCustomerSnapshot(Map<String, Object> customerSnapshot) {
+        this.customerSnapshot = customerSnapshot;
+    }
 
     public Long getId() {
         return id;

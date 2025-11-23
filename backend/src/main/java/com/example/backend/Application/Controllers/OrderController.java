@@ -18,7 +18,7 @@ import java.nio.file.AccessDeniedException;
 
 @RestController
 @Validated
-@RequestMapping("/orders")
+@RequestMapping("/api/orders")
 class OrderController {
     private final OrderService orderService;
     @Autowired
@@ -30,12 +30,12 @@ class OrderController {
     public ResponseEntity<OrderDTO> createOrder(@AuthenticationPrincipal CustomUserDetails userPrincipal,
                                                         @RequestBody CreateOrderRequestDTO req){
         Long userId = userPrincipal.getId();
-        Order order = orderService.createOrderFromCart(userId, req.customerNotes());
+        Order order = orderService.createOrderFromCart(userId, req);
         return ResponseEntity.status(HttpStatus.CREATED).body(OrderDTO.from(order));
     }
 
     @GetMapping("/{orderId}")
-    public ResponseEntity<OrderDTO> getOrder(@PathVariable Long orderId,
+    public ResponseEntity<OrderDTO> getOrdersByUser(@PathVariable Long orderId,
                                                      @AuthenticationPrincipal CustomUserDetails userPrincipal) throws AccessDeniedException {
         Long userId = userPrincipal.getId();
         Order order = orderService.getOrderById(orderId);

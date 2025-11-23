@@ -76,6 +76,17 @@ public class ProductSpecificationBuilder {
             });
         }
 
+        if (!f.productTypes.isEmpty()) {
+            specs.add((root, query, cb) -> {
+                if (query != null) query.distinct(true);
+                Join<ProductVariant, Product> product = root.join("product");
+                Join<Product, ProductType> types = product.join("productType");
+                Expression<String> expr = cb.lower(types.get("canonicalName"));
+                Set<String> lowered = f.productTypes.stream().map(String::toLowerCase).collect(Collectors.toSet());
+                return expr.in(lowered);
+            });
+        }
+
         if (!f.brands.isEmpty()) {
             specs.add((root, query, cb) -> {
                 if (query != null) query.distinct(true);

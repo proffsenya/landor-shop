@@ -13,13 +13,14 @@ public class ProductFilter {
     public Set<String> brands = new HashSet<>(); // бренд как slug/name
     public Set<String> variantColors = new HashSet<>();
     public Set<String> variantScents = new HashSet<>();
+    public Set<String> productTypes = new HashSet<>();
     public BigDecimal minPrice;
     public BigDecimal maxPrice;
 
     public boolean isEmpty() {
         return categories.isEmpty() && breeds.isEmpty() && countries.isEmpty()
                 && typeOfFood.isEmpty() && flavors.isEmpty() && brands.isEmpty()
-                && variantColors.isEmpty() && variantScents.isEmpty()
+                && variantColors.isEmpty() && variantScents.isEmpty() && productTypes.isEmpty()
                 && minPrice == null && maxPrice == null;
 
     }

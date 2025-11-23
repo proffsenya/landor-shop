@@ -24,7 +24,8 @@ public class FilterParser {
                     Map.entry("flavor", (f,v) -> f.flavors.add(v)),
                     Map.entry("brand", (f,v) -> f.brands.add(v)),
                     Map.entry("color", (f,v) -> f.variantColors.add(v)),
-                    Map.entry("scent", (f,v) -> f.variantScents.add(v))
+                    Map.entry("scent", (f,v) -> f.variantScents.add(v)),
+                    Map.entry("producttype", (f,v) -> f.productTypes.add(v))
             );
 
     public static ProductFilter parseFromParams(MultiValueMap<String, String> params) {
