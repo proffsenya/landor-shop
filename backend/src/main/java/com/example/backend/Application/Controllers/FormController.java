@@ -1,5 +1,6 @@
 package com.example.backend.Application.Controllers;
 
+import com.example.backend.Domain.DTOs.CreateProductDTO;
 import com.example.backend.Domain.DTOs.FeedbackFormDTO;
 import com.example.backend.Domain.DTOs.NurseryFormDTO;
 import com.example.backend.Domain.Models.FeedbackForm;
@@ -7,8 +8,11 @@ import com.example.backend.Domain.Models.NurseryForm;
 import com.example.backend.Infrastructure.Repos.FeedbackFormRepository;
 import com.example.backend.Infrastructure.Repos.NurseryFormRepository;
 import com.example.backend.Infrastructure.Services.FormService;
+import jakarta.validation.Valid;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -29,9 +33,12 @@ class FormController {
         return ResponseEntity.ok(formService.saveFeedbackForm(formDTO));
     }
 
-    @PostMapping("/nurseryform")
-    public ResponseEntity<NurseryForm> createNurseryForm(@RequestBody NurseryFormDTO formDTO) {
-        return ResponseEntity.ok(formService.saveNurseryForm(formDTO));
+    @PostMapping(value ="/nurseryform", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<NurseryForm> createNurseryForm(
+            @RequestPart("nurseryFormDTO") @Valid NurseryFormDTO dto,
+            @RequestPart(value = "registrationFile", required = false) MultipartFile registrationFile
+    ) {
+        return ResponseEntity.ok(formService.saveNurseryForm(dto, registrationFile));
     }
 
     @GetMapping("/feedbackform")

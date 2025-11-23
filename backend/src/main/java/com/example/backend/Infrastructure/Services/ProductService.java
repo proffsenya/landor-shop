@@ -339,12 +339,13 @@ public class ProductService {
         Specification<ProductVariant> spec = ProductSpecificationBuilder.build(filter);
 
         List<ProductVariant> products;
+        Sort sort = Sort.by(Sort.Direction.ASC, "id");
         if (spec == null) {
-            products = productVariantRepository.findAll(Sort.by(Sort.Direction.ASC, "id"));
+            products = productVariantRepository.findAll(sort);
 
             // можно убрать сорт или поменять
         } else {
-            products = productVariantRepository.findAll((Sort) spec);
+            products = productVariantRepository.findAll(spec, sort);
         }
 
         return products.stream().map(this::toVariantCardDTO).toList();
@@ -359,7 +360,7 @@ public class ProductService {
         if (spec == null) {
             products = productVariantRepository.findAll();
         } else {
-            products = productVariantRepository.findAll((Sort) spec);
+            products = productVariantRepository.findAll(spec);
         }
 
         return products.stream().map(this::toVariantCardDTO).toList();
