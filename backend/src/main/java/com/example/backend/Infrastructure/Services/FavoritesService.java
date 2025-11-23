@@ -73,7 +73,7 @@ public class FavoritesService {
 
     private VariantCardDTO toVariantCardDTO(ProductVariant v) {
         Product product = v.getProduct();
-        return productService.toVariantCardDTO(v, product);
+        return productService.toVariantCardDTO(v);
     }
 
     public static record MoveResult(List<Long> moved, List<Long> skipped, List<String> errors) {}
