@@ -203,7 +203,7 @@ export default function Catalog() {
     "for-large-breeds": false,
   });
   const [minicatFilters, setMiniCatFilters] = useState({
-    forKittens: false,
+    "for-kittens": false,
   });
   const [minidogFilters, setMiniDogFilters] = useState({
     "for-small-breeds": false,
@@ -257,52 +257,65 @@ export default function Catalog() {
   const generateQueryParams = useCallback(() => {
     const queryParams = new URLSearchParams();
 
-    // typeoffood: dry, wet (таблица typeoffood)
-    if (categoryFilters.dry) queryParams.append("typeoffood_dry", "true");
-    if (categoryFilters.wet) queryParams.append("typeoffood_wet", "true");
+    // category: cat, dog, minicat, minidog (таблица categories)
+    if (catFilters && Object.values(catFilters).some(v => v)) {
+      queryParams.append("category_cat", "true");
+    }
+    if (dogFilters && Object.values(dogFilters).some(v => v)) {
+      queryParams.append("category_dog", "true");
+    }
+    if (minicatFilters && Object.values(minicatFilters).some(v => v)) {
+      queryParams.append("category_minicat", "true");
+    }
+    if (minidogFilters && Object.values(minidogFilters).some(v => v)) {
+      queryParams.append("category_minidog", "true");
+    }
     
-    // product_types: filler (таблица product_types)
-    if (categoryFilters.filler) queryParams.append("product_type_filler", "true");
-    
-    // breeds для кошек (таблица breeds, категория cat)
+    // breed: подфильтры для всех категорий (таблица breeds)
     Object.keys(catFilters).forEach((key) => {
-      if (catFilters[key]) queryParams.append("cat_" + key, "true");
+      if (catFilters[key]) queryParams.append("breed_" + key, "true");
     });
-    
-    // breeds для собак (таблица breeds, категория dog)
     Object.keys(dogFilters).forEach((key) => {
-      if (dogFilters[key]) queryParams.append("dog_" + key, "true");
+      if (dogFilters[key]) queryParams.append("breed_" + key, "true");
     });
-    
-    // breeds для котят (таблица breeds, категория minicat)
     Object.keys(minicatFilters).forEach((key) => {
-      if (minicatFilters[key]) queryParams.append("minicat_" + key, "true");
+      if (minicatFilters[key]) queryParams.append("breed_" + key, "true");
     });
-    
-    // breeds для щенков (таблица breeds, категория minidog)
     Object.keys(minidogFilters).forEach((key) => {
-      if (minidogFilters[key]) queryParams.append("minidog_" + key, "true");
+      if (minidogFilters[key]) queryParams.append("breed_" + key, "true");
     });
     
-    // countries (таблица countries)
+    // country (таблица countries)
     Object.keys(countryFilters).forEach((key) => {
       if (countryFilters[key]) queryParams.append("country_" + key, "true");
     });
     
-    // flavors (таблица flavors)
+    // typeoffood: dry, wet (таблица typeoffood)
+    if (categoryFilters.dry) queryParams.append("typeoffood_dry", "true");
+    if (categoryFilters.wet) queryParams.append("typeoffood_wet", "true");
+    
+    // taste/flavor: вкусы (таблица flavors) - используем taste_ как указано
     Object.keys(flavorFilters).forEach((key) => {
-      if (flavorFilters[key]) queryParams.append("flavor_" + key, "true");
+      if (flavorFilters[key]) queryParams.append("taste_" + key, "true");
     });
     
-    // brands (таблица brands)
+    // brand (таблица brands)
     Object.keys(brandFilters).forEach((key) => {
-      if (brandFilters[key]) queryParams.append("brands_" + key, "true");
+      if (brandFilters[key]) queryParams.append("brand_" + key, "true");
     });
     
-    // scents (таблица scents)
+    // color: пока не используется, но оставляем место для будущего
+    // Object.keys(colorFilters).forEach((key) => {
+    //   if (colorFilters[key]) queryParams.append("color_" + key, "true");
+    // });
+    
+    // scent (таблица scents)
     Object.keys(scentFilters).forEach((key) => {
       if (scentFilters[key]) queryParams.append("scent_" + key, "true");
     });
+    
+    // producttype: filler (таблица product_types)
+    if (categoryFilters.filler) queryParams.append("producttype_filler", "true");
 
     if (priceFrom) queryParams.append("minPrice", priceFrom);
     if (priceTo) queryParams.append("maxPrice", priceTo);
@@ -317,7 +330,7 @@ export default function Catalog() {
     setError("");
 
     try {
-      // filtersUrlString ожидается в формате "?typeoffood_dry=true&brands_landy=true"
+      // filtersUrlString ожидается в формате "?typeoffood_dry=true&brand_landy=true&category_cat=true&breed_for-sterilized=true"
       let filtersUrlValue =
         filtersUrlString || window.location.search || ""; // может быть "" либо "?..."
       
@@ -345,73 +358,97 @@ export default function Catalog() {
       
       // API /api/products/cards/search-by-url возвращает уже готовые карточки (варианты)
       // Структура: [{ id, displayName, price, stock, weight, imageUrl }, ...]
-      let cards = [];
-      
-      if (Array.isArray(data)) {
-        cards = data.map((item) => {
-          const price = Number(item?.price ?? 0);
-          const variantId = item?.id ?? null;
-          const imageUrl = item?.imageUrl || "/korm1.svg";
-          const stock = Number(item?.stock ?? 0);
-          const displayName = item?.displayName || "Товар";
-          
-          // Извлекаем productId из imageUrl: /api/products/{productId}/images/{variantId}
-          let productId = null;
-          if (imageUrl && imageUrl.startsWith("/api/products/")) {
-            const match = imageUrl.match(/\/api\/products\/(\d+)\/images\/(\d+)/);
-            if (match) {
-              productId = match[1];
-            }
-          }
-          
-          return {
-            cardId: `p-${productId || 'unknown'}-v-${variantId}`,
-            id: variantId,
-            parentId: productId,
-            title: displayName,
-            image: imageUrl,
-            price: Number.isFinite(price) ? price : 0,
-            stock: Number.isFinite(stock) ? stock : 0,
-          };
-        });
-      } else {
+      if (!Array.isArray(data)) {
         console.warn("API returned non-array data:", data);
+        setProducts([]);
+        setPage(1);
+        setLoading(false);
+        return;
       }
       
-      // Загружаем изображения для всех карточек через API
-      // imageUrl уже содержит путь типа /api/products/1/images/1
+      // Оптимизированное создание карточек (минимальные вычисления)
+      const cards = data.map((item) => {
+        const variantId = item?.id ?? null;
+        const imageUrl = item?.imageUrl || "";
+        
+        // Извлекаем productId из imageUrl только если нужно
+        let productId = null;
+        if (imageUrl && imageUrl.startsWith("/api/products/")) {
+          const match = imageUrl.match(/\/api\/products\/(\d+)\/images\/(\d+)/);
+          if (match) {
+            productId = match[1];
+          }
+        }
+        
+        return {
+          cardId: `p-${productId || 'unknown'}-v-${variantId}`,
+          id: variantId,
+          parentId: productId,
+          title: item?.displayName || "Товар",
+          image: imageUrl,
+          price: Number(item?.price ?? 0) || 0,
+          stock: Number(item?.stock ?? 0) || 0,
+        };
+      });
+      
+      // Сначала показываем карточки с fallback изображениями для быстрого отображения
+      const cardsWithFallback = cards.map((card) => ({
+        ...card,
+        image: "/korm1.svg", // Временный fallback
+        imageUrl: card.image, // Сохраняем оригинальный путь для последующей загрузки
+      }));
+      
+      // Показываем карточки сразу
+      setProducts(cardsWithFallback);
+      
+      // Затем асинхронно загружаем изображения в фоне (не блокируем UI)
       const authToken = typeof window !== "undefined" 
         ? (localStorage.getItem("authToken") || "guest")
         : "guest";
       
-      const cardsWithImages = await Promise.all(
-        cards.map(async (card) => {
-          // Если imageUrl это путь к API, загружаем изображение
-          if (card.image && card.image.startsWith("/api/products/")) {
-            try {
-              // Парсим путь: /api/products/{productId}/images/{variantId}
-              const match = card.image.match(/\/api\/products\/(\d+)\/images\/(\d+)/);
-              if (match) {
-                const productId = match[1];
-                const variantId = match[2];
-                const imageUrl = await fetchImageUrl(
-                  productId,
-                  variantId,
-                  authToken !== "guest" ? authToken : null
-                );
-                return { ...card, image: imageUrl || "/korm1.svg" };
+      // Загружаем изображения с ограничением параллельных запросов (по 6 одновременно)
+      const loadImagesInBatches = async () => {
+        const batchSize = 6;
+        for (let i = 0; i < cards.length; i += batchSize) {
+          const batch = cards.slice(i, i + batchSize);
+          const imagePromises = batch.map(async (card) => {
+            if (card.image && card.image.startsWith("/api/products/")) {
+              try {
+                const match = card.image.match(/\/api\/products\/(\d+)\/images\/(\d+)/);
+                if (match) {
+                  const productId = match[1];
+                  const variantId = match[2];
+                  const imageUrl = await fetchImageUrl(
+                    productId,
+                    variantId,
+                    authToken !== "guest" ? authToken : null
+                  );
+                  return { cardId: card.cardId, image: imageUrl || "/korm1.svg" };
+                }
+              } catch (e) {
+                console.warn(`Failed to load image from ${card.image}:`, e);
               }
-            } catch (e) {
-              console.warn(`Failed to load image from ${card.image}:`, e);
             }
-          }
+            return { cardId: card.cardId, image: "/korm1.svg" };
+          });
           
-          // Если изображение не загрузилось, используем fallback
-          return { ...card, image: card.image || "/korm1.svg" };
-        })
-      );
+          const loadedImages = await Promise.all(imagePromises);
+          
+          // Обновляем только загруженные изображения
+          setProducts((prevProducts) => {
+            const updated = prevProducts.map((product) => {
+              const loaded = loadedImages.find((img) => img.cardId === product.cardId);
+              return loaded ? { ...product, image: loaded.image } : product;
+            });
+            return updated;
+          });
+        }
+      };
       
-      setProducts(cardsWithImages);
+      // Запускаем загрузку изображений в фоне (не ждем завершения)
+      loadImagesInBatches().catch((e) => {
+        console.warn("Error loading images in background:", e);
+      });
       setPage(1);
       
       // Сохраняем исходные данные продуктов для поиска (не развернутые карточки)
@@ -440,35 +477,39 @@ export default function Catalog() {
       const categoryQueryParams = new URLSearchParams();
       
       // Маппинг категорий на query параметры API
-      // Формат параметров: "cat_<key>", "minicat_<key>", "dog_<key>", "minidog_<key>"
+      // Формат параметров: "category_<slug>", "breed_<slug>", "producttype_<slug>"
       const categoryMapping = {
         cat: () => {
-          // Для кошек - активируем ВСЕ подфильтры кошек
-          categoryQueryParams.append("cat_for-sterilized", "true");
-          categoryQueryParams.append("cat_for-skin-and-coat-health", "true");
-          categoryQueryParams.append("cat_for-sensitive-digestion", "true");
-          categoryQueryParams.append("cat_for-picky", "true");
-          categoryQueryParams.append("cat_for-indoor", "true");
+          // Для кошек - активируем категорию и ВСЕ подфильтры кошек
+          categoryQueryParams.append("category_cat", "true");
+          categoryQueryParams.append("breed_for-sterilized", "true");
+          categoryQueryParams.append("breed_for-skin-and-coat-health", "true");
+          categoryQueryParams.append("breed_for-sensitive-digestion", "true");
+          categoryQueryParams.append("breed_for-picky", "true");
+          categoryQueryParams.append("breed_for-indoor", "true");
         },
         minicat: () => {
-          // Для котят - используем ключ forKittens
-          categoryQueryParams.append("minicat_forKittens", "true");
+          // Для котят - активируем категорию и подфильтр
+          categoryQueryParams.append("category_minicat", "true");
+          categoryQueryParams.append("breed_for-kittens", "true");
         },
         dog: () => {
-          // Для собак - активируем ВСЕ подфильтры собак
-          categoryQueryParams.append("dog_for-small-breeds", "true");
-          categoryQueryParams.append("dog_for-medium-breeds", "true");
-          categoryQueryParams.append("dog_for-large-breeds", "true");
+          // Для собак - активируем категорию и ВСЕ подфильтры собак
+          categoryQueryParams.append("category_dog", "true");
+          categoryQueryParams.append("breed_for-small-breeds", "true");
+          categoryQueryParams.append("breed_for-medium-breeds", "true");
+          categoryQueryParams.append("breed_for-large-breeds", "true");
         },
         minidog: () => {
-          // Для щенков - активируем ВСЕ подфильтры щенков
-          categoryQueryParams.append("minidog_for-small-breeds", "true");
-          categoryQueryParams.append("minidog_for-medium-breeds", "true");
-          categoryQueryParams.append("minidog_for-large-breeds", "true");
+          // Для щенков - активируем категорию и ВСЕ подфильтры щенков
+          categoryQueryParams.append("category_minidog", "true");
+          categoryQueryParams.append("breed_for-small-breeds", "true");
+          categoryQueryParams.append("breed_for-medium-breeds", "true");
+          categoryQueryParams.append("breed_for-large-breeds", "true");
         },
         filler: () => {
-          // Для наполнителей - используем product_type_filler и активируем ВСЕ запахи
-          categoryQueryParams.append("product_type_filler", "true");
+          // Для наполнителей - используем producttype_filler и активируем ВСЕ запахи
+          categoryQueryParams.append("producttype_filler", "true");
           categoryQueryParams.append("scent_classic", "true");
           categoryQueryParams.append("scent_vanilla", "true");
           categoryQueryParams.append("scent_banana", "true");
@@ -505,7 +546,7 @@ export default function Catalog() {
           "for-indoor": true,
         });
       } else if (categoryParam === "minicat") {
-        setMiniCatFilters({ forKittens: true });
+        setMiniCatFilters({ "for-kittens": true });
       } else if (categoryParam === "dog") {
         // Активируем ВСЕ фильтры для собак
         setDogFilters({
@@ -611,7 +652,7 @@ export default function Catalog() {
   }, []);
 
   const handleApplyFilters = useCallback(() => {
-    const queryParams = generateQueryParams(); // "typeoffood_dry=true&brands_landy=true"
+    const queryParams = generateQueryParams(); // "typeoffood_dry=true&brand_landy=true&category_cat=true&breed_for-sterilized=true"
     const filtersUrlString = queryParams ? `?${queryParams}` : "";
 
     console.log("Applying filters, queryParams:", queryParams);
@@ -650,7 +691,7 @@ export default function Catalog() {
       "for-large-breeds": false,
     });
     setMiniCatFilters({
-      forKittens: false,
+      "for-kittens": false,
     });
     setMiniDogFilters({
       "for-small-breeds": false,
@@ -782,11 +823,11 @@ export default function Catalog() {
               <div className="space-y-2">
                 <label className="flex items-center space-x-2">
                   <Checkbox
-                    checked={minicatFilters.forKittens}
+                    checked={minicatFilters["for-kittens"]}
                     onCheckedChange={(c) =>
                       setMiniCatFilters((prev) => ({
                         ...prev,
-                        forKittens: c,
+                        "for-kittens": c,
                       }))
                     }
                   />
@@ -1149,11 +1190,11 @@ export default function Catalog() {
                 <div className="space-y-2">
                   <label className="flex items-center space-x-2">
                     <Checkbox
-                      checked={minicatFilters.forKittens}
+                      checked={minicatFilters["for-kittens"]}
                       onCheckedChange={(c) =>
                         setMiniCatFilters((prev) => ({
                           ...prev,
-                          forKittens: c,
+                          "for-kittens": c,
                         }))
                       }
                     />
