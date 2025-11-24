@@ -1,10 +1,15 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import BreadcrumbNav from "@/components/BreadcrumbNav";
 import { Button } from "@/components/ui/button";
 import { PageFade } from "@/utils/PageAnimations";
+
+const getAuthToken = () => {
+  if (typeof window === "undefined") return null;
+  return localStorage.getItem("authToken");
+};
 
 // Моки
 const mockUser = {
@@ -69,6 +74,9 @@ export default function Profile() {
   const navigate = useNavigate();
   const [user, setUser] = useState(mockUser);
   const [orders] = useState(mockOrders);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [passwordHash, setPasswordHash] = useState("");
 
   const [editing, setEditing] = useState({
     lastName: false,
@@ -76,9 +84,140 @@ export default function Profile() {
     middleName: false,
     email: false,
     phone: false,
+    password: false,
   });
 
-  const toggle = (key) => setEditing((s) => ({ ...s, [key]: !s[key] }));
+  // Загрузка данных профиля
+  useEffect(() => {
+    const fetchProfile = async () => {
+      const authToken = getAuthToken();
+      if (!authToken) {
+        setError("Необходима авторизация");
+        setLoading(false);
+        return;
+      }
+
+      try {
+        setLoading(true);
+        const res = await fetch("/api/users/profile", {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${authToken}`,
+          },
+        });
+
+        if (!res.ok) {
+          throw new Error(`HTTP ${res.status}`);
+        }
+
+        const data = await res.json();
+        setUser({
+          firstName: data.firstName || "",
+          lastName: data.lastName || "",
+          middleName: data.middleName || "",
+          email: data.email || "",
+          phone: data.phone || "",
+          avatar: null,
+        });
+      } catch (e) {
+        console.error("Error fetching profile:", e);
+        setError("Не удалось загрузить профиль");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProfile();
+  }, []);
+
+  // Обновление профиля
+  const updateProfile = async (field, value) => {
+    const authToken = getAuthToken();
+    if (!authToken) {
+      alert("Необходима авторизация");
+      return false;
+    }
+
+    try {
+      const requestBody = {
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        phone: user.phone || "",
+        middleName: user.middleName || "",
+        passwordHash: passwordHash || "",
+      };
+
+      // Обновляем измененное поле
+      if (field === "email") requestBody.email = value;
+      if (field === "firstName") requestBody.firstName = value;
+      if (field === "lastName") requestBody.lastName = value;
+      if (field === "phone") requestBody.phone = value;
+      if (field === "middleName") requestBody.middleName = value;
+      if (field === "password") {
+        if (!value || value.trim() === "") {
+          // Если пароль пустой, не отправляем его
+          delete requestBody.passwordHash;
+        } else {
+          requestBody.passwordHash = value;
+        }
+      }
+
+      const res = await fetch("/api/users/profile", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${authToken}`,
+        },
+        body: JSON.stringify(requestBody),
+      });
+
+      if (!res.ok) {
+        const errorText = await res.text();
+        throw new Error(`HTTP ${res.status}: ${errorText}`);
+      }
+
+      const data = await res.json();
+      setUser({
+        firstName: data.firstName || "",
+        lastName: data.lastName || "",
+        middleName: data.middleName || "",
+        email: data.email || "",
+        phone: data.phone || "",
+        avatar: null,
+      });
+
+      if (field === "password") {
+        setPasswordHash("");
+      }
+
+      return true;
+    } catch (e) {
+      console.error("Error updating profile:", e);
+      alert("Не удалось обновить профиль. Попробуйте позже.");
+      return false;
+    }
+  };
+
+  const toggle = async (key) => {
+    if (editing[key]) {
+      // Сохраняем изменения
+      let value = "";
+      if (key === "password") {
+        value = passwordHash;
+      } else {
+        value = user[key];
+      }
+
+      const success = await updateProfile(key, value);
+      if (success) {
+        setEditing((s) => ({ ...s, [key]: false }));
+      }
+    } else {
+      // Включаем режим редактирования
+      setEditing((s) => ({ ...s, [key]: true }));
+    }
+  };
 
   const handleLogout = () => {
     // Очищаем localStorage
@@ -100,6 +239,13 @@ export default function Profile() {
           { label: "Профиль" }
         ]} />
         <PageFade>
+        {loading && (
+          <div className="py-12 text-center text-gray-500">Загрузка профиля…</div>
+        )}
+        {!loading && error && (
+          <div className="py-12 text-center text-red-600">{error}</div>
+        )}
+        {!loading && !error && (
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_1.2fr]">
           {/* Профиль — уменьшенный */}
           <PageFade>
@@ -153,22 +299,26 @@ export default function Profile() {
                 onToggle={() => toggle("phone")}
               />
 
-              {/* Пароль — только отображение, без редактирования */}
+              {/* Пароль */}
               <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
                 <input
                   type="password"
-                  value={"••••••••"}
+                  value={editing.password ? passwordHash : "••••••••"}
+                  onChange={(e) => setPasswordHash(e.target.value)}
                   placeholder="Пароль"
-                  disabled
-                  className="h-10 rounded-lg border border-[#E8E8E8] bg-white px-3 text-[14px] text-[#1E1E1E] placeholder:text-[#B9B9B9] outline-none sm:flex-1"
+                  disabled={!editing.password}
+                  className={`h-10 rounded-lg border border-[#E8E8E8] bg-white px-3 text-[14px] text-[#1E1E1E] placeholder:text-[#B9B9B9] outline-none sm:flex-1 ${
+                    editing.password ? "ring-1 ring-[#6F2A2B]/20" : ""
+                  }`}
                 />
                 <Button
                   type="button"
                   size="sm"
                   variant="outline"
+                  onClick={() => toggle("password")}
                   className="text-[13px] sm:w-auto w-full"
                 >
-                  Изменить
+                  {editing.password ? "Сохранить" : "Изменить"}
                 </Button>
               </div>
 
@@ -227,6 +377,7 @@ export default function Profile() {
             </PageFade>
           </div>
         </div>
+        )}
         </PageFade>
       </div>
       <Footer />

@@ -91,8 +91,7 @@ const mapCartResponse = (data) => {
     id: String(row?.id), // стабильный ключ строки = cartItem.id
     cartItemId: Number(row?.id ?? 0),
     productId: Number(row?.productId ?? 0),
-    variantId: Number(
-    row?.variantId ?? row?.productId ?? NaN), // если бэк не отдаёт variantId),
+    variantId: Number(row?.variantId ?? NaN), // variantId обязателен, не используем productId как fallback
     name: row?.displayName || row?.productName || "Товар",
     price: Number(row?.currentPrice ?? row?.priceAtAdded ?? row?.price ?? 0),
     quantity: Math.max(1, Number(row?.quantity ?? 1)),
@@ -157,7 +156,20 @@ export default function Cart() {
       const imageMap = new Map();
       await Promise.all(
         mapped.map(async (item) => {
-          if (item.productId && item.variantId) {
+          // Если imageUrl уже есть в формате /api/products/{productId}/images/{variantId}, парсим и загружаем
+          if (item.image && item.image.startsWith("/api/products/")) {
+            const match = item.image.match(/\/api\/products\/(\d+)\/images\/(\d+)/);
+            if (match) {
+              const productId = match[1];
+              const variantId = match[2];
+              const imageUrl = await fetchImageUrl(productId, variantId, authToken);
+              if (imageUrl) {
+                imageMap.set(item.id, imageUrl);
+              }
+            }
+          } 
+          // Если imageUrl нет, но есть productId и variantId, загружаем через API
+          else if (item.productId && item.variantId && Number.isFinite(item.variantId)) {
             const imageUrl = await fetchImageUrl(item.productId, item.variantId, authToken);
             if (imageUrl) {
               imageMap.set(item.id, imageUrl);

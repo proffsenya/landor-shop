@@ -57,6 +57,46 @@ const getProductName = (p) =>
 const getVariantDisplayName = (_, v) =>
   v?.display_name ?? v?.displayName ?? v?.name ?? "Товар";
 
+// ---------- Кэш для изображений ----------
+const imageCache = new Map();
+
+// ---------- Загрузка изображения через API ----------
+async function fetchImageUrl(productId, imageId, token) {
+  if (!productId || !imageId) return "/korm1.svg";
+  const cacheKey = `${productId}:${imageId}`;
+  if (imageCache.has(cacheKey)) return imageCache.get(cacheKey);
+
+  try {
+    const res = await fetch(
+      `/api/products/${encodeURIComponent(
+        productId
+      )}/images/${encodeURIComponent(imageId)}`,
+      {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      }
+    );
+    if (!res.ok) {
+      const fb = "/korm1.svg";
+      imageCache.set(cacheKey, fb);
+      return fb;
+    }
+    const blob = await res.blob();
+    const ct = res.headers.get("content-type") || blob.type || "";
+    if (!ct.startsWith("image/")) {
+      const fb = "/korm1.svg";
+      imageCache.set(cacheKey, fb);
+      return fb;
+    }
+    const url = URL.createObjectURL(blob);
+    imageCache.set(cacheKey, url);
+    return url;
+  } catch (e) {
+    const fb = "/korm1.svg";
+    imageCache.set(cacheKey, fb);
+    return fb;
+  }
+}
+
 // ---------- Получение первой картинки ----------
 const getFirstImage = (product) => {
   const images =
@@ -66,46 +106,48 @@ const getFirstImage = (product) => {
 
   const first =
     images.find((img) => {
-      if (typeof img === "string") return true;
-      return img?.url || img?.path || img?.src;
+      if (typeof img === "string" && img.trim().length > 0) return true;
+      const url = img?.url || img?.path || img?.src;
+      return typeof url === "string" && url.trim().length > 0;
     }) || null;
 
-  if (!first) return "/korm1.svg";
-  if (typeof first === "string") return first;
-  return first.url || first.path || first.src || "/korm1.svg";
+  if (!first) return null; // Возвращаем null, чтобы загрузить через API
+  if (typeof first === "string") {
+    const trimmed = first.trim();
+    return trimmed.length > 0 ? trimmed : null;
+  }
+  const url = first.url || first.path || first.src;
+  if (typeof url === "string" && url.trim().length > 0) {
+    return url.trim();
+  }
+  return null;
 };
 
 // ---------- Преобразование продукта в карточки ----------
 const expandProductToCards = (product) => {
-  const firstImage = getFirstImage(product);
-
   if (Array.isArray(product?.variants) && product.variants.length > 0) {
-    return product.variants.map((v, idx) => {
+    return product.variants.map((v) => {
       const price = Number(v?.price ?? 0);
-      const variantId =
-        v?.id ?? v?.sku ?? `${product.id ?? product.slug}-v${idx}`;
-      const imageUrl =
-        typeof v?.imageUrl === "string" && v.imageUrl.length > 0
-          ? v.imageUrl
-          : firstImage;
+      const variantId = v?.id ?? null;
+      const imageUrl = v?.imageUrl || "/korm1.svg";
       const stock = Number(v?.stock ?? 0);
+      const displayName = v?.displayName || product?.productName || "Товар";
 
       return {
-        cardId: `p-${product.id ?? product.slug}-v-${variantId}`,
+        cardId: `p-${product.id}-v-${variantId}`,
         id: variantId,
-        parentId: product?.id ?? product?.slug ?? null,
-        title: getVariantDisplayName(product, v),
-        image: imageUrl,
+        parentId: product?.id ?? null,
+        title: displayName,
+        image: imageUrl, // Это будет путь типа /api/products/1/images/1
         price: Number.isFinite(price) ? price : 0,
         stock: Number.isFinite(stock) ? stock : 0,
       };
     });
   }
 
-  // Без variants -> одна карточка
+  // Без variants -> одна карточка (не должно быть, но на всякий случай)
+  const pid = product?.id ?? Math.random().toString(36).slice(2);
   const price = Number(product?.price ?? 0);
-  const pid =
-    product?.id ?? product?.slug ?? Math.random().toString(36).slice(2);
   const stock = Number(product?.stock ?? 0);
 
   return [
@@ -113,8 +155,8 @@ const expandProductToCards = (product) => {
       cardId: `p-${pid}`,
       id: pid,
       parentId: pid,
-      title: getProductName(product),
-      image: firstImage,
+      title: product?.productName || "Товар",
+      image: "/korm1.svg",
       price: Number.isFinite(price) ? price : 0,
       stock: Number.isFinite(stock) ? stock : 0,
     },
@@ -252,28 +294,69 @@ export default function Catalog() {
     return queryParams.toString(); // БЕЗ начального "?"
   }, [categoryFilters, catFilters, dogFilters, minicatFilters, minidogFilters, countryFilters, flavorFilters, brandFilters, scentFilters, priceFrom, priceTo, searchQuery]);
 
-  // ---------- API: /api/products/cards/search-by-url?filtersUrl=<строка> ----------
+  // ---------- API: /api/cards ----------
   const fetchCards = async (filtersUrlString = "") => {
     setLoading(true);
     setError("");
 
     try {
       // filtersUrlString ожидается в формате "?category_dry=true&brand_landy=true"
-      const filtersUrlValue =
+      let filtersUrlValue =
         filtersUrlString || window.location.search || ""; // может быть "" либо "?..."
+      
+      // Убираем начальный "?" если он есть
+      if (filtersUrlValue.startsWith("?")) {
+        filtersUrlValue = filtersUrlValue.substring(1);
+      }
 
-      const url = `/api/products/cards/search-by-url?filtersUrl=${encodeURIComponent(
-        filtersUrlValue
-      )}`;
+      // Формируем URL для /api/products/cards с query параметрами
+      let url = "/api/products/cards";
+      if (filtersUrlValue) {
+        url += `?${filtersUrlValue}`;
+      }
 
       const res = await fetch(url);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
       const data = await res.json();
+      
       const cards = Array.isArray(data)
         ? data.flatMap(expandProductToCards)
         : [];
-      setProducts(cards);
+      
+      // Загружаем изображения для всех карточек через API
+      // imageUrl уже содержит путь типа /api/products/1/images/1
+      const authToken = typeof window !== "undefined" 
+        ? (localStorage.getItem("authToken") || "guest")
+        : "guest";
+      
+      const cardsWithImages = await Promise.all(
+        cards.map(async (card) => {
+          // Если imageUrl это путь к API, загружаем изображение
+          if (card.image && card.image.startsWith("/api/products/")) {
+            try {
+              // Парсим путь: /api/products/{productId}/images/{variantId}
+              const match = card.image.match(/\/api\/products\/(\d+)\/images\/(\d+)/);
+              if (match) {
+                const productId = match[1];
+                const variantId = match[2];
+                const imageUrl = await fetchImageUrl(
+                  productId,
+                  variantId,
+                  authToken !== "guest" ? authToken : null
+                );
+                return { ...card, image: imageUrl };
+              }
+            } catch (e) {
+              console.warn(`Failed to load image from ${card.image}:`, e);
+            }
+          }
+          
+          return card;
+        })
+      );
+      
+      setProducts(cardsWithImages);
       setPage(1);
       
       // Сохраняем исходные данные продуктов для поиска (не развернутые карточки)
@@ -1325,9 +1408,13 @@ export default function Catalog() {
                 >
                   <div className="grid grid-cols-1 gap-4 mb-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 items-stretch">
                     {paged.map((product) => {
+                      // Вариант определяется по наличию parentId и его отличию от id
                       const isVariantCard =
-                        !!product.parentId && product.parentId !== product.id;
-                      const to = isVariantCard
+                        product.parentId != null && 
+                        String(product.parentId) !== String(product.id);
+                      
+                      // Всегда формируем URL с вариантом, если есть parentId
+                      const to = product.parentId != null
                         ? `/product/${encodeURIComponent(
                             product.parentId
                           )}?variant=${encodeURIComponent(product.id)}`
@@ -1337,14 +1424,8 @@ export default function Catalog() {
                         <ProductCard
                           key={product.cardId}
                           to={to}
-                          productId={
-                            isVariantCard ? product.parentId : product.id
-                          }
-                          variantId={
-                            isVariantCard
-                              ? product.id
-                              : product.defaultVariantId || product.id
-                          }
+                          productId={product.parentId || product.id}
+                          variantId={product.id}
                           image={product.image}
                           title={product.title ?? product.name ?? "Товар"}
                           price={`${Number(

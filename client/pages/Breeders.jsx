@@ -16,10 +16,15 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 
+const getAuthToken = () => {
+  if (typeof window === "undefined") return "guest";
+  return localStorage.getItem("authToken") || "guest";
+};
+
 export default function Breeders() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [formData, setFormData] = useState({
-    kennelName: "",
+    organizationName: "",
     fullName: "",
     city: "",
     email: "",
@@ -29,6 +34,7 @@ export default function Breeders() {
     consent: false,
   });
   const [errors, setErrors] = useState({});
+  const [loading, setLoading] = useState(false);
 
   const benefits = [
     {
@@ -69,6 +75,9 @@ export default function Breeders() {
   const validateForm = () => {
     const newErrors = {};
     
+    if (!formData.organizationName.trim()) {
+      newErrors.organizationName = "Обязательное поле";
+    }
     if (!formData.fullName.trim()) {
       newErrors.fullName = "Обязательное поле";
     }
@@ -105,23 +114,68 @@ export default function Breeders() {
     }
 
     try {
-      const formDataToSend = new FormData();
-      formDataToSend.append("kennelName", formData.kennelName);
-      formDataToSend.append("fullName", formData.fullName);
-      formDataToSend.append("city", formData.city);
-      formDataToSend.append("email", formData.email);
-      formDataToSend.append("phone", formData.phone);
-      if (formData.file) {
-        formDataToSend.append("file", formData.file);
+      setLoading(true);
+
+      if (!formData.file) {
+        setErrors((prev) => ({ ...prev, file: "Файл обязателен" }));
+        setLoading(false);
+        return;
       }
 
-      // TODO: Заменить на реальный API endpoint
-      console.log("Form data:", formData);
-      alert("Заявка отправлена! Менеджер свяжется с вами в ближайшее время.");
+      const authToken = getAuthToken();
+      const headers = {};
       
+      if (authToken && authToken !== "guest") {
+        headers.Authorization = `Bearer ${authToken}`;
+      }
+
+      // Создаем FormData
+      const formDataToSend = new FormData();
+      
+      // Добавляем файл
+      formDataToSend.append("registrationFile", formData.file);
+      
+      // Создаем JSON объект для nurseryFormDTO
+      const nurseryFormDTO = {
+        organizationName: formData.organizationName.trim(),
+        fullName: formData.fullName.trim(),
+        city: formData.city.trim(),
+        email: formData.email.trim(),
+        phone: formData.phone.trim(),
+        registrationFile: [], // Пустой массив, так как файл отправляется отдельно
+        fileName: formData.file.name || "",
+      };
+      
+      // Добавляем JSON объект как Blob с Content-Type application/json
+      // Это необходимо для правильной обработки JSON в multipart/form-data
+      const jsonString = JSON.stringify(nurseryFormDTO);
+      const jsonBlob = new Blob([jsonString], { type: "application/json" });
+      formDataToSend.append("nurseryFormDTO", jsonBlob);
+
+      const response = await fetch("/api/forms/nurseryform", {
+        method: "POST",
+        headers,
+        body: formDataToSend,
+      });
+
+      if (!response.ok) {
+        let errorText = "";
+        try {
+          errorText = await response.text();
+          const errorJson = JSON.parse(errorText);
+          errorText = errorJson.message || errorJson.error || errorText;
+        } catch {
+          errorText = await response.text();
+        }
+        throw new Error(`HTTP ${response.status}: ${errorText}`);
+      }
+
+      const responseData = await response.json();
+      console.log("Success response:", responseData);
+
       // Сброс формы
       setFormData({
-        kennelName: "",
+        organizationName: "",
         fullName: "",
         city: "",
         email: "",
@@ -131,9 +185,12 @@ export default function Breeders() {
         consent: false,
       });
       setIsDialogOpen(false);
+      alert("Заявка отправлена! Менеджер свяжется с вами в ближайшее время.");
     } catch (error) {
       console.error("Error submitting form:", error);
       alert("Произошла ошибка при отправке заявки. Попробуйте позже.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -235,17 +292,21 @@ export default function Breeders() {
           <form onSubmit={handleSubmit} className="mt-4 space-y-6">
             {/* Название питомника */}
             <div>
-              <Label htmlFor="kennelName" className="text-base font-medium">
-                Название питомника или заводской приставки
+              <Label htmlFor="organizationName" className="text-base font-medium">
+                Название питомника или заводской приставки <span className="text-red-500">*</span>
               </Label>
               <Input
-                id="kennelName"
-                name="kennelName"
-                value={formData.kennelName}
+                id="organizationName"
+                name="organizationName"
+                value={formData.organizationName}
                 onChange={handleInputChange}
                 className="h-12 mt-2"
                 placeholder="Введите название питомника"
+                required
               />
+              {errors.organizationName && (
+                <p className="mt-1 text-sm text-red-500">{errors.organizationName}</p>
+              )}
             </div>
 
             {/* ФИО */}
@@ -409,9 +470,10 @@ export default function Breeders() {
               </Button>
               <Button
                 type="submit"
+                disabled={loading}
                 className="flex-1 bg-[#6F2A2B] hover:bg-[#5a2223] text-white h-12"
               >
-                Отправить заявку
+                {loading ? "Отправка..." : "Отправить заявку"}
               </Button>
             </div>
           </form>

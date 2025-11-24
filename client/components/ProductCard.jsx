@@ -125,6 +125,7 @@ const ProductCard = memo(function ProductCard({
   const [isFavorite, setIsFavorite] = useState(false);
   const [inCart, setInCart] = useState(false);
   const [toast, setToast] = useState("");
+  const [imageError, setImageError] = useState(false);
 
   // Функция для показа уведомлений
   const showToast = (msg, ms = 1500) => {
@@ -286,10 +287,11 @@ const handleToggleFavorite = useCallback(async (e) => {
               aria-label={title || "Товар"}
             >
               <img
-                src={image}
+                src={imageError || !image ? "/korm1.svg" : image}
                 alt={title}
                 className="object-contain w-32 mx-auto h-56 sm:h-72 sm:w-40 lg:h-80 lg:w-48"
                 loading="lazy"
+                onError={() => setImageError(true)}
               />
             </Link>
           </div>
