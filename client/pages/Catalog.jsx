@@ -416,7 +416,9 @@ export default function Catalog() {
       
       // Сохраняем исходные данные продуктов для поиска (не развернутые карточки)
       if (Array.isArray(data) && data.length > 0) {
-      sessionStorage.setItem("catalog:all", JSON.stringify(data));
+        sessionStorage.setItem("catalog:all", JSON.stringify(data));
+        // Отправляем событие обновления каталога
+        window.dispatchEvent(new Event("catalog:update"));
       }
     } catch (e) {
       setProducts([]);

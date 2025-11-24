@@ -9,15 +9,13 @@ import GlobalSearch from "@/components/GlobalSearch";
 const getAuthToken = () =>
   localStorage.getItem("authToken") || localStorage.getItem("authToken") || "guest";
 
-const allProducts =
-  JSON.parse(sessionStorage.getItem("catalog:all") || "[]");
-
 export default function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [isAuth, setIsAuth] = useState(false);
   const [city] = useState("Москва");
   const [favCount, setFavCount] = useState(0);
   const [cartCount, setCartCount] = useState(0);
+  const [allProducts, setAllProducts] = useState([]);
 
   const location = useLocation();
   const authToken = getAuthToken();
@@ -59,6 +57,47 @@ export default function Header() {
     loadCount("/api/cart", setCartCount);
   };
 
+
+  // Загрузка продуктов для поиска из sessionStorage
+  useEffect(() => {
+    const loadProducts = () => {
+      try {
+        const stored = sessionStorage.getItem("catalog:all");
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          setAllProducts(Array.isArray(parsed) ? parsed : []);
+        } else {
+          setAllProducts([]);
+        }
+      } catch (e) {
+        console.warn("Failed to load products from sessionStorage:", e);
+        setAllProducts([]);
+      }
+    };
+
+    // Загружаем при монтировании
+    loadProducts();
+
+    // Слушаем изменения в sessionStorage
+    const handleStorageChange = (e) => {
+      if (e.key === "catalog:all" || !e.key) {
+        loadProducts();
+      }
+    };
+
+    // Слушаем кастомное событие обновления каталога
+    const handleCatalogUpdate = () => {
+      loadProducts();
+    };
+
+    window.addEventListener("storage", handleStorageChange);
+    window.addEventListener("catalog:update", handleCatalogUpdate);
+
+    return () => {
+      window.removeEventListener("storage", handleStorageChange);
+      window.removeEventListener("catalog:update", handleCatalogUpdate);
+    };
+  }, []);
 
   useEffect(() => {
     // auth-флаг

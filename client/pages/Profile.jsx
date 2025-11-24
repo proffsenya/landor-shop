@@ -187,6 +187,37 @@ export default function Profile() {
         avatar: null,
       });
 
+      // Проверяем наличие нового токена в теле ответа
+      if (data.token || data.authToken) {
+        const newToken = data.token || data.authToken;
+        localStorage.setItem("authToken", newToken);
+        // Также обновляем token, если он используется
+        if (data.token) {
+          localStorage.setItem("token", newToken);
+        }
+        console.log("Token updated in localStorage from response body");
+      }
+
+      // Проверяем заголовки ответа на наличие нового токена
+      const authHeader = res.headers.get("Authorization");
+      const xAuthToken = res.headers.get("X-Auth-Token");
+      if (authHeader) {
+        const tokenFromHeader = authHeader.replace("Bearer ", "");
+        localStorage.setItem("authToken", tokenFromHeader);
+        localStorage.setItem("token", tokenFromHeader);
+        console.log("Token updated in localStorage from Authorization header");
+      } else if (xAuthToken) {
+        localStorage.setItem("authToken", xAuthToken);
+        localStorage.setItem("token", xAuthToken);
+        console.log("Token updated in localStorage from X-Auth-Token header");
+      }
+
+      // Обновляем email в localStorage, если он там хранится
+      if (field === "email" && data.email) {
+        localStorage.setItem("authEmail", data.email);
+        localStorage.setItem("email", data.email);
+      }
+
       if (field === "password") {
         setPasswordHash("");
       }
