@@ -4,13 +4,6 @@ import Footer from "@/components/Footer";
 import BreadcrumbNav from "@/components/BreadcrumbNav";
 import { PageFade } from "@/utils/PageAnimations";
 import { Truck, Tag, Package, Paperclip, CheckCircle2 } from "lucide-react";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -22,7 +15,6 @@ const getAuthToken = () => {
 };
 
 export default function Breeders() {
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [formData, setFormData] = useState({
     organizationName: "",
     fullName: "",
@@ -30,7 +22,6 @@ export default function Breeders() {
     email: "",
     phone: "",
     file: null,
-    isRobot: false,
     consent: false,
   });
   const [errors, setErrors] = useState({});
@@ -95,9 +86,6 @@ export default function Breeders() {
     if (!formData.file) {
       newErrors.file = "Обязательное поле";
     }
-    if (!formData.isRobot) {
-      newErrors.isRobot = "Необходимо подтвердить";
-    }
     if (!formData.consent) {
       newErrors.consent = "Необходимо согласие";
     }
@@ -123,34 +111,58 @@ export default function Breeders() {
       }
 
       const authToken = getAuthToken();
-      const headers = {};
       
-      if (authToken && authToken !== "guest") {
-        headers.Authorization = `Bearer ${authToken}`;
+      // Проверка авторизации
+      if (!authToken || authToken === "guest") {
+        alert("Для отправки заявки необходимо авторизоваться");
+        setLoading(false);
+        return;
       }
-
-      // Создаем FormData
+      
+      // Создаем FormData (как в Postman: form-data)
       const formDataToSend = new FormData();
       
-      // Добавляем файл
-      formDataToSend.append("registrationFile", formData.file);
+      // 1. Отправляем оригинальный файл с явным указанием Content-Type: image/jpeg
+      // Создаем новый File объект с правильным типом, если тип не установлен
+      let fileToSend = formData.file;
+      if (!fileToSend.type || fileToSend.type !== "image/jpeg") {
+        // Создаем новый File с явным указанием типа image/jpeg
+        fileToSend = new File([fileToSend], fileToSend.name || "registration.jpeg", { 
+          type: "image/jpeg",
+          lastModified: fileToSend.lastModified || Date.now()
+        });
+      }
+      formDataToSend.append("registrationFile", fileToSend, fileToSend.name || "registration.jpeg");
       
-      // Создаем JSON объект для nurseryFormDTO
+      // 2. Создаем JSON объект для nurseryFormDTO (тип: Text, Content-Type: application/json)
       const nurseryFormDTO = {
         organizationName: formData.organizationName.trim(),
         fullName: formData.fullName.trim(),
         city: formData.city.trim(),
         email: formData.email.trim(),
         phone: formData.phone.trim(),
-        registrationFile: [], // Пустой массив, так как файл отправляется отдельно
         fileName: formData.file.name || "",
       };
       
-      // Добавляем JSON объект как Blob с Content-Type application/json
-      // Это необходимо для правильной обработки JSON в multipart/form-data
+      // Преобразуем JSON в строку
       const jsonString = JSON.stringify(nurseryFormDTO);
+      
+      // В Postman тип "Text" с Content-Type: application/json
+      // Используем Blob с типом application/json для правильного Content-Type
       const jsonBlob = new Blob([jsonString], { type: "application/json" });
       formDataToSend.append("nurseryFormDTO", jsonBlob);
+      
+      // Логируем для отладки
+      console.log("FormData entries:");
+      for (let pair of formDataToSend.entries()) {
+        console.log(pair[0], pair[1]);
+      }
+      console.log("nurseryFormDTO JSON:", jsonString);
+
+      // Устанавливаем заголовки (НЕ устанавливаем Content-Type - браузер сделает это автоматически для FormData)
+      const headers = {
+        Authorization: `Bearer ${authToken}`,
+      };
 
       const response = await fetch("/api/forms/nurseryform", {
         method: "POST",
@@ -162,10 +174,12 @@ export default function Breeders() {
         let errorText = "";
         try {
           errorText = await response.text();
+          console.error("Error response:", errorText);
           const errorJson = JSON.parse(errorText);
-          errorText = errorJson.message || errorJson.error || errorText;
-        } catch {
-          errorText = await response.text();
+          errorText = errorJson.message || errorJson.error || JSON.stringify(errorJson);
+        } catch (e) {
+          console.error("Error parsing response:", e);
+          errorText = errorText || `Internal Server Error (${response.status})`;
         }
         throw new Error(`HTTP ${response.status}: ${errorText}`);
       }
@@ -181,10 +195,8 @@ export default function Breeders() {
         email: "",
         phone: "",
         file: null,
-        isRobot: false,
         consent: false,
       });
-      setIsDialogOpen(false);
       alert("Заявка отправлена! Менеджер свяжется с вами в ближайшее время.");
     } catch (error) {
       console.error("Error submitting form:", error);
@@ -261,35 +273,17 @@ export default function Breeders() {
               </div>
             </PageFade>
 
-            {/* CTA Button */}
+            {/* Form Section */}
             <PageFade>
-              <div className="text-center">
-                <button
-                  onClick={() => setIsDialogOpen(true)}
-                  className="bg-[#6F2A2B] text-white px-8 py-4 rounded-lg text-base md:text-lg font-semibold hover:bg-[#5a2223] transition-all hover:shadow-xl hover:-translate-y-1"
-                >
-                  Участвовать в программе заводчик
-                </button>
-              </div>
-            </PageFade>
-          </div>
-        </div>
-      </PageFade>
-      <Footer />
+              <div className="mt-12">
+                <h2 className="text-2xl md:text-3xl font-bold text-[#6F2A2B] mb-2">
+                  Заявка на вступление в программу «Заводчик»
+                </h2>
+                <p className="text-base text-gray-600 mb-6">
+                  Заполните форму, и наш менеджер свяжется с вами для уточнения деталей
+                </p>
 
-      {/* Modal Dialog */}
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="text-2xl md:text-3xl font-bold text-[#6F2A2B]">
-              Заявка на вступление в программу «Заводчик»
-            </DialogTitle>
-            <DialogDescription className="mt-2 text-base text-gray-600">
-              Заполните форму, и наш менеджер свяжется с вами для уточнения деталей
-            </DialogDescription>
-          </DialogHeader>
-
-          <form onSubmit={handleSubmit} className="mt-4 space-y-6">
+                <form onSubmit={handleSubmit} className="bg-white border border-gray-200 rounded-xl p-6 md:p-8 space-y-6">
             {/* Название питомника */}
             <div>
               <Label htmlFor="organizationName" className="text-base font-medium">
@@ -412,31 +406,6 @@ export default function Breeders() {
               </div>
             </div>
 
-            {/* reCAPTCHA */}
-            <div>
-              <Label className="text-base font-medium">
-                Подтвердите, что вы не робот <span className="text-red-500">*</span>
-              </Label>
-              <div className="flex items-center gap-3 p-4 mt-2 border border-gray-300 rounded-lg">
-                <Checkbox
-                  id="isRobot"
-                  checked={formData.isRobot}
-                  onCheckedChange={(checked) => {
-                    setFormData((prev) => ({ ...prev, isRobot: checked }));
-                    if (errors.isRobot) {
-                      setErrors((prev) => ({ ...prev, isRobot: "" }));
-                    }
-                  }}
-                />
-                <Label htmlFor="isRobot" className="cursor-pointer">
-                  Я не робот
-                </Label>
-              </div>
-              {errors.isRobot && (
-                <p className="mt-1 text-sm text-red-500">{errors.isRobot}</p>
-              )}
-            </div>
-
             {/* Согласие */}
             <div className="flex items-start gap-3">
               <Checkbox
@@ -458,27 +427,23 @@ export default function Breeders() {
               <p className="text-sm text-red-500">{errors.consent}</p>
             )}
 
-            {/* Кнопки */}
-            <div className="flex gap-4 pt-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setIsDialogOpen(false)}
-                className="flex-1 h-12"
-              >
-                Отмена
-              </Button>
-              <Button
-                type="submit"
-                disabled={loading}
-                className="flex-1 bg-[#6F2A2B] hover:bg-[#5a2223] text-white h-12"
-              >
-                {loading ? "Отправка..." : "Отправить заявку"}
-              </Button>
-            </div>
-          </form>
-        </DialogContent>
-      </Dialog>
+                  {/* Кнопка отправки */}
+                  <div className="pt-4">
+                    <Button
+                      type="submit"
+                      disabled={loading}
+                      className="w-full bg-[#6F2A2B] hover:bg-[#5a2223] text-white h-12"
+                    >
+                      {loading ? "Отправка..." : "Отправить заявку"}
+                    </Button>
+                  </div>
+                </form>
+              </div>
+            </PageFade>
+          </div>
+        </div>
+      </PageFade>
+      <Footer />
     </div>
   );
 }

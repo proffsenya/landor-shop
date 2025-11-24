@@ -499,7 +499,7 @@ export default function Cart() {
     return !newErrors.receiver && !newErrors.phone && !newErrors.address;
   };
 
-  const onPay = () => {
+  const onPay = async () => {
     // Проверяем, есть ли выбранные товары
     if (selected.size === 0) {
       showToast("Выберите товары для оформления заказа");
@@ -512,20 +512,87 @@ export default function Cart() {
       return;
     }
 
-    console.log("Текущая корзина:");
-    items.forEach((i) => {
-      console.log({
-        id: i.id,
-        cartItemId: i.cartItemId,
-        variantId: i.variantId,
-        productId: i.productId,
-        name: i.name,
-        quantity: i.quantity,
-        price: i.price,
-        total: i.price * i.quantity,
+    try {
+      // Получаем cartItemIds выбранных товаров
+      const selectedItems = items.filter((i) => selected.has(i.id));
+      const cartItemIds = selectedItems.map((i) => i.cartItemId).filter((id) => id > 0);
+
+      if (cartItemIds.length === 0) {
+        showToast("Не удалось определить товары для заказа");
+        return;
+      }
+
+      // Парсим адрес для формирования billingAddress и shippingAddress
+      // Формат адреса: "г. Москва, ул. Ленина, д. 10, кв. 25"
+      const addressParts = address.trim().split(",").map((s) => s.trim());
+      
+      // Формируем адреса (используем один адрес для обоих)
+      const shippingAddress = {
+        fullAddress: address.trim(),
+        city: addressParts.find((p) => p.startsWith("г.")) || "",
+        street: addressParts.find((p) => p.startsWith("ул.") || p.startsWith("проспект") || p.startsWith("пер.")) || "",
+        house: addressParts.find((p) => p.startsWith("д.")) || "",
+        apartment: addressParts.find((p) => p.startsWith("кв.") || p.startsWith("оф.")) || "",
+      };
+
+      const billingAddress = { ...shippingAddress };
+
+      // Формируем customerSnapshot
+      const customerSnapshot = {
+        fullName: receiver.trim(),
+        phone: phone.trim(),
+        email: "", // Email можно получить из профиля, если нужно
+      };
+
+      const requestBody = {
+        cartItemIds: cartItemIds,
+        billingAddress: billingAddress,
+        shippingAddress: shippingAddress,
+        customerSnapshot: customerSnapshot,
+        customerNotes: "",
+      };
+
+      const headers = {
+        "Content-Type": "application/json",
+      };
+
+      if (authToken && authToken !== "guest") {
+        headers.Authorization = `Bearer ${authToken}`;
+      }
+
+      const response = await fetch("/api/orders", {
+        method: "POST",
+        headers,
+        body: JSON.stringify(requestBody),
       });
-    });
-    showToast("Проверь консоль, корзина выведена");
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        let errorMessage = `Ошибка ${response.status}`;
+        try {
+          const errorJson = JSON.parse(errorText);
+          errorMessage = errorJson.message || errorJson.error || errorMessage;
+        } catch {
+          errorMessage = errorText || errorMessage;
+        }
+        throw new Error(errorMessage);
+      }
+
+      const orderData = await response.json();
+      console.log("Order created:", orderData);
+      
+      showToast("Заказ успешно оформлен!");
+      
+      // Можно перенаправить на страницу заказа или обновить корзину
+      // Например, перезагрузить корзину
+      setTimeout(() => {
+        fetchCart();
+      }, 1500);
+
+    } catch (error) {
+      console.error("Error creating order:", error);
+      showToast(error.message || "Не удалось оформить заказ. Попробуйте позже.");
+    }
   };
 
   return (
