@@ -16,7 +16,7 @@ export default function Categories() {
       bgColor: "#E7F4D8",
       image: "/categories/minicat.svg",
       categoryParam: "minicat",
-    },
+      },
     {
       name: "Наполнители",
       count: "1 товар",

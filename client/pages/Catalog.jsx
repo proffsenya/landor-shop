@@ -257,32 +257,49 @@ export default function Catalog() {
   const generateQueryParams = useCallback(() => {
     const queryParams = new URLSearchParams();
 
-    Object.keys(categoryFilters).forEach((key) => {
-      if (key !== "all" && categoryFilters[key]) {
-        queryParams.append("category_" + key, "true");
-      }
-    });
+    // typeoffood: dry, wet (таблица typeoffood)
+    if (categoryFilters.dry) queryParams.append("typeoffood_dry", "true");
+    if (categoryFilters.wet) queryParams.append("typeoffood_wet", "true");
+    
+    // product_types: filler (таблица product_types)
+    if (categoryFilters.filler) queryParams.append("product_type_filler", "true");
+    
+    // breeds для кошек (таблица breeds, категория cat)
     Object.keys(catFilters).forEach((key) => {
       if (catFilters[key]) queryParams.append("cat_" + key, "true");
     });
+    
+    // breeds для собак (таблица breeds, категория dog)
     Object.keys(dogFilters).forEach((key) => {
       if (dogFilters[key]) queryParams.append("dog_" + key, "true");
     });
+    
+    // breeds для котят (таблица breeds, категория minicat)
     Object.keys(minicatFilters).forEach((key) => {
       if (minicatFilters[key]) queryParams.append("minicat_" + key, "true");
     });
+    
+    // breeds для щенков (таблица breeds, категория minidog)
     Object.keys(minidogFilters).forEach((key) => {
       if (minidogFilters[key]) queryParams.append("minidog_" + key, "true");
     });
+    
+    // countries (таблица countries)
     Object.keys(countryFilters).forEach((key) => {
       if (countryFilters[key]) queryParams.append("country_" + key, "true");
     });
+    
+    // flavors (таблица flavors)
     Object.keys(flavorFilters).forEach((key) => {
       if (flavorFilters[key]) queryParams.append("flavor_" + key, "true");
     });
+    
+    // brands (таблица brands)
     Object.keys(brandFilters).forEach((key) => {
-      if (brandFilters[key]) queryParams.append("brand_" + key, "true");
+      if (brandFilters[key]) queryParams.append("brands_" + key, "true");
     });
+    
+    // scents (таблица scents)
     Object.keys(scentFilters).forEach((key) => {
       if (scentFilters[key]) queryParams.append("scent_" + key, "true");
     });
@@ -294,13 +311,13 @@ export default function Catalog() {
     return queryParams.toString(); // БЕЗ начального "?"
   }, [categoryFilters, catFilters, dogFilters, minicatFilters, minidogFilters, countryFilters, flavorFilters, brandFilters, scentFilters, priceFrom, priceTo, searchQuery]);
 
-  // ---------- API: /api/cards ----------
+  // ---------- API: /api/products/cards/search-by-url?filtersUrl=<строка> ----------
   const fetchCards = async (filtersUrlString = "") => {
     setLoading(true);
     setError("");
 
     try {
-      // filtersUrlString ожидается в формате "?category_dry=true&brand_landy=true"
+      // filtersUrlString ожидается в формате "?typeoffood_dry=true&brands_landy=true"
       let filtersUrlValue =
         filtersUrlString || window.location.search || ""; // может быть "" либо "?..."
       
@@ -309,20 +326,57 @@ export default function Catalog() {
         filtersUrlValue = filtersUrlValue.substring(1);
       }
 
-      // Формируем URL для /api/products/cards с query параметрами
-      let url = "/api/products/cards";
-      if (filtersUrlValue) {
-        url += `?${filtersUrlValue}`;
-      }
+      // Формируем filtersUrl с префиксом "catalog?"
+      // Формат: catalog?flavor_partridge=true&minPrice=800
+      const filtersUrl = filtersUrlValue ? `catalog?${filtersUrlValue}` : "catalog?";
+
+      const url = `/api/products/cards/search-by-url?filtersUrl=${encodeURIComponent(
+        filtersUrl
+      )}`;
 
       const res = await fetch(url);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      if (!res.ok) {
+        const errorText = await res.text();
+        console.error("API error:", res.status, errorText);
+        throw new Error(`HTTP ${res.status}`);
+      }
 
       const data = await res.json();
       
-      const cards = Array.isArray(data)
-        ? data.flatMap(expandProductToCards)
-        : [];
+      // API /api/products/cards/search-by-url возвращает уже готовые карточки (варианты)
+      // Структура: [{ id, displayName, price, stock, weight, imageUrl }, ...]
+      let cards = [];
+      
+      if (Array.isArray(data)) {
+        cards = data.map((item) => {
+          const price = Number(item?.price ?? 0);
+          const variantId = item?.id ?? null;
+          const imageUrl = item?.imageUrl || "/korm1.svg";
+          const stock = Number(item?.stock ?? 0);
+          const displayName = item?.displayName || "Товар";
+          
+          // Извлекаем productId из imageUrl: /api/products/{productId}/images/{variantId}
+          let productId = null;
+          if (imageUrl && imageUrl.startsWith("/api/products/")) {
+            const match = imageUrl.match(/\/api\/products\/(\d+)\/images\/(\d+)/);
+            if (match) {
+              productId = match[1];
+            }
+          }
+          
+          return {
+            cardId: `p-${productId || 'unknown'}-v-${variantId}`,
+            id: variantId,
+            parentId: productId,
+            title: displayName,
+            image: imageUrl,
+            price: Number.isFinite(price) ? price : 0,
+            stock: Number.isFinite(stock) ? stock : 0,
+          };
+        });
+      } else {
+        console.warn("API returned non-array data:", data);
+      }
       
       // Загружаем изображения для всех карточек через API
       // imageUrl уже содержит путь типа /api/products/1/images/1
@@ -345,14 +399,15 @@ export default function Catalog() {
                   variantId,
                   authToken !== "guest" ? authToken : null
                 );
-                return { ...card, image: imageUrl };
+                return { ...card, image: imageUrl || "/korm1.svg" };
               }
             } catch (e) {
               console.warn(`Failed to load image from ${card.image}:`, e);
             }
           }
           
-          return card;
+          // Если изображение не загрузилось, используем fallback
+          return { ...card, image: card.image || "/korm1.svg" };
         })
       );
       
@@ -410,8 +465,8 @@ export default function Catalog() {
           categoryQueryParams.append("minidog_for-large-breeds", "true");
         },
         filler: () => {
-          // Для наполнителей - используем category_filler и активируем ВСЕ запахи
-          categoryQueryParams.append("category_filler", "true");
+          // Для наполнителей - используем product_type_filler и активируем ВСЕ запахи
+          categoryQueryParams.append("product_type_filler", "true");
           categoryQueryParams.append("scent_classic", "true");
           categoryQueryParams.append("scent_vanilla", "true");
           categoryQueryParams.append("scent_banana", "true");
@@ -554,8 +609,11 @@ export default function Catalog() {
   }, []);
 
   const handleApplyFilters = useCallback(() => {
-    const queryParams = generateQueryParams(); // "category_dry=true&brand_landy=true"
+    const queryParams = generateQueryParams(); // "typeoffood_dry=true&brands_landy=true"
     const filtersUrlString = queryParams ? `?${queryParams}` : "";
+
+    console.log("Applying filters, queryParams:", queryParams);
+    console.log("Filters URL string:", filtersUrlString);
 
     // обновляем URL страницы
     window.history.pushState({}, "", filtersUrlString || window.location.pathname);
@@ -755,7 +813,7 @@ export default function Catalog() {
                     }
                   />
                   <span className="text-sm">
-                    Для здоровья кожи и блеска шерсти
+                    Для здоровья кожи и шерсти
                   </span>
                 </label>
                 <label className="flex items-center space-x-2">
@@ -941,15 +999,15 @@ export default function Catalog() {
               <div className="grid grid-cols-2 gap-2">
                 {[
                   ["classic", "Классический"],
-                  ["vanilla", "Ваниль"],
-                  ["banana", "Банан"],
-                  ["coconut", "Кокос"],
+                  ["vanilla", "Ванильный"],
+                  ["banana", "Банановый"],
+                  ["coconut", "Кокосовый"],
                   ["green-tea", "Зеленый чай"],
-                  ["rose", "Роза"],
+                  ["rose", "Аромат розы"],
                   ["apple", "Яблоко"],
                   ["lemon", "Лимон"],
-                  ["no-flavor", "Без ароматизатора"],
-                  ["milk", "Молочный"],
+                  ["no-flavor", "Без амортизатора"],
+                  ["milk", "Молоко"],
                 ].map(([key, label]) => (
                   <label key={key} className="flex items-center space-x-2">
                     <Checkbox
@@ -1286,7 +1344,7 @@ export default function Catalog() {
                     ["fish", "Рыба"],
                     ["veal", "Телятина"],
                     ["duck", "Утка"],
-                    ["lamb", "Ягненок"],
+                    ["lamb", "Ягнёнок"],
                     ["goose", "Гусь"],
                     ["beef", "Говядина"],
                   ].map(([key, label]) => (
@@ -1311,15 +1369,15 @@ export default function Catalog() {
                 <div className="grid grid-cols-2 gap-2">
                   {[
                     ["classic", "Классический"],
-                    ["vanilla", "Ваниль"],
-                    ["banana", "Банан"],
-                    ["coconut", "Кокос"],
+                    ["vanilla", "Ванильный"],
+                    ["banana", "Банановый"],
+                    ["coconut", "Кокосовый"],
                     ["green-tea", "Зеленый чай"],
-                    ["rose", "Роза"],
+                    ["rose", "Аромат розы"],
                     ["apple", "Яблоко"],
                     ["lemon", "Лимон"],
-                    ["no-flavor", "Без ароматизатора"],
-                    ["milk", "Молочный"],
+                    ["no-flavor", "Без амортизатора"],
+                    ["milk", "Молоко"],
                   ].map(([key, label]) => (
                     <label key={key} className="flex items-center space-x-2">
                       <Checkbox

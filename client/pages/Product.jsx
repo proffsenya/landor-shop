@@ -558,10 +558,10 @@ export default function Product() {
         const cartSet = loadSet(cartKey);
         cartSet.add(vidStr);
         saveSet(cartKey, cartSet);
-        window.dispatchEvent(new Event("cart:update"));
-        try {
-          window.dispatchEvent(new Event("cart:changed"));
-        } catch {}
+          window.dispatchEvent(new Event("cart:update"));
+          try {
+            window.dispatchEvent(new Event("cart:changed"));
+          } catch {}
         setQty(1);
         showToast("Товар добавлен в корзину");
       } catch (err) {
@@ -580,10 +580,10 @@ export default function Product() {
         cartSet.delete(vidStr);
         saveSet(cartKey, cartSet);
         setQty(1);
-        window.dispatchEvent(new Event("cart:update"));
-        try {
-          window.dispatchEvent(new Event("cart:changed"));
-        } catch {}
+      window.dispatchEvent(new Event("cart:update"));
+      try {
+        window.dispatchEvent(new Event("cart:changed"));
+      } catch {}
         showToast("Товар удалён из корзины");
       } else {
         console.warn("Не удалось удалить из корзины");
@@ -754,22 +754,22 @@ export default function Product() {
                 {/* Счетчик количества */}
                 {!inCart && available && (
                   <div className="inline-flex h-9 items-center rounded-full border border-[#1E1E1E] overflow-hidden flex-shrink-0">
-                    <button
-                      onClick={() => setQty((n) => Math.max(1, n - 1))}
+                  <button
+                    onClick={() => setQty((n) => Math.max(1, n - 1))}
                       className="h-9 w-9 text-[18px] font-semibold text-[#1E1E1E] rounded-l-full flex items-center justify-center"
-                    >
-                      –
-                    </button>
+                  >
+                    –
+                  </button>
                     <span className="min-w-[36px] text-center text-[15px] font-medium text-[#1E1E1E] px-2">
-                      {qty}
-                    </span>
-                    <button
-                      onClick={() => setQty((n) => n + 1)}
+                    {qty}
+                  </span>
+                  <button
+                    onClick={() => setQty((n) => n + 1)}
                       className="h-9 w-9 text-[18px] font-semibold text-[#1E1E1E] rounded-r-full flex items-center justify-center"
-                    >
-                      +
-                    </button>
-                  </div>
+                  >
+                    +
+                  </button>
+                </div>
                 )}
               </div>
 
@@ -818,9 +818,9 @@ export default function Product() {
                       min-w-[110px]
                       w-full sm:w-auto
                       ${
-                        inCart
-                          ? "bg-white border border-[#6F2A2B] text-[#6F2A2B]"
-                          : "bg-[#6F2A2B] text-white hover:bg-[#5a2223]"
+                      inCart
+                        ? "bg-white border border-[#6F2A2B] text-[#6F2A2B]"
+                        : "bg-[#6F2A2B] text-white hover:bg-[#5a2223]"
                       }
                       ${adding ? "opacity-60 cursor-not-allowed" : ""}
                     `}
@@ -885,7 +885,7 @@ export default function Product() {
             </CardSection>
             <CardSection title="Гарантируемые показатели" defaultOpen>
               <p className="text-base leading-relaxed text-gray-600 whitespace-pre-line">
-                {guaranteedIndicators}
+              {guaranteedIndicators}
               </p>
             </CardSection>
             <CardSection title="Нормы кормления" defaultOpen>
