@@ -14,10 +14,7 @@ public class FilterParser {
     private static final Map<String, BiConsumer<ProductFilter,String>> PREFIX_MAP =
             Map.ofEntries(
                     Map.entry("category", (f,v) -> f.categories.add(v)),
-                    Map.entry("cat", (f,v) -> f.categories.add(v)),
-                    Map.entry("minicat", (f,v) -> f.breeds.add(v)),
-                    Map.entry("minidog", (f,v) -> f.breeds.add(v)),
-                    Map.entry("dog", (f,v) -> f.breeds.add(v)),
+                    Map.entry("breed", (f,v) -> f.breeds.add(v)),
                     Map.entry("country", (f,v) -> f.countries.add(v)),
                     Map.entry("typeoffood", (f,v) -> f.typeOfFood.add(v)),
                     Map.entry("taste", (f,v) -> f.flavors.add(v)),

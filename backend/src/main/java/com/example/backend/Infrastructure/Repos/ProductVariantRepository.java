@@ -19,10 +19,32 @@ public interface ProductVariantRepository extends JpaRepository<ProductVariant, 
     @Query("select pv from ProductVariant pv where pv.id = :id")
     Optional<ProductVariant> findByIdForUpdate(@Param("id") Long id);
 
-    @EntityGraph(attributePaths = {"product", "product.images", "product.images.productVariant", "product.productVariants"})
+    @EntityGraph(attributePaths = {"product",
+            "product.categories",
+            "product.breeds",
+            "product.countries",
+            "product.typeoffoods",
+            "product.flavors",
+            "product.brand",
+            "product.productType",
+            "product.images",
+            "product.images.productVariant",
+            "colors",
+            "scents"})
     List<ProductVariant> findAll(Specification<ProductVariant> spec, Sort sort);
 
-    @EntityGraph(attributePaths = {"product", "product.images", "product.images.productVariant", "product.productVariants"})
+    @EntityGraph(attributePaths = {"product",
+            "product.categories",
+            "product.breeds",
+            "product.countries",
+            "product.typeoffoods",
+            "product.flavors",
+            "product.brand",
+            "product.productType",
+            "product.images",
+            "product.images.productVariant",
+            "colors",
+            "scents"})
     List<ProductVariant> findAll(Specification<ProductVariant> spec);
 
 }
