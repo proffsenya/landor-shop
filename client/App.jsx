@@ -21,6 +21,14 @@ const ExchangeReturn = lazy(() => import("./pages/ExchangeReturn"));
 const HowToOrder = lazy(() => import("./pages/HowToOrder"));
 const Breeders = lazy(() => import("./pages/Breeders"));
 const Cooperation = lazy(() => import("./pages/Cooperation"));
+const AdminLogin = lazy(() => import("./pages/admin/AdminLogin"));
+const AdminDashboard = lazy(() => import("./pages/admin/AdminDashboard"));
+const AdminProducts = lazy(() => import("./pages/admin/AdminProducts"));
+const AdminOrders = lazy(() => import("./pages/admin/AdminOrders"));
+const AdminCategories = lazy(() => import("./pages/admin/AdminCategories"));
+const AdminUsers = lazy(() => import("./pages/admin/AdminUsers"));
+const AdminSettings = lazy(() => import("./pages/admin/AdminSettings"));
+const AdminForms = lazy(() => import("./pages/admin/AdminForms"));
 
 // Компонент загрузки
 const PageLoader = () => (
@@ -54,6 +62,14 @@ const App = () => (
             <Route path="/breeders" element={<Breeders />} />
             <Route path="/cooperation" element={<Cooperation />} />
                   <Route path="/profile" element={<Profile />} />
+                  <Route path="/admin/login" element={<AdminLogin />} />
+                  <Route path="/admin" element={<AdminDashboard />} />
+                  <Route path="/admin/products" element={<AdminProducts />} />
+                  <Route path="/admin/orders" element={<AdminOrders />} />
+                  <Route path="/admin/categories" element={<AdminCategories />} />
+                  <Route path="/admin/forms" element={<AdminForms />} />
+                  <Route path="/admin/users" element={<AdminUsers />} />
+                  <Route path="/admin/settings" element={<AdminSettings />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
         </Suspense>

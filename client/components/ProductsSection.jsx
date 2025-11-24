@@ -141,26 +141,61 @@ export default function ProductsSection({ title, linkText = "Все товары
       // если у тебя другая — поменяй ниже url
       let data = [];
       try {
-        const res = await fetch("/api/products"); // <- список продуктов с variants
+        // Пробуем альтернативный эндпоинт, если основной не работает
+        const res = await fetch("/api/products/cards");
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         data = await res.json();
       } catch (e) {
-        // попробуем альтернативу, если у тебя есть
-        try {
-          const res2 = await fetch("/api/products/cards");
-          if (!res2.ok) throw new Error(`HTTP ${res2.status}`);
-          data = await res2.json();
-        } catch (e2) {
-          console.warn("[ProductsSection] fetch error", e, e2);
-          data = [];
-        }
+        // Если не получилось, просто не показываем товары
+        console.warn("[ProductsSection] fetch error", e);
+        data = [];
       }
 
       // 3) разворачиваем в варианты
-      const allVariantCards = (Array.isArray(data) ? data : [])
-        .flatMap(expandProductToVariantCards)
-        // фильтры на всякий - только валидные варианты
-        .filter((x) => Number.isFinite(x.productId) && Number.isFinite(x.variantId));
+      // Проверяем структуру данных: если это плоские карточки (из /api/products/cards),
+      // преобразуем их в формат, который ожидает expandProductToVariantCards
+      let allVariantCards = [];
+      
+      if (Array.isArray(data) && data.length > 0) {
+        // Проверяем, есть ли у первого элемента variants (структура с variants)
+        const hasVariants = data[0]?.variants && Array.isArray(data[0].variants);
+        
+        if (hasVariants) {
+          // Структура с variants - используем существующую логику
+          allVariantCards = data
+            .flatMap(expandProductToVariantCards)
+            .filter((x) => Number.isFinite(x.productId) && Number.isFinite(x.variantId));
+        } else {
+          // Плоская структура карточек - преобразуем в нужный формат
+          allVariantCards = data
+            .map((card) => {
+              const variantId = card?.id ?? null;
+              const productId = card?.parentId ?? card?.productId ?? null;
+              
+              if (!Number.isFinite(variantId) || !Number.isFinite(productId)) {
+                return null;
+              }
+              
+              const price = Number(card?.price ?? 0);
+              const stock = Number(card?.stock ?? 0);
+              const displayName = card?.displayName || card?.display_name || "Товар";
+              const imageUrl = card?.imageUrl || "/korm1.svg";
+              
+              return {
+                id: `${productId}:${variantId}`,
+                productId: Number(productId),
+                variantId: Number(variantId),
+                image: imageUrl,
+                title: displayName,
+                price: `${price.toLocaleString("ru-RU")} ₽`,
+                stock,
+                weight: card?.weight ? `${card.weight} кг` : "—",
+                to: `/product/${encodeURIComponent(productId)}?variant=${encodeURIComponent(variantId)}`,
+              };
+            })
+            .filter((x) => x !== null);
+        }
+      }
 
       // 4) выбираем 5 случайных уникальных вариантов
       const seed = Number(todayKey().slice(-8)) || 1;

@@ -10,10 +10,9 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Building2, Truck, Users, CheckCircle2 } from "lucide-react";
 
-const getAuthToken = () => {
-  if (typeof window === "undefined") return "guest";
-  return localStorage.getItem("authToken") || "guest";
-};
+import { getAuthToken } from "@/utils/auth";
+import { validateName, validateEmail, validatePhone } from "@/utils/validation";
+import { formatName, formatPhone } from "@/utils/formatting";
 
 export default function Cooperation() {
   const [formData, setFormData] = useState({
@@ -47,29 +46,51 @@ export default function Cooperation() {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    let formattedValue = value;
+    
+    // Применяем форматирование
+    if (name === "name") {
+      formattedValue = formatName(value);
+    } else if (name === "phone") {
+      formattedValue = formatPhone(value);
+    }
+    
+    setFormData((prev) => ({ ...prev, [name]: formattedValue }));
+    
+    // Валидация в реальном времени
     if (errors[name]) {
-      setErrors((prev) => ({ ...prev, [name]: "" }));
+      let error = "";
+      if (name === "name") {
+        error = validateName(formattedValue, "Имя");
+      } else if (name === "email") {
+        error = validateEmail(formattedValue);
+      } else if (name === "phone") {
+        error = validatePhone(formattedValue);
+      } else if (name === "city") {
+        if (!formattedValue.trim()) {
+          error = "Город обязателен для заполнения";
+        }
+      }
+      setErrors((prev) => ({ ...prev, [name]: error }));
     }
   };
 
   const validateForm = () => {
     const newErrors = {};
     
-    if (!formData.name.trim()) {
-      newErrors.name = "Обязательное поле";
-    }
-    if (!formData.phone.trim()) {
-      newErrors.phone = "Обязательное поле";
-    }
-    if (!formData.email.trim()) {
-      newErrors.email = "Обязательное поле";
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = "Некорректный email";
-    }
+    const nameError = validateName(formData.name, "Имя");
+    if (nameError) newErrors.name = nameError;
+    
+    const emailError = validateEmail(formData.email);
+    if (emailError) newErrors.email = emailError;
+    
+    const phoneError = validatePhone(formData.phone);
+    if (phoneError) newErrors.phone = phoneError;
+    
     if (!formData.city.trim()) {
-      newErrors.city = "Обязательное поле";
+      newErrors.city = "Город обязателен для заполнения";
     }
+    
     if (!formData.consent) {
       newErrors.consent = "Необходимо согласие";
     }
@@ -225,6 +246,12 @@ export default function Cooperation() {
                           onChange={handleInputChange}
                           placeholder="Иван"
                           className="w-full h-12"
+                          onBlur={(e) => {
+                            const error = validateName(e.target.value, "Имя");
+                            if (error) {
+                              setErrors((prev) => ({ ...prev, name: error }));
+                            }
+                          }}
                         />
                         {errors.name && (
                           <p className="mt-1 text-sm text-red-500">{errors.name}</p>
@@ -242,8 +269,14 @@ export default function Cooperation() {
                           type="tel"
                           value={formData.phone}
                           onChange={handleInputChange}
-                          placeholder="+7 (000) 000-00-00"
+                          placeholder="+7 (999) 123-45-67"
                           className="w-full h-12"
+                          onBlur={(e) => {
+                            const error = validatePhone(e.target.value);
+                            if (error) {
+                              setErrors((prev) => ({ ...prev, phone: error }));
+                            }
+                          }}
                         />
                         {errors.phone && (
                           <p className="mt-1 text-sm text-red-500">{errors.phone}</p>
@@ -263,8 +296,14 @@ export default function Cooperation() {
                           type="email"
                           value={formData.email}
                           onChange={handleInputChange}
-                          placeholder="ivanov555@mail.ru"
+                          placeholder="example@mail.ru"
                           className="w-full h-12"
+                          onBlur={(e) => {
+                            const error = validateEmail(e.target.value);
+                            if (error) {
+                              setErrors((prev) => ({ ...prev, email: error }));
+                            }
+                          }}
                         />
                         {errors.email && (
                           <p className="mt-1 text-sm text-red-500">{errors.email}</p>
@@ -281,8 +320,13 @@ export default function Cooperation() {
                           name="city"
                           value={formData.city}
                           onChange={handleInputChange}
-                          placeholder="Москва"
+                          placeholder="г. Москва"
                           className="w-full h-12"
+                          onBlur={(e) => {
+                            if (!e.target.value.trim()) {
+                              setErrors((prev) => ({ ...prev, city: "Город обязателен для заполнения" }));
+                            }
+                          }}
                         />
                         {errors.city && (
                           <p className="mt-1 text-sm text-red-500">{errors.city}</p>

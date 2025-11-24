@@ -6,8 +6,7 @@ import AccordionMotion from "@/utils/AccordionMotion";
 import GlobalSearch from "@/components/GlobalSearch";
 
 
-const getAuthToken = () =>
-  localStorage.getItem("authToken") || localStorage.getItem("authToken") || "guest";
+import { getAuthToken } from "@/utils/auth";
 
 export default function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -22,9 +21,11 @@ export default function Header() {
 
   const loadCount = async (url, setter) => {
     try {
+      // Получаем актуальный токен каждый раз при запросе
+      const currentToken = getAuthToken();
       const res = await fetch(url, {
         headers:
-          authToken !== "guest" ? { Authorization: `Bearer ${authToken}` } : {},
+          currentToken && currentToken !== "guest" ? { Authorization: `Bearer ${currentToken}` } : {},
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
@@ -112,15 +113,22 @@ export default function Header() {
     };
     const onFavs = () => refreshBadges();
     const onCart = () => refreshBadges();
+    const onTokenUpdate = () => {
+      // При обновлении токена перезагружаем бейджи с новым токеном
+      setIsAuth(getAuthToken() !== "guest");
+      refreshBadges();
+    };
 
     window.addEventListener("storage", onStorage);
     window.addEventListener("favorites:update", onFavs);
     window.addEventListener("cart:update", onCart);
+    window.addEventListener("auth:token-updated", onTokenUpdate);
 
     return () => {
       window.removeEventListener("storage", onStorage);
       window.removeEventListener("favorites:update", onFavs);
       window.removeEventListener("cart:update", onCart);
+      window.removeEventListener("auth:token-updated", onTokenUpdate);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authToken, location.pathname]);

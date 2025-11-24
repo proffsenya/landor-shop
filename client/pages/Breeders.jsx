@@ -9,10 +9,9 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 
-const getAuthToken = () => {
-  if (typeof window === "undefined") return "guest";
-  return localStorage.getItem("authToken") || "guest";
-};
+import { getAuthToken } from "@/utils/auth";
+import { validateReceiver, validateEmail, validatePhone } from "@/utils/validation";
+import { formatReceiver, formatPhone } from "@/utils/formatting";
 
 export default function Breeders() {
   const [formData, setFormData] = useState({
@@ -47,9 +46,36 @@ export default function Breeders() {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    let formattedValue = value;
+    
+    // Применяем форматирование
+    if (name === "fullName") {
+      formattedValue = formatReceiver(value);
+    } else if (name === "phone") {
+      formattedValue = formatPhone(value);
+    }
+    
+    setFormData((prev) => ({ ...prev, [name]: formattedValue }));
+    
+    // Валидация в реальном времени
     if (errors[name]) {
-      setErrors((prev) => ({ ...prev, [name]: "" }));
+      let error = "";
+      if (name === "fullName") {
+        error = validateReceiver(formattedValue);
+      } else if (name === "email") {
+        error = validateEmail(formattedValue);
+      } else if (name === "phone") {
+        error = validatePhone(formattedValue);
+      } else if (name === "organizationName") {
+        if (!formattedValue.trim()) {
+          error = "Название питомника обязательно для заполнения";
+        }
+      } else if (name === "city") {
+        if (!formattedValue.trim()) {
+          error = "Город обязателен для заполнения";
+        }
+      }
+      setErrors((prev) => ({ ...prev, [name]: error }));
     }
   };
 
@@ -67,25 +93,26 @@ export default function Breeders() {
     const newErrors = {};
     
     if (!formData.organizationName.trim()) {
-      newErrors.organizationName = "Обязательное поле";
+      newErrors.organizationName = "Название питомника обязательно для заполнения";
     }
-    if (!formData.fullName.trim()) {
-      newErrors.fullName = "Обязательное поле";
-    }
+    
+    const fullNameError = validateReceiver(formData.fullName);
+    if (fullNameError) newErrors.fullName = fullNameError;
+    
+    const emailError = validateEmail(formData.email);
+    if (emailError) newErrors.email = emailError;
+    
+    const phoneError = validatePhone(formData.phone);
+    if (phoneError) newErrors.phone = phoneError;
+    
     if (!formData.city.trim()) {
-      newErrors.city = "Обязательное поле";
+      newErrors.city = "Город обязателен для заполнения";
     }
-    if (!formData.email.trim()) {
-      newErrors.email = "Обязательное поле";
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = "Некорректный email";
-    }
-    if (!formData.phone.trim()) {
-      newErrors.phone = "Обязательное поле";
-    }
+    
     if (!formData.file) {
-      newErrors.file = "Обязательное поле";
+      newErrors.file = "Необходимо прикрепить файл";
     }
+    
     if (!formData.consent) {
       newErrors.consent = "Необходимо согласие";
     }
@@ -295,8 +322,12 @@ export default function Breeders() {
                 value={formData.organizationName}
                 onChange={handleInputChange}
                 className="h-12 mt-2"
-                placeholder="Введите название питомника"
-                required
+                placeholder="Название питомника или заводской приставки"
+                onBlur={(e) => {
+                  if (!e.target.value.trim()) {
+                    setErrors((prev) => ({ ...prev, organizationName: "Название питомника обязательно для заполнения" }));
+                  }
+                }}
               />
               {errors.organizationName && (
                 <p className="mt-1 text-sm text-red-500">{errors.organizationName}</p>
@@ -315,7 +346,12 @@ export default function Breeders() {
                 onChange={handleInputChange}
                 className="h-12 mt-2"
                 placeholder="Иванов Иван Иванович"
-                required
+                onBlur={(e) => {
+                  const error = validateReceiver(e.target.value);
+                  if (error) {
+                    setErrors((prev) => ({ ...prev, fullName: error }));
+                  }
+                }}
               />
               {errors.fullName && (
                 <p className="mt-1 text-sm text-red-500">{errors.fullName}</p>
@@ -333,8 +369,12 @@ export default function Breeders() {
                 value={formData.city}
                 onChange={handleInputChange}
                 className="h-12 mt-2"
-                placeholder="Москва"
-                required
+                placeholder="г. Москва"
+                onBlur={(e) => {
+                  if (!e.target.value.trim()) {
+                    setErrors((prev) => ({ ...prev, city: "Город обязателен для заполнения" }));
+                  }
+                }}
               />
               {errors.city && (
                 <p className="mt-1 text-sm text-red-500">{errors.city}</p>
@@ -353,8 +393,13 @@ export default function Breeders() {
                 value={formData.email}
                 onChange={handleInputChange}
                 className="h-12 mt-2"
-                placeholder="mail@domen.com"
-                required
+                placeholder="example@mail.ru"
+                onBlur={(e) => {
+                  const error = validateEmail(e.target.value);
+                  if (error) {
+                    setErrors((prev) => ({ ...prev, email: error }));
+                  }
+                }}
               />
               {errors.email && (
                 <p className="mt-1 text-sm text-red-500">{errors.email}</p>
@@ -373,8 +418,13 @@ export default function Breeders() {
                 value={formData.phone}
                 onChange={handleInputChange}
                 className="h-12 mt-2"
-                placeholder="+7 (999) 999-99-99"
-                required
+                placeholder="+7 (999) 123-45-67"
+                onBlur={(e) => {
+                  const error = validatePhone(e.target.value);
+                  if (error) {
+                    setErrors((prev) => ({ ...prev, phone: error }));
+                  }
+                }}
               />
               {errors.phone && (
                 <p className="mt-1 text-sm text-red-500">{errors.phone}</p>
@@ -397,7 +447,6 @@ export default function Breeders() {
                     onChange={handleFileChange}
                     className="hidden"
                     accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
-                    required
                   />
                 </label>
                 {errors.file && (

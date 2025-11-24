@@ -9,14 +9,7 @@ import ProductsSection from "../components/ProductsSection";
 import { PageFade, ListMotion, ToastMotion } from "@/utils/PageAnimations";
 import { motion, AnimatePresence } from "framer-motion";
 
-const getAuthToken = () => {
-  if (typeof window === "undefined") return "guest";
-  return (
-    localStorage.getItem("authToken") ||
-    localStorage.getItem("token") ||
-    "guest"
-  );
-};
+import { getAuthToken } from "@/utils/auth";
 
 const favsKeyByToken = (token) => `favs:variants:${token || "guest"}`;
 

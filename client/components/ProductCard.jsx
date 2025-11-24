@@ -9,10 +9,7 @@ import { ToastMotion } from "../utils/PageAnimations";
 const STORAGE_CART = (authToken) => `cart:variants:${authToken || "guest"}`;
 const STORAGE_FAVS = (authToken) => `favs:variants:${authToken || "guest"}`;
 
-const getAuthToken = () => {
-  if (typeof window === "undefined") return "guest";
-  return localStorage.getItem("authToken") || "guest";
-};
+import { getAuthToken } from "@/utils/auth";
 
 // --- ДОБАВЬ ЭТИ ХЕЛПЕРЫ ВЫШЕ (рядом с loadSet/saveSet) ---
 async function safeText(res) {

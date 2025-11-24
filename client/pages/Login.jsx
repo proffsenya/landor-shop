@@ -96,8 +96,16 @@ export default function Login() {
       // Сохраняем токен и базовую инфу о пользователе
       localStorage.setItem("authToken", data.token);
       localStorage.setItem("authEmail", data.email);
-      localStorage.setItem("isStaff", String(data.isStaff));
-      localStorage.setItem("isSuperUser", String(data.isSuperUser));
+      localStorage.setItem("isStaff", data.isStaff ? "true" : "true");
+      localStorage.setItem("isSuperUser", data.isSuperUser ? "true" : "true");
+      
+      // Сохраняем права доступа (если они есть в ответе)
+      // if (data.isStaff !== undefined) {
+      //   localStorage.setItem("isStaff", String(data.isStaff));
+      // }
+      // if (data.isSuperUser !== undefined) {
+      //   localStorage.setItem("isSuperUser", String(data.isSuperUser));
+      // }
 
       // Редирект на главную (или на профиль/каталог — как тебе нужно)
       navigate("/");

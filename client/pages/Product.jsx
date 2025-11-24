@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, Heart, Check } from "lucide-react";
 import { PageFade, ToastMotion } from "@/utils/PageAnimations";
 import AccordionMotion from "@/utils/AccordionMotion";
+import { getAuthToken } from "@/utils/auth";
 
 // ------------------ UI: секция-аккордеон ------------------
 const CardSection = memo(({ title, defaultOpen = false, children }) => {
@@ -46,12 +47,6 @@ const pickDisplayName = (obj) => obj?.display_name ?? obj?.displayName ?? null;
 const s = (v) => (v == null ? null : String(v));
 
 const pickSKU = (obj) => obj?.sku ?? obj?.article ?? obj?.code ?? "—";
-
-// helpers: authToken + sessionStorage-сеты по токену
-const getAuthToken = () => {
-  if (typeof window === "undefined") return "guest";
-  return localStorage.getItem("authToken") || "guest";
-};
 const STORAGE_CART = (token) => `cart:variants:${token || "guest"}`;
 const STORAGE_FAVS = (token) => `favs:variants:${token || "guest"}`;
 

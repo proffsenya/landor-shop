@@ -1,15 +1,15 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import BreadcrumbNav from "@/components/BreadcrumbNav";
 import { Button } from "@/components/ui/button";
 import { PageFade } from "@/utils/PageAnimations";
-
-const getAuthToken = () => {
-  if (typeof window === "undefined") return null;
-  return localStorage.getItem("authToken");
-};
+import { getAuthToken } from "@/utils/auth";
+import { formatName, formatPhone } from "@/utils/formatting";
+import { validateName, validateEmail, validatePhone, validatePassword, validateConfirmPassword } from "@/utils/validation";
+import { checkAdminAccess } from "@/utils/adminAuth";
+import { Shield } from "lucide-react";
 
 // Моки
 const mockUser = {
@@ -39,32 +39,46 @@ function RowWithButton({
   placeholder,
   value,
   onChange,
+  onBlur,
   isEditing,
   onToggle,
   type = "text",
+  error = "",
+  example = "",
 }) {
   return (
     <PageFade>
-    <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-      <input
-        type={type}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder}
-        disabled={!isEditing}
-        className={`h-10 rounded-lg border border-[#E8E8E8] bg-white px-3 text-[14px] text-[#1E1E1E] placeholder:text-[#B9B9B9] outline-none sm:flex-1 ${
-          isEditing ? "ring-1 ring-[#6F2A2B]/20" : ""
-        }`}
-      />
-      <Button
-        type="button"
-        size="sm"
-        variant="outline"
-        onClick={onToggle}
-        className="text-[13px] sm:w-auto w-full"
-      >
-        {isEditing ? "Сохранить" : "Изменить"}
-      </Button>
+    <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+        <input
+          type={type}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          onBlur={onBlur}
+          placeholder={placeholder}
+          disabled={!isEditing}
+          className={`h-10 rounded-lg border ${
+            error ? "border-red-500" : "border-[#E8E8E8]"
+          } bg-white px-3 text-[14px] text-[#1E1E1E] placeholder:text-[#B9B9B9] outline-none sm:flex-1 ${
+            isEditing ? "ring-1 ring-[#6F2A2B]/20" : ""
+          }`}
+        />
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          onClick={onToggle}
+          className="text-[13px] sm:w-auto w-full"
+        >
+          {isEditing ? "Сохранить" : "Изменить"}
+        </Button>
+      </div>
+      {example && !isEditing && (
+        <p className="text-xs text-gray-500">{example}</p>
+      )}
+      {error && (
+        <p className="text-sm text-red-500">{error}</p>
+      )}
     </div>
     </PageFade>
   );
@@ -76,7 +90,21 @@ export default function Profile() {
   const [orders] = useState(mockOrders);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [passwordHash, setPasswordHash] = useState("");
+  const [isStaff, setIsStaff] = useState(false);
+  const [isSuperUser, setIsSuperUser] = useState(false);
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: "",
+  });
+  const [errors, setErrors] = useState({
+    firstName: "",
+    lastName: "",
+    middleName: "",
+    email: "",
+    phone: "",
+    password: "",
+  });
 
   const [editing, setEditing] = useState({
     lastName: false,
@@ -119,6 +147,19 @@ export default function Profile() {
           phone: data.phone || "",
           avatar: null,
         });
+        // Проверяем права доступа (если они есть в ответе, иначе из localStorage)
+        if (data.isStaff !== undefined) {
+          setIsStaff(data.isStaff);
+          localStorage.setItem("isStaff", String(data.isStaff));
+        } else {
+          setIsStaff(localStorage.getItem("isStaff") === "true");
+        }
+        if (data.isSuperUser !== undefined) {
+          setIsSuperUser(data.isSuperUser);
+          localStorage.setItem("isSuperUser", String(data.isSuperUser));
+        } else {
+          setIsSuperUser(localStorage.getItem("isSuperUser") === "true");
+        }
       } catch (e) {
         console.error("Error fetching profile:", e);
         setError("Не удалось загрузить профиль");
@@ -130,11 +171,122 @@ export default function Profile() {
     fetchProfile();
   }, []);
 
+  // Изменение пароля
+  const changePassword = async () => {
+    const authToken = getAuthToken();
+    if (!authToken) {
+      alert("Необходима авторизация");
+      return false;
+    }
+
+    // Валидация всех полей пароля
+    const currentPasswordError = validatePassword(passwordData.currentPassword);
+    const newPasswordError = validatePassword(passwordData.newPassword);
+    const confirmPasswordError = validateConfirmPassword(
+      passwordData.confirmPassword,
+      passwordData.newPassword
+    );
+
+    if (currentPasswordError || newPasswordError || confirmPasswordError) {
+      setErrors((prev) => ({
+        ...prev,
+        password: currentPasswordError || newPasswordError || confirmPasswordError || "",
+      }));
+      return false;
+    }
+
+    try {
+      const requestBody = {
+        currentPassword: passwordData.currentPassword,
+        newPassword: passwordData.newPassword,
+        confirmPassword: passwordData.confirmPassword,
+      };
+
+      console.log("Sending password change request:", {
+        url: "/api/users/profile/changepassword",
+        method: "PUT",
+        body: requestBody,
+      });
+
+      const res = await fetch("/api/users/profile/changepassword", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${authToken}`,
+        },
+        body: JSON.stringify(requestBody),
+      });
+
+      console.log("Password change response status:", res.status);
+
+      if (!res.ok) {
+        const errorText = await res.text();
+        console.error("Password change error response:", {
+          status: res.status,
+          statusText: res.statusText,
+          body: errorText,
+        });
+        let errorMessage = `HTTP ${res.status}`;
+        try {
+          const errorJson = JSON.parse(errorText);
+          errorMessage = errorJson.message || errorJson.error || errorMessage;
+        } catch {
+          errorMessage = errorText || errorMessage;
+        }
+        throw new Error(errorMessage);
+      }
+
+      // Проверяем, есть ли ответ от сервера
+      const responseData = await res.json().catch(() => null);
+      if (responseData) {
+        console.log("Password change success response:", responseData);
+      }
+
+      // Очищаем поля пароля после успешного изменения
+      setPasswordData({
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: "",
+      });
+      setErrors((prev) => ({ ...prev, password: "" }));
+      alert("Пароль успешно изменен");
+      return true;
+    } catch (e) {
+      console.error("Error changing password:", e);
+      setErrors((prev) => ({
+        ...prev,
+        password: e.message || "Не удалось изменить пароль. Проверьте текущий пароль.",
+      }));
+      return false;
+    }
+  };
+
   // Обновление профиля
   const updateProfile = async (field, value) => {
     const authToken = getAuthToken();
     if (!authToken) {
       alert("Необходима авторизация");
+      return false;
+    }
+
+    // Валидация перед отправкой
+    let fieldError = "";
+    if (field === "firstName") {
+      fieldError = validateName(value, "Имя");
+    } else if (field === "lastName") {
+      fieldError = validateName(value, "Фамилия");
+    } else if (field === "middleName") {
+      if (value.trim()) {
+        fieldError = validateName(value, "Отчество");
+      }
+    } else if (field === "email") {
+      fieldError = validateEmail(value);
+    } else if (field === "phone") {
+      fieldError = validatePhone(value);
+    }
+
+    if (fieldError) {
+      setErrors((prev) => ({ ...prev, [field]: fieldError }));
       return false;
     }
 
@@ -145,23 +297,18 @@ export default function Profile() {
         lastName: user.lastName,
         phone: user.phone || "",
         middleName: user.middleName || "",
-        passwordHash: passwordHash || "",
       };
 
       // Обновляем измененное поле
-      if (field === "email") requestBody.email = value;
-      if (field === "firstName") requestBody.firstName = value;
-      if (field === "lastName") requestBody.lastName = value;
-      if (field === "phone") requestBody.phone = value;
-      if (field === "middleName") requestBody.middleName = value;
-      if (field === "password") {
-        if (!value || value.trim() === "") {
-          // Если пароль пустой, не отправляем его
-          delete requestBody.passwordHash;
-        } else {
-          requestBody.passwordHash = value;
-        }
+      if (field === "email") requestBody.email = value.trim();
+      if (field === "firstName") requestBody.firstName = value.trim();
+      if (field === "lastName") requestBody.lastName = value.trim();
+      if (field === "phone") {
+        // Убираем форматирование для отправки
+        const cleaned = value.replace(/[\s\-()\+]/g, "");
+        requestBody.phone = cleaned.startsWith("8") ? "7" + cleaned.slice(1) : cleaned;
       }
+      if (field === "middleName") requestBody.middleName = value.trim();
 
       const res = await fetch("/api/users/profile", {
         method: "PUT",
@@ -187,40 +334,94 @@ export default function Profile() {
         avatar: null,
       });
 
-      // Проверяем наличие нового токена в теле ответа
-      if (data.token || data.authToken) {
-        const newToken = data.token || data.authToken;
-        localStorage.setItem("authToken", newToken);
-        // Также обновляем token, если он используется
-        if (data.token) {
-          localStorage.setItem("token", newToken);
+      // Если изменился email, обязательно обновляем токен и email в localStorage
+      if (field === "email") {
+        let tokenUpdated = false;
+        let newToken = null;
+
+        // Проверяем наличие нового токена в теле ответа
+        if (data.token || data.authToken) {
+          newToken = data.token || data.authToken;
+          localStorage.setItem("authToken", newToken);
+          // Также обновляем token, если он используется
+          if (data.token) {
+            localStorage.setItem("token", newToken);
+          }
+          tokenUpdated = true;
+          console.log("Token updated in localStorage from response body (email changed)");
         }
-        console.log("Token updated in localStorage from response body");
+
+        // Проверяем заголовки ответа на наличие нового токена
+        if (!tokenUpdated) {
+          const authHeader = res.headers.get("Authorization");
+          const xAuthToken = res.headers.get("X-Auth-Token");
+          if (authHeader) {
+            newToken = authHeader.replace("Bearer ", "");
+            localStorage.setItem("authToken", newToken);
+            localStorage.setItem("token", newToken);
+            tokenUpdated = true;
+            console.log("Token updated in localStorage from Authorization header (email changed)");
+          } else if (xAuthToken) {
+            newToken = xAuthToken;
+            localStorage.setItem("authToken", newToken);
+            localStorage.setItem("token", newToken);
+            tokenUpdated = true;
+            console.log("Token updated in localStorage from X-Auth-Token header (email changed)");
+          }
+        }
+
+        // Если токен не был обновлен сервером, но email изменился,
+        // возможно нужно перезагрузить страницу или использовать текущий токен
+        // (в зависимости от логики сервера)
+        if (!tokenUpdated) {
+          console.warn("Token not updated by server after email change. Current token may be invalid.");
+          // Можно попробовать перезагрузить страницу для получения нового токена
+          // или показать предупреждение пользователю
+        }
+
+        // Обновляем email в localStorage
+        if (data.email) {
+          localStorage.setItem("authEmail", data.email);
+          localStorage.setItem("email", data.email);
+          console.log("Email updated in localStorage:", data.email);
+        }
+
+        // Отправляем событие об обновлении токена, чтобы другие компоненты перезагрузились
+        window.dispatchEvent(new Event("auth:token-updated"));
+        
+        // Также отправляем событие storage для синхронизации между вкладками
+        // Используем setTimeout, чтобы убедиться, что localStorage обновлен
+        setTimeout(() => {
+          window.dispatchEvent(new StorageEvent("storage", {
+            key: "authToken",
+            newValue: localStorage.getItem("authToken"),
+            oldValue: authToken,
+          }));
+        }, 100);
+      } else {
+        // Для других полей также проверяем токен (на случай, если сервер его обновляет)
+        if (data.token || data.authToken) {
+          const newToken = data.token || data.authToken;
+          localStorage.setItem("authToken", newToken);
+          if (data.token) {
+            localStorage.setItem("token", newToken);
+          }
+        }
+
+        const authHeader = res.headers.get("Authorization");
+        const xAuthToken = res.headers.get("X-Auth-Token");
+        if (authHeader) {
+          const tokenFromHeader = authHeader.replace("Bearer ", "");
+          localStorage.setItem("authToken", tokenFromHeader);
+          localStorage.setItem("token", tokenFromHeader);
+        } else if (xAuthToken) {
+          localStorage.setItem("authToken", xAuthToken);
+          localStorage.setItem("token", xAuthToken);
+        }
       }
 
-      // Проверяем заголовки ответа на наличие нового токена
-      const authHeader = res.headers.get("Authorization");
-      const xAuthToken = res.headers.get("X-Auth-Token");
-      if (authHeader) {
-        const tokenFromHeader = authHeader.replace("Bearer ", "");
-        localStorage.setItem("authToken", tokenFromHeader);
-        localStorage.setItem("token", tokenFromHeader);
-        console.log("Token updated in localStorage from Authorization header");
-      } else if (xAuthToken) {
-        localStorage.setItem("authToken", xAuthToken);
-        localStorage.setItem("token", xAuthToken);
-        console.log("Token updated in localStorage from X-Auth-Token header");
-      }
-
-      // Обновляем email в localStorage, если он там хранится
-      if (field === "email" && data.email) {
-        localStorage.setItem("authEmail", data.email);
-        localStorage.setItem("email", data.email);
-      }
-
-      if (field === "password") {
-        setPasswordHash("");
-      }
+      // Очищаем ошибку при успешном обновлении
+      setErrors((prev) => ({ ...prev, [field]: "" }));
 
       return true;
     } catch (e) {
@@ -233,20 +434,33 @@ export default function Profile() {
   const toggle = async (key) => {
     if (editing[key]) {
       // Сохраняем изменения
-      let value = "";
       if (key === "password") {
-        value = passwordHash;
+        // Для пароля используем отдельную функцию
+        const success = await changePassword();
+        if (success) {
+          setEditing((s) => ({ ...s, [key]: false }));
+          setErrors((prev) => ({ ...prev, [key]: "" }));
+        }
       } else {
-        value = user[key];
-      }
-
-      const success = await updateProfile(key, value);
-      if (success) {
-        setEditing((s) => ({ ...s, [key]: false }));
+        const value = user[key];
+        const success = await updateProfile(key, value);
+        if (success) {
+          setEditing((s) => ({ ...s, [key]: false }));
+          setErrors((prev) => ({ ...prev, [key]: "" }));
+        }
       }
     } else {
       // Включаем режим редактирования
       setEditing((s) => ({ ...s, [key]: true }));
+      setErrors((prev) => ({ ...prev, [key]: "" }));
+      // Очищаем данные пароля при открытии редактирования
+      if (key === "password") {
+        setPasswordData({
+          currentPassword: "",
+          newPassword: "",
+          confirmPassword: "",
+        });
+      }
     }
   };
 
@@ -297,64 +511,225 @@ export default function Profile() {
                 placeholder="Фамилия"
                 value={user.lastName}
                 isEditing={editing.lastName}
-                onChange={(v) => setUser((s) => ({ ...s, lastName: v }))}
+                onChange={(v) => {
+                  const formatted = formatName(v);
+                  setUser((s) => ({ ...s, lastName: formatted }));
+                  if (errors.lastName) {
+                    setErrors((prev) => ({ ...prev, lastName: "" }));
+                  }
+                }}
+                onBlur={() => {
+                  const error = validateName(user.lastName, "Фамилия");
+                  setErrors((prev) => ({ ...prev, lastName: error }));
+                }}
                 onToggle={() => toggle("lastName")}
+                error={errors.lastName}
+                example="Пример: Иванов"
               />
               <RowWithButton
                 placeholder="Имя"
                 value={user.firstName}
                 isEditing={editing.firstName}
-                onChange={(v) => setUser((s) => ({ ...s, firstName: v }))}
+                onChange={(v) => {
+                  const formatted = formatName(v);
+                  setUser((s) => ({ ...s, firstName: formatted }));
+                  if (errors.firstName) {
+                    setErrors((prev) => ({ ...prev, firstName: "" }));
+                  }
+                }}
+                onBlur={() => {
+                  const error = validateName(user.firstName, "Имя");
+                  setErrors((prev) => ({ ...prev, firstName: error }));
+                }}
                 onToggle={() => toggle("firstName")}
+                error={errors.firstName}
+                example="Пример: Иван"
               />
               <RowWithButton
                 placeholder="Отчество"
                 value={user.middleName}
                 isEditing={editing.middleName}
-                onChange={(v) => setUser((s) => ({ ...s, middleName: v }))}
+                onChange={(v) => {
+                  const formatted = formatName(v);
+                  setUser((s) => ({ ...s, middleName: formatted }));
+                  if (errors.middleName) {
+                    setErrors((prev) => ({ ...prev, middleName: "" }));
+                  }
+                }}
+                onBlur={() => {
+                  if (user.middleName.trim()) {
+                    const error = validateName(user.middleName, "Отчество");
+                    setErrors((prev) => ({ ...prev, middleName: error }));
+                  } else {
+                    setErrors((prev) => ({ ...prev, middleName: "" }));
+                  }
+                }}
                 onToggle={() => toggle("middleName")}
+                error={errors.middleName}
+                example="Пример: Иванович (необязательно)"
               />
               <RowWithButton
                 placeholder="Почта"
                 value={user.email}
                 isEditing={editing.email}
-                onChange={(v) => setUser((s) => ({ ...s, email: v }))}
+                onChange={(v) => {
+                  setUser((s) => ({ ...s, email: v }));
+                  if (errors.email) {
+                    setErrors((prev) => ({ ...prev, email: "" }));
+                  }
+                }}
+                onBlur={() => {
+                  const error = validateEmail(user.email);
+                  setErrors((prev) => ({ ...prev, email: error }));
+                }}
                 onToggle={() => toggle("email")}
                 type="email"
+                error={errors.email}
+                example="Пример: ivan@mail.ru"
               />
               <RowWithButton
                 placeholder="Номер телефона"
                 value={user.phone}
                 isEditing={editing.phone}
-                onChange={(v) => setUser((s) => ({ ...s, phone: v }))}
+                onChange={(v) => {
+                  const formatted = formatPhone(v);
+                  setUser((s) => ({ ...s, phone: formatted }));
+                  if (errors.phone) {
+                    setErrors((prev) => ({ ...prev, phone: "" }));
+                  }
+                }}
+                onBlur={() => {
+                  const error = validatePhone(user.phone);
+                  setErrors((prev) => ({ ...prev, phone: error }));
+                }}
                 onToggle={() => toggle("phone")}
+                error={errors.phone}
+                example="Пример: +7 (999) 123-45-67"
               />
 
               {/* Пароль */}
-              <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-                <input
-                  type="password"
-                  value={editing.password ? passwordHash : "••••••••"}
-                  onChange={(e) => setPasswordHash(e.target.value)}
-                  placeholder="Пароль"
-                  disabled={!editing.password}
-                  className={`h-10 rounded-lg border border-[#E8E8E8] bg-white px-3 text-[14px] text-[#1E1E1E] placeholder:text-[#B9B9B9] outline-none sm:flex-1 ${
-                    editing.password ? "ring-1 ring-[#6F2A2B]/20" : ""
-                  }`}
-                />
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="outline"
-                  onClick={() => toggle("password")}
-                  className="text-[13px] sm:w-auto w-full"
-                >
-                  {editing.password ? "Сохранить" : "Изменить"}
-                </Button>
+              <div className="flex flex-col gap-2">
+                {!editing.password ? (
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                    <input
+                      type="password"
+                      value="••••••••"
+                      placeholder="Пароль"
+                      disabled
+                      className="h-10 rounded-lg border border-[#E8E8E8] bg-gray-50 px-3 text-[14px] text-[#1E1E1E] placeholder:text-[#B9B9B9] outline-none sm:flex-1"
+                    />
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={() => toggle("password")}
+                      className="text-[13px] sm:w-auto w-full"
+                    >
+                      Изменить
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                      <div className="flex-1 space-y-2">
+                        <input
+                          type="password"
+                          value={passwordData.currentPassword}
+                          onChange={(e) => {
+                            setPasswordData((prev) => ({
+                              ...prev,
+                              currentPassword: e.target.value,
+                            }));
+                            if (errors.password) {
+                              setErrors((prev) => ({ ...prev, password: "" }));
+                            }
+                          }}
+                          placeholder="Текущий пароль"
+                          className={`h-10 w-full rounded-lg border ${
+                            errors.password ? "border-red-500" : "border-[#E8E8E8]"
+                          } bg-white px-3 text-[14px] text-[#1E1E1E] placeholder:text-[#B9B9B9] outline-none ring-1 ring-[#6F2A2B]/20`}
+                        />
+                        <input
+                          type="password"
+                          value={passwordData.newPassword}
+                          onChange={(e) => {
+                            setPasswordData((prev) => ({
+                              ...prev,
+                              newPassword: e.target.value,
+                            }));
+                            if (errors.password) {
+                              setErrors((prev) => ({ ...prev, password: "" }));
+                            }
+                          }}
+                          placeholder="Новый пароль"
+                          className={`h-10 w-full rounded-lg border ${
+                            errors.password ? "border-red-500" : "border-[#E8E8E8]"
+                          } bg-white px-3 text-[14px] text-[#1E1E1E] placeholder:text-[#B9B9B9] outline-none ring-1 ring-[#6F2A2B]/20`}
+                        />
+                        <input
+                          type="password"
+                          value={passwordData.confirmPassword}
+                          onChange={(e) => {
+                            setPasswordData((prev) => ({
+                              ...prev,
+                              confirmPassword: e.target.value,
+                            }));
+                            if (errors.password) {
+                              setErrors((prev) => ({ ...prev, password: "" }));
+                            }
+                          }}
+                          placeholder="Подтвердите новый пароль"
+                          className={`h-10 w-full rounded-lg border ${
+                            errors.password ? "border-red-500" : "border-[#E8E8E8]"
+                          } bg-white px-3 text-[14px] text-[#1E1E1E] placeholder:text-[#B9B9B9] outline-none ring-1 ring-[#6F2A2B]/20`}
+                        />
+                      </div>
+                      <div className="flex flex-col gap-2 sm:flex-row">
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          onClick={() => toggle("password")}
+                          className="text-[13px] sm:w-auto w-full"
+                        >
+                          Отмена
+                        </Button>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          onClick={() => toggle("password")}
+                          className="text-[13px] sm:w-auto w-full bg-[#6F2A2B] text-white hover:bg-[#5a2223]"
+                        >
+                          Сохранить
+                        </Button>
+                      </div>
+                    </div>
+                    {errors.password && (
+                      <p className="text-sm text-red-500">{errors.password}</p>
+                    )}
+                    <p className="text-xs text-gray-500">
+                      Пароль должен содержать минимум 6 символов
+                    </p>
+                  </div>
+                )}
               </div>
 
-              {/* Кнопка выхода */}
-              <div className="mt-6 pt-4 border-t border-[#E8E8E8]">
+              {/* Кнопка выхода и админки */}
+              <div className="mt-6 pt-4 border-t border-[#E8E8E8] space-y-3">
+                {(isStaff || isSuperUser) && (
+                  <Button
+                    type="button"
+                    onClick={() => {
+                      const { hasAccess } = checkAdminAccess();
+                      navigate(hasAccess ? "/admin" : "/admin/login");
+                    }}
+                    className="w-full h-[40px] rounded-lg bg-gray-800 text-white text-[14px] hover:bg-gray-700 flex items-center justify-center gap-2"
+                  >
+                    <Shield className="w-4 h-4" />
+                    Перейти в админку
+                  </Button>
+                )}
                 <Button
                   type="button"
                   onClick={handleLogout}
