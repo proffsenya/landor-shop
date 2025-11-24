@@ -1,5 +1,6 @@
 package com.example.backend.Application.Controllers.UserAuth;
 
+import com.example.backend.Domain.DTOs.ChangePasswodDTO;
 import com.example.backend.Domain.DTOs.UserProfileDTO;
 import com.example.backend.Domain.DTOs.UserUpdateDTO;
 import com.example.backend.Domain.Models.User;
@@ -33,6 +34,13 @@ class UserController {
         Long id = principal.getId();
         UserProfileDTO userupdate = usersService.update(id, userUpdateDTO);
         return ResponseEntity.ok(userupdate);
+    }
+
+    @PutMapping("/profile/changepassword")
+    public ResponseEntity<?> changePassword(@AuthenticationPrincipal CustomUserDetails principal, @RequestBody ChangePasswodDTO passwordDto){
+        Long id = principal.getId();
+        usersService.changePassword(id, passwordDto);
+        return ResponseEntity.ok().build();
     }
 
     @GetMapping("/profile")

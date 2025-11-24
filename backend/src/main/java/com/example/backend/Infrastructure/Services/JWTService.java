@@ -1,6 +1,7 @@
 package com.example.backend.Infrastructure.Services;
 
 import com.example.backend.Domain.Models.User;
+import com.example.backend.Infrastructure.Configurations.CustomUserDetails;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
@@ -22,8 +23,8 @@ public class JWTService {
 
     public String generateToken(User user) {
         return Jwts.builder()
-                .setSubject(user.getEmail())
-                .claim("userId", user.getId())
+                .setSubject(user.getId().toString())
+                .claim("email", user.getEmail())
                 .claim("isStuff", user.getIsStaff())
                 .setExpiration(new Date(System.currentTimeMillis() + EXPIRATION_TIME))
                 .signWith(SignatureAlgorithm.HS256, SECRET_KEY)
@@ -38,8 +39,12 @@ public class JWTService {
                 .parseClaimsJws(token).getBody();
     }
 
+    public Long extractUserIdFromToken(String token) {
+        return Long.parseLong(exctractClaim(token, Claims::getSubject));
+    }
+
     public String extractEmail(String token) {
-        return exctractClaim(token, Claims::getSubject);
+        return exctractClaim(token, claims -> claims.get("email", String.class));
     }
 
     private <T> T exctractClaim(String token, Function<Claims, T> claimsResolver) {
@@ -47,14 +52,13 @@ public class JWTService {
         return claimsResolver.apply(claims);
     }
 
-    public Long extractUserId(String token) {
-        Number idNumber = exctractClaim(token, claims -> claims.get("userId", Number.class));
-        return idNumber == null ? null : idNumber.longValue();
-    }
-
     public boolean isTokenValid(String token, UserDetails user) {
-        final String email = extractEmail(token);
-        return (email.equals(user.getUsername())) && !isTokenExpired(token);
+        final Long userId = extractUserIdFromToken(token);
+        if (user instanceof CustomUserDetails){
+            CustomUserDetails customUserDetails = (CustomUserDetails) user;
+            return (userId.equals(customUserDetails.getId())) && !isTokenExpired(token);
+        }
+        return false;
     }
 
     private Date extractExpiration(String token) {

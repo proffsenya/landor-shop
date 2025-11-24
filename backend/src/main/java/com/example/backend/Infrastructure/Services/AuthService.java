@@ -60,9 +60,9 @@ public class AuthService {
         newuser.setIsSuperuser(false);
         newuser.setIsActive(true);
 
-        String jwtToken = jwtService.generateToken(newuser);
-
         User saveuser = userRepository.save(newuser);
+        String jwtToken = jwtService.generateToken(saveuser);
+
         return new AuthResponseDTO(
                 jwtToken,
                 newuser.getEmail(),

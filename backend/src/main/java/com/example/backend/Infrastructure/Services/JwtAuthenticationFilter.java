@@ -1,10 +1,16 @@
 package com.example.backend.Infrastructure.Services;
 
+import com.example.backend.Domain.Models.User;
+import com.example.backend.Infrastructure.Configurations.CustomUserDetails;
+import com.example.backend.Infrastructure.Exceptions.InvalidRequestException;
+import com.example.backend.Infrastructure.Repos.UserRepository;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -13,15 +19,23 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final JWTService jwtService;
     private final UserDetailsService userDetailsService;
+    private final UsersService usersService;
+    private final UserRepository userRepository;
 
-    public JwtAuthenticationFilter(JWTService jwtService, UserDetailsService userDetailsService) {
+    public JwtAuthenticationFilter(JWTService jwtService, UserDetailsService userDetailsService,
+                                   UsersService usersService, UserRepository userRepository) {
         this.jwtService = jwtService;
         this.userDetailsService = userDetailsService;
+        this.usersService = usersService;
+        this.userRepository = userRepository;
     }
 
     @Override
@@ -55,20 +69,45 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
 
         String token = authHeader.substring(7);
-        String userEmail = jwtService.extractEmail(token);
+        try {
+            Long userId = jwtService.extractUserIdFromToken(token);
 
-        if(userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+            if (userId != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+                User user = userRepository.findById(userId).orElseThrow(() -> new InvalidRequestException("User not found"));
 
-            UserDetails userDetails = userDetailsService.loadUserByUsername(userEmail);
+                CustomUserDetails userDetails = new CustomUserDetails(
+                        user.getId(),
+                        user.getEmail(),
+                        user.getPasswordHash(),
+                        getAuthorities(user),
+                        user.getIsActive()
+                );
+                if (jwtService.isTokenValid(token, userDetails)){
+                    UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
+                            userDetails, null, userDetails.getAuthorities());
 
-            if (jwtService.isTokenValid(token, userDetails)){
-                UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
-                        userDetails, null, userDetails.getAuthorities());
-
-                SecurityContextHolder.getContext().setAuthentication(authentication);
+                    SecurityContextHolder.getContext().setAuthentication(authentication);
+                }
             }
         }
+        catch (Exception e) {
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.getWriter().write("Invalid token");
+            return;
+        }
+
         filterChain.doFilter(request, response);
 
+    }
+
+    private Collection<? extends GrantedAuthority> getAuthorities(User user) {
+        List<GrantedAuthority> authorities = new ArrayList<>();
+        if (user.getIsStaff()) {
+            authorities.add(new SimpleGrantedAuthority("ROLE_STAFF"));
+        }
+        if(user.getIsSuperuser()) {
+            authorities.add(new SimpleGrantedAuthority("ROLE_SUPERUSER"));
+        }
+        return authorities;
     }
 }
