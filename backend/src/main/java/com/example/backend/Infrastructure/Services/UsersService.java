@@ -87,24 +87,39 @@ public class UsersService {
 
     @Transactional
     public void changePassword(Long userId, ChangePasswodDTO changePasswodDTO) {
+        System.out.println("=== PASSWORD CHANGE DEBUG ===");
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new InvalidRequestException("User not found"));
 
-        if (!passwordEncoder.matches(changePasswodDTO.currentPassword(), user.getPasswordHash())) {
-            throw new InvalidRequestException("Current password does not match");
+        System.out.println("User ID: " + userId);
+        System.out.println("User email: " + user.getEmail());
+        System.out.println("Current password input: " + changePasswodDTO.currentPassword());
+        System.out.println("New password input: " + changePasswodDTO.newPassword());
+        System.out.println("Confirm password input: " + changePasswodDTO.confirmPassword());
+
+        // Проверка текущего пароля
+        boolean currentPasswordValid = passwordEncoder.matches(
+                changePasswodDTO.currentPassword(),
+                user.getPasswordHash()
+        );
+        System.out.println("Current password valid: " + currentPasswordValid);
+
+        if (!currentPasswordValid) {
+            System.out.println("ERROR: Current password invalid!");
+            throw new InvalidRequestException("Current password is incorrect");
         }
 
-        if (!changePasswodDTO.newPassword().equals(changePasswodDTO.confirmPassword())) {
-            throw new InvalidRequestException("New password does not match");
-        }
+        // Хэшируем новый пароль
+        String newHashedPassword = passwordEncoder.encode(changePasswodDTO.newPassword());
+        System.out.println("New hashed password: " + newHashedPassword);
 
-        if (passwordEncoder.matches(changePasswodDTO.currentPassword(), user.getPasswordHash())) {
-            throw new InvalidRequestException("New password must be different from current password");
-        }
-
-        user.setPasswordHash(passwordEncoder.encode(changePasswodDTO.newPassword()));
+        // Сохраняем
+        user.setPasswordHash(newHashedPassword);
         user.setUpdatedAt(Instant.now());
-        userRepository.save(user);
-    }
 
+        User savedUser = userRepository.save(user);
+        System.out.println("Password updated successfully");
+        System.out.println("Saved user hash: " + savedUser.getPasswordHash());
+        System.out.println("=== END DEBUG ===");
+    }
 }

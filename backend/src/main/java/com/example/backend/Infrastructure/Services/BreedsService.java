@@ -1,5 +1,7 @@
 package com.example.backend.Infrastructure.Services;
 
+import com.example.backend.Domain.DTOs.BreedCreateDTO;
+import com.example.backend.Domain.DTOs.BreedDTO;
 import com.example.backend.Domain.DTOs.CreateProductDTO;
 import com.example.backend.Domain.Models.Breed;
 import com.example.backend.Domain.Models.Product;

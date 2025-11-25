@@ -7,6 +7,8 @@ import org.springframework.data.repository.Repository;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 
 public interface CountryRepository extends JpaRepository<Country, Integer> {
+    Optional<Country> findByName(String name);
 }

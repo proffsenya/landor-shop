@@ -27,7 +27,7 @@ public class JWTService {
                 .claim("email", user.getEmail())
                 .claim("isStuff", user.getIsStaff())
                 .setExpiration(new Date(System.currentTimeMillis() + EXPIRATION_TIME))
-                .signWith(SignatureAlgorithm.HS256, SECRET_KEY)
+                .signWith(getSignKey(), SignatureAlgorithm.HS256)
                 .compact();
 
     }
