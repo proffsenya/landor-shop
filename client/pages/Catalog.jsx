@@ -169,6 +169,7 @@ export default function Catalog() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [toast, setToast] = useState("");
+  const [filtersRestored, setFiltersRestored] = useState(false);
 
   // Функция для показа уведомлений
   const showToast = (msg, ms = 1500) => {
@@ -252,6 +253,54 @@ export default function Catalog() {
   // пагинация
   const ITEMS_PER_PAGE = 12;
   const [page, setPage] = useState(1);
+
+  // ---------- Сохранение и восстановление фильтров ----------
+  const saveFiltersToStorage = useCallback(() => {
+    const filtersState = {
+      searchQuery,
+      priceFrom,
+      priceTo,
+      categoryFilters,
+      catFilters,
+      dogFilters,
+      minicatFilters,
+      minidogFilters,
+      countryFilters,
+      flavorFilters,
+      brandFilters,
+      scentFilters,
+      page,
+    };
+    sessionStorage.setItem("catalog:filters", JSON.stringify(filtersState));
+  }, [searchQuery, priceFrom, priceTo, categoryFilters, catFilters, dogFilters, minicatFilters, minidogFilters, countryFilters, flavorFilters, brandFilters, scentFilters, page]);
+
+  const restoreFiltersFromStorage = useCallback(() => {
+    try {
+      const saved = sessionStorage.getItem("catalog:filters");
+      if (!saved) return false;
+
+      const filtersState = JSON.parse(saved);
+      
+      if (filtersState.searchQuery !== undefined) setSearchQuery(filtersState.searchQuery);
+      if (filtersState.priceFrom !== undefined) setPriceFrom(filtersState.priceFrom);
+      if (filtersState.priceTo !== undefined) setPriceTo(filtersState.priceTo);
+      if (filtersState.categoryFilters) setCategoryFilters(filtersState.categoryFilters);
+      if (filtersState.catFilters) setCatFilters(filtersState.catFilters);
+      if (filtersState.dogFilters) setDogFilters(filtersState.dogFilters);
+      if (filtersState.minicatFilters) setMiniCatFilters(filtersState.minicatFilters);
+      if (filtersState.minidogFilters) setMiniDogFilters(filtersState.minidogFilters);
+      if (filtersState.countryFilters) setCountryFilters(filtersState.countryFilters);
+      if (filtersState.flavorFilters) setFlavorFilters(filtersState.flavorFilters);
+      if (filtersState.brandFilters) setBrandFilters(filtersState.brandFilters);
+      if (filtersState.scentFilters) setScentFilters(filtersState.scentFilters);
+      if (filtersState.page) setPage(filtersState.page);
+      
+      return true;
+    } catch (e) {
+      console.warn("Failed to restore filters from storage:", e);
+      return false;
+    }
+  }, []);
 
   // ---------- Генерация query-строки для фильтров ----------
   const generateQueryParams = useCallback(() => {
@@ -466,6 +515,79 @@ export default function Catalog() {
     }
   };
 
+  // Восстановление фильтров при монтировании (если нет параметров в URL)
+  useEffect(() => {
+    const queryString = window.location.search || "";
+    const urlParams = new URLSearchParams(queryString);
+    const categoryParam = urlParams.get("category");
+    
+    // Если нет параметров в URL, пытаемся восстановить фильтры из sessionStorage
+    if (!queryString && !categoryParam) {
+      const restored = restoreFiltersFromStorage();
+      if (restored) {
+        setFiltersRestored(true);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Применение восстановленных фильтров после обновления состояния (только один раз)
+  useEffect(() => {
+    if (!filtersRestored) {
+      return;
+    }
+    
+    const queryString = window.location.search || "";
+    const urlParams = new URLSearchParams(queryString);
+    const categoryParam = urlParams.get("category");
+    
+    // Пропускаем, если уже есть параметры в URL
+    if (queryString || categoryParam) {
+      setFiltersRestored(false);
+      return;
+    }
+    
+    // Проверяем, есть ли сохраненные фильтры
+    const saved = sessionStorage.getItem("catalog:filters");
+    if (!saved) {
+      setFiltersRestored(false);
+      return;
+    }
+    
+    try {
+      const filtersState = JSON.parse(saved);
+      // Проверяем, есть ли хотя бы один активный фильтр
+      const hasActiveFilters = 
+        (filtersState.searchQuery && filtersState.searchQuery.trim()) ||
+        (filtersState.priceFrom && filtersState.priceFrom.trim()) ||
+        (filtersState.priceTo && filtersState.priceTo.trim()) ||
+        (filtersState.categoryFilters && Object.values(filtersState.categoryFilters).some(v => v)) ||
+        (filtersState.catFilters && Object.values(filtersState.catFilters).some(v => v)) ||
+        (filtersState.dogFilters && Object.values(filtersState.dogFilters).some(v => v)) ||
+        (filtersState.minicatFilters && Object.values(filtersState.minicatFilters).some(v => v)) ||
+        (filtersState.minidogFilters && Object.values(filtersState.minidogFilters).some(v => v)) ||
+        (filtersState.countryFilters && Object.values(filtersState.countryFilters).some(v => v)) ||
+        (filtersState.flavorFilters && Object.values(filtersState.flavorFilters).some(v => v)) ||
+        (filtersState.brandFilters && Object.values(filtersState.brandFilters).some(v => v)) ||
+        (filtersState.scentFilters && Object.values(filtersState.scentFilters).some(v => v));
+      
+      if (hasActiveFilters) {
+        // Применяем восстановленные фильтры
+        const queryParams = generateQueryParams();
+        const filtersUrlString = queryParams ? `?${queryParams}` : "";
+        if (filtersUrlString) {
+          window.history.pushState({}, "", filtersUrlString);
+          fetchCards(filtersUrlString);
+        }
+      }
+      setFiltersRestored(false);
+    } catch (e) {
+      console.warn("Failed to apply restored filters:", e);
+      setFiltersRestored(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filtersRestored, searchQuery, priceFrom, priceTo, categoryFilters, catFilters, dogFilters, minicatFilters, minidogFilters, countryFilters, flavorFilters, brandFilters, scentFilters]);
+
   // первая загрузка: используем то, что уже есть в адресной строке
   useEffect(() => {
     const queryString = window.location.search || "";
@@ -629,6 +751,14 @@ export default function Catalog() {
     setPage(newPage);
   };
 
+  // Автоматическое сохранение фильтров при их изменении
+  useEffect(() => {
+    // Сохраняем фильтры только если они были изменены пользователем (не при восстановлении)
+    if (!filtersRestored) {
+      saveFiltersToStorage();
+    }
+  }, [searchQuery, priceFrom, priceTo, categoryFilters, catFilters, dogFilters, minicatFilters, minidogFilters, countryFilters, flavorFilters, brandFilters, scentFilters, page, saveFiltersToStorage, filtersRestored]);
+
   // Прокручиваем вверх при смене страницы
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -663,13 +793,16 @@ export default function Catalog() {
 
     // сохраняем query параметры в sessionStorage для использования при возврате из страницы товара
     sessionStorage.setItem("catalog:lastQuery", filtersUrlString);
+    
+    // сохраняем состояние всех фильтров
+    saveFiltersToStorage();
 
     // отправляем в бэк именно эту строку
     fetchCards(filtersUrlString);
     setMobileFiltersOpen(false);
     // Прокручиваем вверх при применении фильтров
     window.scrollTo({ top: 0, behavior: 'smooth' });
-  }, [generateQueryParams]);
+  }, [generateQueryParams, saveFiltersToStorage]);
 
   const handleResetFilters = useCallback(() => {
     setCategoryFilters({

@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, Heart, Check } from "lucide-react";
 import { PageFade, ToastMotion } from "@/utils/PageAnimations";
 import AccordionMotion from "@/utils/AccordionMotion";
+import { AuthToast } from "@/components/AuthToast";
 import { getAuthToken } from "@/utils/auth";
 
 // ------------------ UI: секция-аккордеон ------------------
@@ -111,6 +112,9 @@ async function apiAddFavorite(variantId, authToken) {
     headers: authHeaders(authToken, { "Content-Type": "application/json" }),
     body: JSON.stringify({ variantId: Number(variantId) }),
   });
+  if (r.status === 401) {
+    throw new Error("401 Unauthorized");
+  }
   if (!r.ok) throw new Error(`POST /api/favorites -> ${r.status} ${await safeText(r)}`);
   return true;
 }
@@ -123,8 +127,13 @@ async function apiRemoveFavorite(variantId, authToken) {
       method: "DELETE",
       headers: authHeaders(authToken),
     });
+    if (r.status === 401) {
+      throw new Error("401 Unauthorized");
+    }
     if (r.ok) return true;
-  } catch {}
+  } catch (e) {
+    if (e.message === "401 Unauthorized") throw e;
+  }
 
   // 2) DELETE /api/favorites?variantId=...
   try {
@@ -132,8 +141,13 @@ async function apiRemoveFavorite(variantId, authToken) {
       method: "DELETE",
       headers: authHeaders(authToken),
     });
+    if (r.status === 401) {
+      throw new Error("401 Unauthorized");
+    }
     if (r.ok) return true;
-  } catch {}
+  } catch (e) {
+    if (e.message === "401 Unauthorized") throw e;
+  }
 
   // 3) DELETE /api/favorites (body)
   try {
@@ -277,11 +291,25 @@ export default function Product() {
   const [inCart, setInCart] = useState(false);
   const [adding, setAdding] = useState(false);
   const [toast, setToast] = useState("");
+  const [showAuthToast, setShowAuthToast] = useState(false);
+  const [authToastMessage, setAuthToastMessage] = useState("");
 
   // Функция для показа уведомлений
   const showToast = (msg, ms = 1500) => {
     setToast(msg);
     setTimeout(() => setToast(""), ms);
+  };
+
+  // Функция для обработки ошибок API
+  const handleApiError = (err, defaultMessage) => {
+    const errorMessage = err.message || "";
+    if (errorMessage.includes("401") || errorMessage.includes("Unauthorized")) {
+      setAuthToastMessage("Для выполнения этого действия необходимо авторизоваться");
+      setShowAuthToast(true);
+      return true;
+    }
+    showToast(defaultMessage, 2000);
+    return false;
   };
 
   // Сохраняем ссылку на каталог с последними фильтрами
@@ -532,6 +560,12 @@ export default function Product() {
     const vid = selectedVariant?.id;
     if (!vid || adding || !available) return;
 
+    // Проверка авторизации
+    if (!authToken || authToken === "guest") {
+      showToast("Для добавления товара в корзину необходимо авторизоваться", 3000);
+      return;
+    }
+
     const vidStr = String(vid);
     const vidNum = Number(vid);
 
@@ -547,7 +581,16 @@ export default function Product() {
           },
           body: JSON.stringify({ variantId: vidNum, quantity: qty }),
         });
-        if (!res.ok) throw new Error(`HTTP ${res.status} ${await safeText(res)}`);
+        if (!res.ok) {
+          const errorText = await safeText(res);
+          if (res.status === 401) {
+            setAuthToastMessage("Для добавления товара в корзину необходимо авторизоваться");
+            setShowAuthToast(true);
+            setAdding(false);
+            return;
+          }
+          throw new Error(`HTTP ${res.status} ${errorText}`);
+        }
 
         setInCart(true);
         const cartSet = loadSet(cartKey);
@@ -561,7 +604,9 @@ export default function Product() {
         showToast("Товар добавлен в корзину");
       } catch (err) {
         console.warn("Ошибка при добавлении в корзину:", err);
-        showToast("Не удалось добавить в корзину", 2000);
+        if (!handleApiError(err, "Не удалось добавить в корзину")) {
+          showToast("Не удалось добавить в корзину", 2000);
+        }
       } finally {
         setAdding(false);
       }
@@ -593,6 +638,12 @@ export default function Product() {
     const vidStr = String(selectedVariant?.id ?? "");
     if (!vidStr) return;
 
+    // Проверка авторизации
+    if (!authToken || authToken === "guest") {
+      showToast("Для добавления товара в избранное необходимо авторизоваться", 3000);
+      return;
+    }
+
     const vidNum = Number(vidStr);
     const favSet = loadSet(favKey);
     const nowFav = favSet.has(vidStr);
@@ -617,6 +668,22 @@ export default function Product() {
       try { window.dispatchEvent(new Event("favs:changed")); } catch {}
       showToast(!nowFav ? "Товар добавлен в избранное" : "Товар удалён из избранного");
     } catch (e) {
+      // Проверка на 401
+      if (e.message && (e.message.includes("401") || e.message.includes("Unauthorized"))) {
+        setAuthToastMessage("Для работы с избранным необходимо авторизоваться");
+        setShowAuthToast(true);
+        // откат при ошибке
+        const rollback = loadSet(favKey);
+        if (!nowFav) {
+          rollback.delete(vidStr);
+          setIsFav(false);
+        } else {
+          rollback.add(vidStr);
+          setIsFav(true);
+        }
+        saveSet(favKey, rollback);
+        return;
+      }
       // откат при ошибке
       const rollback = loadSet(favKey);
       if (!nowFav) {
@@ -893,6 +960,11 @@ export default function Product() {
       </main>
       <Footer />
       <ToastMotion show={!!toast}>{toast}</ToastMotion>
+      <AuthToast 
+        show={showAuthToast} 
+        onClose={() => setShowAuthToast(false)}
+        message={authToastMessage}
+      />
     </div>
   );
 }

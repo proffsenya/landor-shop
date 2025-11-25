@@ -4,7 +4,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import BreadcrumbNav from "@/components/BreadcrumbNav";
 import { Button } from "@/components/ui/button";
-import { PageFade } from "@/utils/PageAnimations";
+import { PageFade, ToastMotion } from "@/utils/PageAnimations";
 import { getAuthToken } from "@/utils/auth";
 import { formatName, formatPhone } from "@/utils/formatting";
 import { validateName, validateEmail, validatePhone, validatePassword, validateConfirmPassword } from "@/utils/validation";
@@ -92,6 +92,12 @@ export default function Profile() {
   const [error, setError] = useState("");
   const [isStaff, setIsStaff] = useState(false);
   const [isSuperUser, setIsSuperUser] = useState(false);
+  const [toast, setToast] = useState("");
+
+  const showToast = (msg, ms = 3000) => {
+    setToast(msg);
+    setTimeout(() => setToast(""), ms);
+  };
   const [passwordData, setPasswordData] = useState({
     currentPassword: "",
     newPassword: "",
@@ -119,9 +125,14 @@ export default function Profile() {
   useEffect(() => {
     const fetchProfile = async () => {
       const authToken = getAuthToken();
-      if (!authToken) {
+      if (!authToken || authToken === "guest") {
         setError("Необходима авторизация");
+        showToast("Для просмотра профиля необходимо авторизоваться", 3000);
         setLoading(false);
+        // Перенаправляем на страницу логина через 2 секунды
+        setTimeout(() => {
+          navigate("/login");
+        }, 2000);
         return;
       }
 
@@ -174,8 +185,8 @@ export default function Profile() {
   // Изменение пароля
   const changePassword = async () => {
     const authToken = getAuthToken();
-    if (!authToken) {
-      alert("Необходима авторизация");
+    if (!authToken || authToken === "guest") {
+      showToast("Необходима авторизация", 3000);
       return false;
     }
 
@@ -249,7 +260,7 @@ export default function Profile() {
         confirmPassword: "",
       });
       setErrors((prev) => ({ ...prev, password: "" }));
-      alert("Пароль успешно изменен");
+      showToast("Пароль успешно изменен");
       return true;
     } catch (e) {
       console.error("Error changing password:", e);
@@ -264,8 +275,8 @@ export default function Profile() {
   // Обновление профиля
   const updateProfile = async (field, value) => {
     const authToken = getAuthToken();
-    if (!authToken) {
-      alert("Необходима авторизация");
+    if (!authToken || authToken === "guest") {
+      showToast("Необходима авторизация", 3000);
       return false;
     }
 
@@ -426,7 +437,7 @@ export default function Profile() {
       return true;
     } catch (e) {
       console.error("Error updating profile:", e);
-      alert("Не удалось обновить профиль. Попробуйте позже.");
+      showToast("Не удалось обновить профиль. Попробуйте позже.");
       return false;
     }
   };
@@ -500,7 +511,11 @@ export default function Profile() {
             </h2>
 
             <div className="flex flex-col items-center mt-4 sm:mt-5">
-              <div className="w-[96px] h-[96px] sm:w-[140px] sm:h-[140px] rounded-full bg-[#E5E5E5]" />
+              <img 
+                src="/avatar.png" 
+                alt="Аватар" 
+                className="w-[96px] h-[96px] sm:w-[140px] sm:h-[140px] rounded-full object-cover border-2 border-[#E8E8E8]"
+              />
               <div className="mt-3 text-[16px] sm:text-[18px] font-semibold text-[#1E1E1E]">
                 {user.firstName || "Иван"}
               </div>
@@ -787,6 +802,7 @@ export default function Profile() {
         </PageFade>
       </div>
       <Footer />
+      <ToastMotion show={!!toast}>{toast}</ToastMotion>
     </div>
   );
 }

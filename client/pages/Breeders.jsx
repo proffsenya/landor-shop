@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import BreadcrumbNav from "@/components/BreadcrumbNav";
-import { PageFade } from "@/utils/PageAnimations";
+import { PageFade, ToastMotion } from "@/utils/PageAnimations";
+import { AuthToast } from "@/components/AuthToast";
 import { Truck, Tag, Package, Paperclip, CheckCircle2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -25,6 +26,14 @@ export default function Breeders() {
   });
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
+  const [toast, setToast] = useState("");
+  const [showAuthToast, setShowAuthToast] = useState(false);
+  const [authToastMessage, setAuthToastMessage] = useState("");
+
+  const showToast = (msg, ms = 3000) => {
+    setToast(msg);
+    setTimeout(() => setToast(""), ms);
+  };
 
   const benefits = [
     {
@@ -141,7 +150,8 @@ export default function Breeders() {
       
       // Проверка авторизации
       if (!authToken || authToken === "guest") {
-        alert("Для отправки заявки необходимо авторизоваться");
+        setAuthToastMessage("Для отправки заявки необходимо авторизоваться");
+        setShowAuthToast(true);
         setLoading(false);
         return;
       }
@@ -197,6 +207,14 @@ export default function Breeders() {
         body: formDataToSend,
       });
 
+      // Обработка 401 - показываем уведомление об авторизации
+      if (response.status === 401) {
+        setAuthToastMessage("Для отправки заявки необходимо авторизоваться");
+        setShowAuthToast(true);
+        setLoading(false);
+        return;
+      }
+
       if (!response.ok) {
         let errorText = "";
         try {
@@ -224,10 +242,16 @@ export default function Breeders() {
         file: null,
         consent: false,
       });
-      alert("Заявка отправлена! Менеджер свяжется с вами в ближайшее время.");
+      showToast("Заявка отправлена! Менеджер свяжется с вами в ближайшее время.");
     } catch (error) {
       console.error("Error submitting form:", error);
-      alert("Произошла ошибка при отправке заявки. Попробуйте позже.");
+      // Проверяем, не 401 ли это
+      if (error?.message && (error.message.includes("401") || error.message.includes("Unauthorized"))) {
+        setAuthToastMessage("Для отправки заявки необходимо авторизоваться");
+        setShowAuthToast(true);
+      } else {
+        showToast("Произошла ошибка при отправке заявки. Попробуйте позже.");
+      }
     } finally {
       setLoading(false);
     }
@@ -493,6 +517,12 @@ export default function Breeders() {
         </div>
       </PageFade>
       <Footer />
+      <ToastMotion show={!!toast}>{toast}</ToastMotion>
+      <AuthToast 
+        show={showAuthToast} 
+        onClose={() => setShowAuthToast(false)}
+        message={authToastMessage}
+      />
     </div>
   );
 }

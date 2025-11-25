@@ -8,6 +8,7 @@ import { Link } from "react-router-dom";
 import ProductSection from "../components/ProductsSection";
 import { PageFade, ListMotion, ToastMotion } from "@/utils/PageAnimations";
 import { motion, AnimatePresence } from "framer-motion";
+import { AuthToast } from "@/components/AuthToast";
 import { getAuthToken } from "@/utils/auth";
 import { formatName, formatPhone } from "@/utils/formatting";
 import { validateReceiver, validatePhone, validateAddress } from "@/utils/validation";
@@ -115,6 +116,8 @@ export default function Cart() {
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
   const [toast, setToast] = useState("");
+  const [showAuthToast, setShowAuthToast] = useState(false);
+  const [authToastMessage, setAuthToastMessage] = useState("");
   const [errors, setErrors] = useState({
     receiver: "",
     phone: "",
@@ -140,6 +143,18 @@ export default function Cart() {
           ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
         },
       });
+      
+      // Обработка 401 - показываем пустую корзину и уведомление
+      if (res.status === 401) {
+        setItems([]);
+        setSelected(new Set());
+        setError(""); // Не показываем техническую ошибку
+        setAuthToastMessage("Для просмотра корзины необходимо авторизоваться");
+        setShowAuthToast(true);
+        setLoading(false);
+        return;
+      }
+      
       if (!res.ok) {
         let body = "";
         try {
@@ -188,9 +203,18 @@ export default function Cart() {
       );
       saveSet(cartKey, setCart);
     } catch (e) {
-      setItems([]);
-      setSelected(new Set());
-      setError(e?.message || "Не удалось загрузить корзину");
+      // Проверяем, не 401 ли это (может быть в сообщении об ошибке)
+      if (e?.message && (e.message.includes("401") || e.message.includes("Unauthorized"))) {
+        setItems([]);
+        setSelected(new Set());
+        setError(""); // Не показываем техническую ошибку
+        setAuthToastMessage("Для просмотра корзины необходимо авторизоваться");
+        setShowAuthToast(true);
+      } else {
+        setItems([]);
+        setSelected(new Set());
+        setError(e?.message || "Не удалось загрузить корзину");
+      }
     } finally {
       setLoading(false);
     }
@@ -362,6 +386,12 @@ export default function Cart() {
   };
 
   const onPay = async () => {
+    // Проверка авторизации
+    if (!authToken || authToken === "guest") {
+      showToast("Для оформления заказа необходимо авторизоваться", 3000);
+      return;
+    }
+
     // Проверяем, есть ли выбранные товары
     if (selected.size === 0) {
       showToast("Выберите товары для оформления заказа");
@@ -429,6 +459,11 @@ export default function Cart() {
       });
 
       if (!response.ok) {
+        if (response.status === 401) {
+          setAuthToastMessage("Для оформления заказа необходимо авторизоваться");
+          setShowAuthToast(true);
+          return;
+        }
         const errorText = await response.text();
         let errorMessage = `Ошибка ${response.status}`;
         try {
@@ -746,29 +781,42 @@ export default function Cart() {
                   </div>
 
                   <div className="mt-5 sm:mt-6">
-                    <p className="text-[#6F2A2B] mb-2">Платежная информация</p>
-                    <label className="flex items-center gap-2 text-[15px] mb-2">
-                      <input
-                        type="radio"
-                        name="pay"
-                        value="cash"
-                        checked={payMethod === "cash"}
-                        onChange={() => setPayMethod("cash")}
-                        className="accent-[#6F2A2B]"
-                      />
-                      Наличные
-                    </label>
-                    <label className="flex items-center gap-2 text-[15px]">
-                      <input
-                        type="radio"
-                        name="pay"
-                        value="umoney"
-                        checked={payMethod === "umoney"}
-                        onChange={() => setPayMethod("umoney")}
-                        className="accent-[#6F2A2B]"
-                      />
-                      Юmoney
-                    </label>
+                    <p className="text-[#6F2A2B] mb-3">Способ оплаты</p>
+                    <div className="space-y-2">
+                      <label className="flex items-center gap-2 text-[15px] cursor-pointer hover:opacity-80">
+                        <input
+                          type="radio"
+                          name="pay"
+                          value="cash"
+                          checked={payMethod === "cash"}
+                          onChange={() => setPayMethod("cash")}
+                          className="accent-[#6F2A2B]"
+                        />
+                        Наличными
+                      </label>
+                      <label className="flex items-center gap-2 text-[15px] cursor-pointer hover:opacity-80">
+                        <input
+                          type="radio"
+                          name="pay"
+                          value="sbp"
+                          checked={payMethod === "sbp"}
+                          onChange={() => setPayMethod("sbp")}
+                          className="accent-[#6F2A2B]"
+                        />
+                        СБП
+                      </label>
+                      <label className="flex items-center gap-2 text-[15px] cursor-pointer hover:opacity-80">
+                        <input
+                          type="radio"
+                          name="pay"
+                          value="requisites"
+                          checked={payMethod === "requisites"}
+                          onChange={() => setPayMethod("requisites")}
+                          className="accent-[#6F2A2B]"
+                        />
+                        По реквизитам
+                      </label>
+                    </div>
                   </div>
 
                   <div className="mt-5 sm:mt-6">
@@ -864,6 +912,11 @@ export default function Cart() {
 
         {/* Тосты */}
         <ToastMotion show={!!toast}>{toast}</ToastMotion>
+        <AuthToast 
+          show={showAuthToast} 
+          onClose={() => setShowAuthToast(false)}
+          message={authToastMessage}
+        />
       </PageFade>
       <Footer />
     </div>

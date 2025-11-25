@@ -4,6 +4,7 @@ import { Heart, Check } from "lucide-react";
 import { HoverLift, StaggerItem } from "../utils/CatalogAnimations";
 import { ScalePulse, FadeSwitch } from "../utils/ActionAnimations";
 import { ToastMotion } from "../utils/PageAnimations";
+import { AuthToast } from "./AuthToast";
 
 // ---- helpers: storage by authToken ------------------------------------------
 const STORAGE_CART = (authToken) => `cart:variants:${authToken || "guest"}`;
@@ -20,15 +21,27 @@ async function apiDeleteFavorite(variantId, authToken) {
   const headers = authToken !== "guest" ? { Authorization: `Bearer ${authToken}` } : {};
   try {
     const r = await fetch(`/api/favorites/${encodeURIComponent(variantId)}`, { method: "DELETE", headers });
+    if (r.status === 401) {
+      throw new Error("401 Unauthorized");
+    }
     if (r.ok) return true;
     console.warn("DELETE /api/favorites/:variantId ->", r.status, await safeText(r));
-  } catch (e) { console.warn("favorites delete path err", e); }
+  } catch (e) {
+    if (e.message === "401 Unauthorized") throw e;
+    console.warn("favorites delete path err", e);
+  }
 
   try {
     const r = await fetch(`/api/favorites?variantId=${encodeURIComponent(variantId)}`, { method: "DELETE", headers });
+    if (r.status === 401) {
+      throw new Error("401 Unauthorized");
+    }
     if (r.ok) return true;
     console.warn("DELETE /api/favorites?variantId ->", r.status, await safeText(r));
-  } catch (e) { console.warn("favorites delete query err", e); }
+  } catch (e) {
+    if (e.message === "401 Unauthorized") throw e;
+    console.warn("favorites delete query err", e);
+  }
 
   try {
     const r = await fetch(`/api/favorites`, {
@@ -36,9 +49,15 @@ async function apiDeleteFavorite(variantId, authToken) {
       headers: { "Content-Type": "application/json", ...headers },
       body: JSON.stringify({ id: Number(variantId), variantId: Number(variantId) })
     });
+    if (r.status === 401) {
+      throw new Error("401 Unauthorized");
+    }
     if (r.ok) return true;
     console.warn("DELETE /api/favorites body ->", r.status, await safeText(r));
-  } catch (e) { console.warn("favorites delete body err", e); }
+  } catch (e) {
+    if (e.message === "401 Unauthorized") throw e;
+    console.warn("favorites delete body err", e);
+  }
 
   return false;
 }
@@ -123,6 +142,8 @@ const ProductCard = memo(function ProductCard({
   const [inCart, setInCart] = useState(false);
   const [toast, setToast] = useState("");
   const [imageError, setImageError] = useState(false);
+  const [showAuthToast, setShowAuthToast] = useState(false);
+  const [authToastMessage, setAuthToastMessage] = useState("");
 
   // Функция для показа уведомлений
   const showToast = (msg, ms = 1500) => {
@@ -152,6 +173,12 @@ const ProductCard = memo(function ProductCard({
   e.stopPropagation();
   if (!variantId || !available) return;
 
+  // Проверка авторизации
+  if (!authToken || authToken === "guest") {
+    showToast("Для добавления товара в корзину необходимо авторизоваться", 3000);
+    return;
+  }
+
   const vidStr = String(variantId);
   const vidNum = Number(variantId);
 
@@ -166,6 +193,11 @@ const ProductCard = memo(function ProductCard({
         },
         body: JSON.stringify({ variantId: vidNum, quantity: 1 }),
       });
+      if (res.status === 401) {
+        setAuthToastMessage("Для добавления товара в корзину необходимо авторизоваться");
+        setShowAuthToast(true);
+        return;
+      }
       if (!res.ok) throw new Error(`HTTP ${res.status} ${await safeText(res)}`);
 
       setInCart(true);
@@ -203,6 +235,12 @@ const handleToggleFavorite = useCallback(async (e) => {
   e.stopPropagation();
   if (!variantId) return;
 
+  // Проверка авторизации
+  if (!authToken || authToken === "guest") {
+    showToast("Для добавления товара в избранное необходимо авторизоваться", 3000);
+    return;
+  }
+
   const vidStr = String(variantId);
   const vidNum = Number(variantId);
   const next = !isFavorite;
@@ -225,6 +263,13 @@ const handleToggleFavorite = useCallback(async (e) => {
         },
         body: JSON.stringify({ variantId: vidNum }),
       });
+      if (res.status === 401) {
+        setIsFavorite(false);
+        const rb = loadSet(favsKey); rb.delete(vidStr); saveSet(favsKey, rb);
+        setAuthToastMessage("Для добавления товара в избранное необходимо авторизоваться");
+        setShowAuthToast(true);
+        return;
+      }
       if (!res.ok) throw new Error(`HTTP ${res.status} ${await safeText(res)}`);
       window.dispatchEvent(new Event("favorites:update"));
       showToast("Товар добавлен в избранное");
@@ -237,16 +282,30 @@ const handleToggleFavorite = useCallback(async (e) => {
     }
   } else {
     // удалить из избранного
-    const ok = await apiDeleteFavorite(vidNum, authToken);
-    if (ok) {
-      window.dispatchEvent(new Event("favorites:update"));
-      showToast("Товар удалён из избранного");
-    } else {
-      // откат
-      setIsFavorite(true);
-      const rb = loadSet(favsKey); rb.add(vidStr); saveSet(favsKey, rb);
-      console.warn("Не удалось удалить из избранного");
-      showToast("Не удалось удалить из избранного", 2000);
+    try {
+      const ok = await apiDeleteFavorite(vidNum, authToken);
+      if (ok) {
+        window.dispatchEvent(new Event("favorites:update"));
+        showToast("Товар удалён из избранного");
+      } else {
+        // откат
+        setIsFavorite(true);
+        const rb = loadSet(favsKey); rb.add(vidStr); saveSet(favsKey, rb);
+        console.warn("Не удалось удалить из избранного");
+        showToast("Не удалось удалить из избранного", 2000);
+      }
+    } catch (e) {
+      if (e.message === "401 Unauthorized") {
+        setIsFavorite(true);
+        const rb = loadSet(favsKey); rb.add(vidStr); saveSet(favsKey, rb);
+        setAuthToastMessage("Для работы с избранным необходимо авторизоваться");
+        setShowAuthToast(true);
+      } else {
+        setIsFavorite(true);
+        const rb = loadSet(favsKey); rb.add(vidStr); saveSet(favsKey, rb);
+        console.warn("Не удалось удалить из избранного");
+        showToast("Не удалось удалить из избранного", 2000);
+      }
     }
   }
 }, [variantId, isFavorite, authToken, favsKey]);
@@ -364,6 +423,11 @@ const handleToggleFavorite = useCallback(async (e) => {
         </div>
       </HoverLift>
       <ToastMotion show={!!toast}>{toast}</ToastMotion>
+      <AuthToast 
+        show={showAuthToast} 
+        onClose={() => setShowAuthToast(false)}
+        message={authToastMessage}
+      />
     </StaggerItem>
   );
 });

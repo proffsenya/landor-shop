@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import BreadcrumbNav from "@/components/BreadcrumbNav";
-import { PageFade } from "@/utils/PageAnimations";
+import { PageFade, ToastMotion } from "@/utils/PageAnimations";
+import { AuthToast } from "@/components/AuthToast";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -25,6 +26,14 @@ export default function Cooperation() {
   });
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
+  const [toast, setToast] = useState("");
+  const [showAuthToast, setShowAuthToast] = useState(false);
+  const [authToastMessage, setAuthToastMessage] = useState("");
+
+  const showToast = (msg, ms = 3000) => {
+    setToast(msg);
+    setTimeout(() => setToast(""), ms);
+  };
 
   const benefits = [
     {
@@ -130,6 +139,14 @@ export default function Cooperation() {
         }),
       });
 
+      // Обработка 401 - показываем уведомление об авторизации
+      if (response.status === 401) {
+        setAuthToastMessage("Для отправки формы необходимо авторизоваться");
+        setShowAuthToast(true);
+        setLoading(false);
+        return;
+      }
+
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}`);
       }
@@ -144,10 +161,16 @@ export default function Cooperation() {
         consent: false,
       });
       
-      alert("Спасибо! Наш специалист свяжется с вами в ближайшее время.");
+      showToast("Спасибо! Наш специалист свяжется с вами в ближайшее время.");
     } catch (error) {
       console.error("Error submitting form:", error);
-      alert("Произошла ошибка при отправке формы. Попробуйте позже.");
+      // Проверяем, не 401 ли это
+      if (error?.message && (error.message.includes("401") || error.message.includes("Unauthorized"))) {
+        setAuthToastMessage("Для отправки формы необходимо авторизоваться");
+        setShowAuthToast(true);
+      } else {
+        showToast("Произошла ошибка при отправке формы. Попробуйте позже.");
+      }
     } finally {
       setLoading(false);
     }
@@ -388,6 +411,12 @@ export default function Cooperation() {
         </div>
       </PageFade>
       <Footer />
+      <ToastMotion show={!!toast}>{toast}</ToastMotion>
+      <AuthToast 
+        show={showAuthToast} 
+        onClose={() => setShowAuthToast(false)}
+        message={authToastMessage}
+      />
     </div>
   );
 }

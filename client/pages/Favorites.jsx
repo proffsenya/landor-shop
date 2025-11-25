@@ -8,6 +8,7 @@ import { ShoppingCart, ArrowLeft } from "lucide-react";
 import ProductsSection from "../components/ProductsSection";
 import { PageFade, ListMotion, ToastMotion } from "@/utils/PageAnimations";
 import { motion, AnimatePresence } from "framer-motion";
+import { AuthToast } from "@/components/AuthToast";
 
 import { getAuthToken } from "@/utils/auth";
 
@@ -18,17 +19,41 @@ export default function Favorites() {
   const [selected, setSelected] = useState(new Set());
   const [toast, setToast] = useState("");
   const [loading, setLoading] = useState(true);
+  const [showAuthToast, setShowAuthToast] = useState(false);
+  const [authToastMessage, setAuthToastMessage] = useState("");
   const authToken = getAuthToken();
 
   // ===== загрузка избранного =====
   useEffect(() => {
     let mounted = true;
     (async () => {
+      // Проверка авторизации
+      if (!authToken || authToken === "guest") {
+        if (mounted) {
+          setFavorites([]);
+          setLoading(false);
+          setAuthToastMessage("Для просмотра избранного необходимо авторизоваться");
+          setShowAuthToast(true);
+        }
+        return;
+      }
+
       try {
         const res = await fetch("/api/favorites", {
-          headers:
-            authToken !== "guest" ? { Authorization: `Bearer ${authToken}` } : {},
+          headers: { Authorization: `Bearer ${authToken}` },
         });
+        
+        // Обработка 401 - показываем пустое избранное и уведомление
+        if (res.status === 401) {
+          if (mounted) {
+            setFavorites([]);
+            setLoading(false);
+            setAuthToastMessage("Для просмотра избранного необходимо авторизоваться");
+            setShowAuthToast(true);
+          }
+          return;
+        }
+        
         if (!res.ok) {
           let body = "";
           try { body = await res.text(); } catch {}
@@ -61,7 +86,21 @@ export default function Favorites() {
 
         setFavorites(mapped);
       } catch (e) {
-        console.warn("Ошибка загрузки избранного:", e);
+        // Проверяем, не 401 ли это (может быть в сообщении об ошибке)
+        if (e?.message && (e.message.includes("401") || e.message.includes("Unauthorized"))) {
+          if (mounted) {
+            setFavorites([]);
+            setLoading(false);
+            setAuthToastMessage("Для просмотра избранного необходимо авторизоваться");
+            setShowAuthToast(true);
+          }
+        } else {
+          console.warn("Ошибка загрузки избранного:", e);
+          if (mounted) {
+            setFavorites([]);
+            setLoading(false);
+          }
+        }
       } finally {
         if (mounted) setLoading(false);
       }
@@ -110,11 +149,15 @@ async function apiDeleteFavorite(id) {
       method: "DELETE",
       headers,
     });
+    if (res.status === 401) {
+      throw new Error("401 Unauthorized");
+    }
     if (res.ok) return true;
     const body = await safeText(res);
     console.warn(`[favorites] DELETE /favorites/${id} -> ${res.status}`, body);
     if (![400,404,405,415].includes(res.status)) return false;
   } catch (e) {
+    if (e.message === "401 Unauthorized") throw e;
     console.warn("[favorites] path delete error", e);
   }
 
@@ -206,6 +249,7 @@ async function apiDeleteFavorite(id) {
   const failed = new Set();
 
   // последовательно или параллельно — выбери сам; ниже параллельно
+  let has401 = false;
   await Promise.all(
     toDelete.map(async (id) => {
       try {
@@ -213,6 +257,11 @@ async function apiDeleteFavorite(id) {
           method: "DELETE",
           headers,
         });
+        if (res.status === 401) {
+          has401 = true;
+          failed.add(id);
+          return;
+        }
         if (!res.ok) {
           const body = await safeText(res);
           console.warn(`[favorites] DELETE /favorites/${id} -> ${res.status}`, body);
@@ -224,6 +273,12 @@ async function apiDeleteFavorite(id) {
       }
     })
   );
+
+  if (has401) {
+    setAuthToastMessage("Для работы с избранным необходимо авторизоваться");
+    setShowAuthToast(true);
+    return;
+  }
 
   // успешные = toDelete \ failed
   const succeeded = new Set(toDelete.filter((id) => !failed.has(id)));
@@ -573,6 +628,11 @@ async function moveFavoritesToCart(variantIdsRaw) {
         </div>
 
         <ToastMotion show={!!toast}>{toast}</ToastMotion>
+        <AuthToast 
+          show={showAuthToast} 
+          onClose={() => setShowAuthToast(false)}
+          message={authToastMessage}
+        />
       </PageFade>
       <Footer />
     </div>
