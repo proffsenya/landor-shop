@@ -11,6 +11,7 @@ export default function AdminSettings() {
   const navigate = useNavigate();
   const [isSuperUser, setIsSuperUser] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [settings, setSettings] = useState({
     siteName: "",
     siteDescription: "",
@@ -81,17 +82,24 @@ export default function AdminSettings() {
 
   return (
     <div className="min-h-screen bg-gray-100">
-      <AdminHeader isSuperUser={isSuperUser} />
+      <AdminHeader 
+        isSuperUser={isSuperUser} 
+        onMenuClick={() => setSidebarOpen(!sidebarOpen)}
+      />
       <div className="flex">
-        <AdminSidebar isSuperUser={isSuperUser} />
-        <main className="flex-1 p-8">
+        <AdminSidebar 
+          isSuperUser={isSuperUser} 
+          isOpen={sidebarOpen}
+          onClose={() => setSidebarOpen(false)}
+        />
+        <main className="flex-1 p-4 sm:p-6 lg:p-8 w-full lg:w-auto">
           <div className="max-w-4xl mx-auto">
-            <h1 className="text-3xl font-bold text-gray-900 mb-6">Настройки</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-4 sm:mb-6">Настройки</h1>
 
-            <div className="bg-white rounded-lg shadow p-6 space-y-6">
+            <div className="bg-white rounded-lg shadow p-4 sm:p-6 space-y-4 sm:space-y-6">
               <div>
-                <h2 className="text-xl font-semibold text-gray-900 mb-4">Основные настройки</h2>
-                <div className="space-y-4">
+                <h2 className="text-lg sm:text-xl font-semibold text-gray-900 mb-3 sm:mb-4">Основные настройки</h2>
+                <div className="space-y-3 sm:space-y-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Название сайта
@@ -99,6 +107,7 @@ export default function AdminSettings() {
                     <Input
                       value={settings.siteName}
                       onChange={(e) => setSettings({ ...settings, siteName: e.target.value })}
+                      className="w-full"
                     />
                   </div>
                   <div>
@@ -120,6 +129,7 @@ export default function AdminSettings() {
                       type="email"
                       value={settings.contactEmail}
                       onChange={(e) => setSettings({ ...settings, contactEmail: e.target.value })}
+                      className="w-full"
                     />
                   </div>
                   <div>
@@ -129,6 +139,7 @@ export default function AdminSettings() {
                     <Input
                       value={settings.contactPhone}
                       onChange={(e) => setSettings({ ...settings, contactPhone: e.target.value })}
+                      className="w-full"
                     />
                   </div>
                 </div>
@@ -137,7 +148,7 @@ export default function AdminSettings() {
               <div className="pt-4 border-t border-gray-200">
                 <Button
                   onClick={handleSave}
-                  className="bg-[#6F2A2B] text-white hover:bg-[#5a2223]"
+                  className="bg-[#6F2A2B] text-white hover:bg-[#5a2223] w-full sm:w-auto"
                 >
                   <Save className="w-4 h-4 mr-2" />
                   Сохранить настройки

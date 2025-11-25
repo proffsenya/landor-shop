@@ -12,6 +12,7 @@ export default function AdminOrders() {
   const [loading, setLoading] = useState(true);
   const [orders, setOrders] = useState([]);
   const [selectedOrder, setSelectedOrder] = useState(null);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
     const { isSuperUser: superUser, hasAccess } = checkAdminAccess();
@@ -77,74 +78,86 @@ export default function AdminOrders() {
 
   return (
     <div className="min-h-screen bg-gray-100">
-      <AdminHeader isSuperUser={isSuperUser} />
+      <AdminHeader 
+        isSuperUser={isSuperUser} 
+        onMenuClick={() => setSidebarOpen(!sidebarOpen)}
+      />
       <div className="flex">
-        <AdminSidebar isSuperUser={isSuperUser} />
-        <main className="flex-1 p-8">
+        <AdminSidebar 
+          isSuperUser={isSuperUser} 
+          isOpen={sidebarOpen}
+          onClose={() => setSidebarOpen(false)}
+        />
+        <main className="flex-1 p-4 sm:p-6 lg:p-8 w-full lg:w-auto">
           <div className="max-w-7xl mx-auto">
-            <h1 className="text-3xl font-bold text-gray-900 mb-6">Заказы</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-4 sm:mb-6">Заказы</h1>
 
             <div className="bg-white rounded-lg shadow overflow-hidden">
-              <table className="w-full">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">ID</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Дата</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Клиент</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Сумма</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Статус</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Действия</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200">
-                  {orders.length === 0 ? (
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[800px]">
+                  <thead className="bg-gray-50">
                     <tr>
-                      <td colSpan="6" className="px-6 py-4 text-center text-gray-500">
-                        Нет заказов
-                      </td>
+                      <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">ID</th>
+                      <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Дата</th>
+                      <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase hidden md:table-cell">Клиент</th>
+                      <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Сумма</th>
+                      <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Статус</th>
+                      <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Действия</th>
                     </tr>
-                  ) : (
-                    orders.map((order) => (
-                      <tr key={order.id}>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">#{order.id}</td>
-                        <td className="px-6 py-4 text-sm text-gray-500">
-                          {new Date(order.createdAt).toLocaleDateString("ru-RU")}
-                        </td>
-                        <td className="px-6 py-4 text-sm text-gray-900">
-                          {order.customerSnapshot?.email || order.customerEmail || "-"}
-                        </td>
-                        <td className="px-6 py-4 text-sm text-gray-900">
-                          {new Intl.NumberFormat("ru-RU", {
-                            style: "currency",
-                            currency: "RUB",
-                          }).format(order.totalAmount || 0)}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <select
-                            value={order.orderStatus || "PENDING"}
-                            onChange={(e) => updateOrderStatus(order.id, e.target.value)}
-                            className="text-sm px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-[#6F2A2B]"
-                          >
-                            <option value="PENDING">Ожидает</option>
-                            <option value="PROCESSING">В обработке</option>
-                            <option value="SHIPPED">Отправлен</option>
-                            <option value="DELIVERED">Доставлен</option>
-                            <option value="CANCELLED">Отменен</option>
-                          </select>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm">
-                          <button
-                            onClick={() => setSelectedOrder(order)}
-                            className="text-[#6F2A2B] hover:text-[#5a2223]"
-                          >
-                            <Eye className="w-4 h-4" />
-                          </button>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200">
+                    {orders.length === 0 ? (
+                      <tr>
+                        <td colSpan="6" className="px-3 sm:px-6 py-4 text-center text-gray-500">
+                          Нет заказов
                         </td>
                       </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
+                    ) : (
+                      orders.map((order) => (
+                        <tr key={order.id}>
+                          <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-900">#{order.id}</td>
+                          <td className="px-3 sm:px-6 py-4 text-sm text-gray-500">
+                            {new Date(order.createdAt).toLocaleDateString("ru-RU")}
+                          </td>
+                          <td className="px-3 sm:px-6 py-4 text-sm text-gray-900 hidden md:table-cell">
+                            <span className="truncate block max-w-[200px]" title={order.customerSnapshot?.email || order.customerEmail || "-"}>
+                              {order.customerSnapshot?.email || order.customerEmail || "-"}
+                            </span>
+                          </td>
+                          <td className="px-3 sm:px-6 py-4 text-sm text-gray-900">
+                            {new Intl.NumberFormat("ru-RU", {
+                              style: "currency",
+                              currency: "RUB",
+                            }).format(order.totalAmount || 0)}
+                          </td>
+                          <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
+                            <select
+                              value={order.orderStatus || "PENDING"}
+                              onChange={(e) => updateOrderStatus(order.id, e.target.value)}
+                              className="text-xs sm:text-sm px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-[#6F2A2B] w-full sm:w-auto"
+                            >
+                              <option value="PENDING">Ожидает</option>
+                              <option value="PROCESSING">В обработке</option>
+                              <option value="SHIPPED">Отправлен</option>
+                              <option value="DELIVERED">Доставлен</option>
+                              <option value="CANCELLED">Отменен</option>
+                            </select>
+                          </td>
+                          <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm">
+                            <button
+                              onClick={() => setSelectedOrder(order)}
+                              className="text-[#6F2A2B] hover:text-[#5a2223] p-1"
+                              title="Просмотр"
+                            >
+                              <Eye className="w-4 h-4" />
+                            </button>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
 
             {selectedOrder && (
@@ -165,12 +178,12 @@ function OrderModal({ order, onClose, onUpdateStatus }) {
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="p-6">
+        <div className="p-4 sm:p-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-2xl font-bold text-gray-900">Заказ #{order.id}</h2>
+            <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Заказ #{order.id}</h2>
             <button
               onClick={onClose}
-              className="text-gray-400 hover:text-gray-600"
+              className="text-gray-400 hover:text-gray-600 text-2xl leading-none"
             >
               ✕
             </button>
@@ -178,11 +191,11 @@ function OrderModal({ order, onClose, onUpdateStatus }) {
 
           <div className="space-y-4">
             <div>
-              <h3 className="font-semibold text-gray-900 mb-2">Информация о заказе</h3>
-              <div className="bg-gray-50 rounded-lg p-4 space-y-2">
-                <p><span className="font-medium">Дата:</span> {new Date(order.createdAt).toLocaleString("ru-RU")}</p>
-                <p><span className="font-medium">Статус:</span> {order.orderStatus}</p>
-                <p><span className="font-medium">Сумма:</span> {new Intl.NumberFormat("ru-RU", {
+              <h3 className="text-sm sm:text-base font-semibold text-gray-900 mb-2">Информация о заказе</h3>
+              <div className="bg-gray-50 rounded-lg p-3 sm:p-4 space-y-2">
+                <p className="text-sm sm:text-base"><span className="font-medium">Дата:</span> {new Date(order.createdAt).toLocaleString("ru-RU")}</p>
+                <p className="text-sm sm:text-base"><span className="font-medium">Статус:</span> {order.orderStatus}</p>
+                <p className="text-sm sm:text-base"><span className="font-medium">Сумма:</span> {new Intl.NumberFormat("ru-RU", {
                   style: "currency",
                   currency: "RUB",
                 }).format(order.totalAmount || 0)}</p>
@@ -190,15 +203,15 @@ function OrderModal({ order, onClose, onUpdateStatus }) {
             </div>
 
             <div>
-              <h3 className="font-semibold text-gray-900 mb-2">Товары</h3>
+              <h3 className="text-sm sm:text-base font-semibold text-gray-900 mb-2">Товары</h3>
               <div className="space-y-2">
                 {order.items?.map((item, idx) => (
-                  <div key={idx} className="bg-gray-50 rounded-lg p-4 flex justify-between">
+                  <div key={idx} className="bg-gray-50 rounded-lg p-3 sm:p-4 flex flex-col sm:flex-row sm:justify-between gap-2">
                     <div>
-                      <p className="font-medium">{item.productName}</p>
-                      <p className="text-sm text-gray-500">Количество: {item.quantity}</p>
+                      <p className="text-sm sm:text-base font-medium">{item.productName}</p>
+                      <p className="text-xs sm:text-sm text-gray-500">Количество: {item.quantity}</p>
                     </div>
-                    <p className="font-medium">
+                    <p className="text-sm sm:text-base font-medium">
                       {new Intl.NumberFormat("ru-RU", {
                         style: "currency",
                         currency: "RUB",
@@ -210,17 +223,17 @@ function OrderModal({ order, onClose, onUpdateStatus }) {
             </div>
 
             <div>
-              <h3 className="font-semibold text-gray-900 mb-2">Адрес доставки</h3>
-              <div className="bg-gray-50 rounded-lg p-4">
-                <p>{order.shippingAddress?.fullAddress || order.shippingAddress?.city || "-"}</p>
+              <h3 className="text-sm sm:text-base font-semibold text-gray-900 mb-2">Адрес доставки</h3>
+              <div className="bg-gray-50 rounded-lg p-3 sm:p-4">
+                <p className="text-sm sm:text-base break-words">{order.shippingAddress?.fullAddress || order.shippingAddress?.city || "-"}</p>
               </div>
             </div>
 
             {order.customerNotes && (
               <div>
-                <h3 className="font-semibold text-gray-900 mb-2">Примечания клиента</h3>
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <p>{order.customerNotes}</p>
+                <h3 className="text-sm sm:text-base font-semibold text-gray-900 mb-2">Примечания клиента</h3>
+                <div className="bg-gray-50 rounded-lg p-3 sm:p-4">
+                  <p className="text-sm sm:text-base break-words">{order.customerNotes}</p>
                 </div>
               </div>
             )}

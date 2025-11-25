@@ -414,6 +414,9 @@ export default function Cart() {
         return;
       }
 
+      // Вычисляем сумму только выбранных товаров
+      const selectedTotalPrice = selectedItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+
       // Парсим адрес для формирования billingAddress и shippingAddress
       // Формат адреса: "г. Москва, ул. Ленина, д. 10, кв. 25"
       const addressParts = address.trim().split(",").map((s) => s.trim());
@@ -477,6 +480,49 @@ export default function Cart() {
 
       const orderData = await response.json();
       console.log("Order created:", orderData);
+      
+      // Получаем orderId из ответа
+      const orderId = orderData?.id || orderData?.orderId;
+      
+      if (!orderId) {
+        throw new Error("Не удалось получить ID заказа");
+      }
+
+      // Маппинг способа оплаты для API (передаем строковые значения как отображаются пользователю)
+      const paymentMethodMap = {
+        cash: "наличными",
+        sbp: "СБП",
+        requisites: "По реквизитам"
+      };
+      
+      const apiPaymentMethod = paymentMethodMap[payMethod] || "наличными";
+      
+      // Вызываем API оплаты
+      try {
+        const paymentResponse = await fetch(`/api/payments/mock/${orderId}`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${authToken}`,
+          },
+          body: JSON.stringify({
+            amount: selectedTotalPrice,
+            paymentMethod: apiPaymentMethod,
+          }),
+        });
+
+        if (!paymentResponse.ok) {
+          const errorText = await paymentResponse.text();
+          console.warn("Payment API error:", paymentResponse.status, errorText);
+          // Не прерываем процесс, заказ уже создан
+        } else {
+          const paymentData = await paymentResponse.json();
+          console.log("Payment created:", paymentData);
+        }
+      } catch (paymentError) {
+        console.error("Error creating payment:", paymentError);
+        // Не прерываем процесс, заказ уже создан
+      }
       
       showToast("Заказ успешно оформлен!");
       

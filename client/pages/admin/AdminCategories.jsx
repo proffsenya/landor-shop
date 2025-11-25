@@ -21,6 +21,7 @@ export default function AdminCategories() {
   const [categories, setCategories] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [editingCategory, setEditingCategory] = useState(null);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
     const { isSuperUser: superUser, hasAccess } = checkAdminAccess();
@@ -83,19 +84,26 @@ export default function AdminCategories() {
 
   return (
     <div className="min-h-screen bg-gray-100">
-      <AdminHeader isSuperUser={isSuperUser} />
+      <AdminHeader 
+        isSuperUser={isSuperUser} 
+        onMenuClick={() => setSidebarOpen(!sidebarOpen)}
+      />
       <div className="flex">
-        <AdminSidebar isSuperUser={isSuperUser} />
-        <main className="flex-1 p-8">
+        <AdminSidebar 
+          isSuperUser={isSuperUser} 
+          isOpen={sidebarOpen}
+          onClose={() => setSidebarOpen(false)}
+        />
+        <main className="flex-1 p-4 sm:p-6 lg:p-8 w-full lg:w-auto">
           <div className="max-w-7xl mx-auto">
-            <div className="flex items-center justify-between mb-6">
-              <h1 className="text-3xl font-bold text-gray-900">Категории</h1>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4 sm:mb-6">
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Категории</h1>
               <Button
                 onClick={() => {
                   setEditingCategory(null);
                   setShowForm(true);
                 }}
-                className="bg-[#6F2A2B] text-white hover:bg-[#5a2223]"
+                className="bg-[#6F2A2B] text-white hover:bg-[#5a2223] w-full sm:w-auto"
               >
                 <Plus className="w-4 h-4 mr-2" />
                 Добавить категорию
@@ -119,62 +127,68 @@ export default function AdminCategories() {
             )}
 
             <div className="bg-white rounded-lg shadow overflow-hidden">
-              <table className="w-full">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">ID</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Название</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Slug</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Родитель</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Активна</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Действия</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200">
-                  {categories.length === 0 ? (
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[700px]">
+                  <thead className="bg-gray-50">
                     <tr>
-                      <td colSpan="6" className="px-6 py-4 text-center text-gray-500">
-                        Нет категорий
-                      </td>
+                      <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">ID</th>
+                      <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Название</th>
+                      <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase hidden md:table-cell">Slug</th>
+                      <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase hidden lg:table-cell">Родитель</th>
+                      <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Активна</th>
+                      <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Действия</th>
                     </tr>
-                  ) : (
-                    categories.map((category) => (
+                  </thead>
+                  <tbody className="divide-y divide-gray-200">
+                    {categories.length === 0 ? (
+                      <tr>
+                        <td colSpan="6" className="px-3 sm:px-6 py-4 text-center text-gray-500">
+                          Нет категорий
+                        </td>
+                      </tr>
+                    ) : (
+                      categories.map((category) => (
                       <tr key={category.id}>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{category.id}</td>
-                        <td className="px-6 py-4 text-sm text-gray-900">{category.name}</td>
-                        <td className="px-6 py-4 text-sm text-gray-500">{category.slug || "-"}</td>
-                        <td className="px-6 py-4 text-sm text-gray-500">
+                        <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-900">{category.id}</td>
+                        <td className="px-3 sm:px-6 py-4 text-sm text-gray-900">{category.name}</td>
+                        <td className="px-3 sm:px-6 py-4 text-sm text-gray-500 hidden md:table-cell">{category.slug || "-"}</td>
+                        <td className="px-3 sm:px-6 py-4 text-sm text-gray-500 hidden lg:table-cell">
                           {category.parentName || "Корневая"}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
+                        <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
                           <span className={`px-2 py-1 text-xs rounded-full ${
                             category.isActive ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"
                           }`}>
                             {category.isActive ? "Да" : "Нет"}
                           </span>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm">
-                          <button
-                            onClick={() => {
-                              setEditingCategory(category);
-                              setShowForm(true);
-                            }}
-                            className="text-[#6F2A2B] hover:text-[#5a2223] mr-4"
-                          >
-                            <Edit className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => handleDelete(category.id)}
-                            className="text-red-600 hover:text-red-800"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
+                        <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm">
+                          <div className="flex items-center gap-2 sm:gap-4">
+                            <button
+                              onClick={() => {
+                                setEditingCategory(category);
+                                setShowForm(true);
+                              }}
+                              className="text-[#6F2A2B] hover:text-[#5a2223]"
+                              title="Редактировать"
+                            >
+                              <Edit className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => handleDelete(category.id)}
+                              className="text-red-600 hover:text-red-800"
+                              title="Удалить"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))
                   )}
                 </tbody>
               </table>
+              </div>
             </div>
           </div>
         </main>

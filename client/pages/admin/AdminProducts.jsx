@@ -19,6 +19,7 @@ export default function AdminProducts() {
   const [isSuperUser, setIsSuperUser] = useState(false);
   const [loading, setLoading] = useState(true);
   const [products, setProducts] = useState([]);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
   const [showImageUpload, setShowImageUpload] = useState(false);
@@ -199,18 +200,25 @@ export default function AdminProducts() {
 
   return (
     <div className="min-h-screen bg-gray-100">
-      <AdminHeader isSuperUser={isSuperUser} />
+      <AdminHeader 
+        isSuperUser={isSuperUser} 
+        onMenuClick={() => setSidebarOpen(!sidebarOpen)}
+      />
       <div className="flex">
-        <AdminSidebar isSuperUser={isSuperUser} />
-        <main className="flex-1 p-8">
+        <AdminSidebar 
+          isSuperUser={isSuperUser} 
+          isOpen={sidebarOpen}
+          onClose={() => setSidebarOpen(false)}
+        />
+        <main className="flex-1 p-4 sm:p-6 lg:p-8 w-full lg:w-auto">
           <div className="max-w-7xl mx-auto">
-            <div className="flex items-center justify-between mb-6">
-              <h1 className="text-3xl font-bold text-gray-900">Товары</h1>
-              <div className="flex items-center gap-4">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4 sm:mb-6">
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Товары</h1>
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4">
                 <div className="flex items-center gap-2">
-                  <label className="text-sm font-medium text-gray-700">Метод загрузки:</label>
+                  <label className="text-xs sm:text-sm font-medium text-gray-700 whitespace-nowrap">Метод загрузки:</label>
                   <Select value={loadMethod} onValueChange={setLoadMethod}>
-                    <SelectTrigger className="w-[150px]">
+                    <SelectTrigger className="w-full sm:w-[150px]">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -224,10 +232,11 @@ export default function AdminProducts() {
                     setEditingProduct(null);
                     setShowForm(true);
                   }}
-                  className="bg-[#6F2A2B] text-white hover:bg-[#5a2223]"
+                  className="bg-[#6F2A2B] text-white hover:bg-[#5a2223] w-full sm:w-auto"
                 >
                   <Plus className="w-4 h-4 mr-2" />
-                  Добавить товар
+                  <span className="hidden sm:inline">Добавить товар</span>
+                  <span className="sm:hidden">Добавить</span>
                 </Button>
               </div>
             </div>
@@ -272,30 +281,31 @@ export default function AdminProducts() {
             )}
 
             <div className="bg-white rounded-lg shadow overflow-hidden">
-              <table className="w-full">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">ID</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Название</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Slug</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Действия</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200">
-                  {products.length === 0 ? (
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[640px]">
+                  <thead className="bg-gray-50">
                     <tr>
-                      <td colSpan="4" className="px-6 py-4 text-center text-gray-500">
-                        Нет товаров
-                      </td>
+                      <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">ID</th>
+                      <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Название</th>
+                      <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase hidden md:table-cell">Slug</th>
+                      <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Действия</th>
                     </tr>
-                  ) : (
-                    products.map((product) => (
-                      <tr key={product.id}>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{product.id}</td>
-                        <td className="px-6 py-4 text-sm text-gray-900">{product.name || product.productName}</td>
-                        <td className="px-6 py-4 text-sm text-gray-500">{product.slug || "-"}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm">
-                          <div className="flex items-center gap-2">
+                  </thead>
+                  <tbody className="divide-y divide-gray-200">
+                    {products.length === 0 ? (
+                      <tr>
+                        <td colSpan="4" className="px-3 sm:px-6 py-4 text-center text-gray-500">
+                          Нет товаров
+                        </td>
+                      </tr>
+                    ) : (
+                      products.map((product) => (
+                        <tr key={product.id}>
+                          <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-900">{product.id}</td>
+                          <td className="px-3 sm:px-6 py-4 text-sm text-gray-900">{product.name || product.productName}</td>
+                          <td className="px-3 sm:px-6 py-4 text-sm text-gray-500 hidden md:table-cell">{product.slug || "-"}</td>
+                          <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm">
+                            <div className="flex items-center gap-1 sm:gap-2">
                             <button
                               onClick={() => {
                                 setSelectedProductId(product.id);
@@ -347,6 +357,7 @@ export default function AdminProducts() {
                   )}
                 </tbody>
               </table>
+              </div>
             </div>
           </div>
         </main>

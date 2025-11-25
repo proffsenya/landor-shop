@@ -373,30 +373,114 @@ export default function Catalog() {
     return queryParams.toString(); // БЕЗ начального "?"
   }, [categoryFilters, catFilters, dogFilters, minicatFilters, minidogFilters, countryFilters, flavorFilters, brandFilters, scentFilters, priceFrom, priceTo, searchQuery]);
 
+  // ---------- Кэш для результатов запросов ----------
+  const cacheRef = useMemo(() => new Map(), []);
+  const abortControllerRef = useMemo(() => ({ current: null }), []);
+  const debounceTimerRef = useMemo(() => ({ current: null }), []);
+
+  // Функция для загрузки изображений карточек
+  const loadImagesForCards = useCallback(async (cards) => {
+    const authToken = typeof window !== "undefined" 
+      ? (localStorage.getItem("authToken") || "guest")
+      : "guest";
+    
+    // Загружаем изображения с ограничением параллельных запросов (по 6 одновременно)
+    const batchSize = 6;
+    for (let i = 0; i < cards.length; i += batchSize) {
+      const batch = cards.slice(i, i + batchSize);
+      const imagePromises = batch.map(async (card) => {
+        if (card.image && card.image.startsWith("/api/products/")) {
+          try {
+            const match = card.image.match(/\/api\/products\/(\d+)\/images\/(\d+)/);
+            if (match) {
+              const productId = match[1];
+              const variantId = match[2];
+              const imageUrl = await fetchImageUrl(
+                productId,
+                variantId,
+                authToken !== "guest" ? authToken : null
+              );
+              return { cardId: card.cardId, image: imageUrl || "/korm1.svg" };
+            }
+          } catch (e) {
+            console.warn(`Failed to load image from ${card.image}:`, e);
+          }
+        }
+        return { cardId: card.cardId, image: "/korm1.svg" };
+      });
+      
+      const loadedImages = await Promise.all(imagePromises);
+      
+      // Обновляем только загруженные изображения
+      setProducts((prevProducts) => {
+        const updated = prevProducts.map((product) => {
+          const loaded = loadedImages.find((img) => img.cardId === product.cardId);
+          return loaded ? { ...product, image: loaded.image } : product;
+        });
+        return updated;
+      });
+    }
+  }, []);
+
   // ---------- API: /api/products/cards/search-by-url?filtersUrl=<строка> ----------
-  const fetchCards = async (filtersUrlString = "") => {
+  const fetchCards = useCallback(async (filtersUrlString = "", useCache = true) => {
+    // Отменяем предыдущий запрос, если он еще выполняется
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+
+    // Создаем новый AbortController для этого запроса
+    const abortController = new AbortController();
+    abortControllerRef.current = abortController;
+
+    // filtersUrlString ожидается в формате "?typeoffood_dry=true&brand_landy=true&category_cat=true&breed_for-sterilized=true"
+    let filtersUrlValue =
+      filtersUrlString || window.location.search || ""; // может быть "" либо "?..."
+    
+    // Убираем начальный "?" если он есть
+    if (filtersUrlValue.startsWith("?")) {
+      filtersUrlValue = filtersUrlValue.substring(1);
+    }
+
+    // Формируем filtersUrl с префиксом "catalog?"
+    // Формат: catalog?flavor_partridge=true&minPrice=800
+    const filtersUrl = filtersUrlValue ? `catalog?${filtersUrlValue}` : "catalog?";
+
+    const url = `/api/products/cards/search-by-url?filtersUrl=${encodeURIComponent(
+      filtersUrl
+    )}`;
+
+    // Проверяем кэш
+    const cacheKey = url;
+    if (useCache && cacheRef.has(cacheKey)) {
+      const cachedData = cacheRef.get(cacheKey);
+      // Проверяем, не устарел ли кэш (5 минут)
+      if (Date.now() - cachedData.timestamp < 5 * 60 * 1000) {
+        setLoading(false);
+        setError("");
+        const cards = cachedData.cards;
+        
+        // Сначала показываем карточки с fallback изображениями
+        const cardsWithFallback = cards.map((card) => ({
+          ...card,
+          image: "/korm1.svg",
+          imageUrl: card.image,
+        }));
+        setProducts(cardsWithFallback);
+        
+        // Загружаем изображения в фоне
+        loadImagesForCards(cards);
+        return;
+      }
+    }
+
     setLoading(true);
     setError("");
 
     try {
-      // filtersUrlString ожидается в формате "?typeoffood_dry=true&brand_landy=true&category_cat=true&breed_for-sterilized=true"
-      let filtersUrlValue =
-        filtersUrlString || window.location.search || ""; // может быть "" либо "?..."
-      
-      // Убираем начальный "?" если он есть
-      if (filtersUrlValue.startsWith("?")) {
-        filtersUrlValue = filtersUrlValue.substring(1);
-      }
-
-      // Формируем filtersUrl с префиксом "catalog?"
-      // Формат: catalog?flavor_partridge=true&minPrice=800
-      const filtersUrl = filtersUrlValue ? `catalog?${filtersUrlValue}` : "catalog?";
-
-      const url = `/api/products/cards/search-by-url?filtersUrl=${encodeURIComponent(
-        filtersUrl
-      )}`;
-
-      const res = await fetch(url);
+      const res = await fetch(url, {
+        signal: abortController.signal,
+      });
       if (!res.ok) {
         const errorText = await res.text();
         console.error("API error:", res.status, errorText);
@@ -440,6 +524,12 @@ export default function Catalog() {
         };
       });
       
+      // Сохраняем в кэш
+      cacheRef.set(cacheKey, {
+        cards,
+        timestamp: Date.now(),
+      });
+      
       // Сначала показываем карточки с fallback изображениями для быстрого отображения
       const cardsWithFallback = cards.map((card) => ({
         ...card,
@@ -451,69 +541,39 @@ export default function Catalog() {
       setProducts(cardsWithFallback);
       
       // Затем асинхронно загружаем изображения в фоне (не блокируем UI)
-      const authToken = typeof window !== "undefined" 
-        ? (localStorage.getItem("authToken") || "guest")
-        : "guest";
+      loadImagesForCards(cards);
       
-      // Загружаем изображения с ограничением параллельных запросов (по 6 одновременно)
-      const loadImagesInBatches = async () => {
-        const batchSize = 6;
-        for (let i = 0; i < cards.length; i += batchSize) {
-          const batch = cards.slice(i, i + batchSize);
-          const imagePromises = batch.map(async (card) => {
-            if (card.image && card.image.startsWith("/api/products/")) {
-              try {
-                const match = card.image.match(/\/api\/products\/(\d+)\/images\/(\d+)/);
-                if (match) {
-                  const productId = match[1];
-                  const variantId = match[2];
-                  const imageUrl = await fetchImageUrl(
-                    productId,
-                    variantId,
-                    authToken !== "guest" ? authToken : null
-                  );
-                  return { cardId: card.cardId, image: imageUrl || "/korm1.svg" };
-                }
-              } catch (e) {
-                console.warn(`Failed to load image from ${card.image}:`, e);
-              }
-            }
-            return { cardId: card.cardId, image: "/korm1.svg" };
-          });
-          
-          const loadedImages = await Promise.all(imagePromises);
-          
-          // Обновляем только загруженные изображения
-          setProducts((prevProducts) => {
-            const updated = prevProducts.map((product) => {
-              const loaded = loadedImages.find((img) => img.cardId === product.cardId);
-              return loaded ? { ...product, image: loaded.image } : product;
-            });
-            return updated;
-          });
-        }
-      };
-      
-      // Запускаем загрузку изображений в фоне (не ждем завершения)
-      loadImagesInBatches().catch((e) => {
-        console.warn("Error loading images in background:", e);
-      });
-      setPage(1);
-      
-      // Сохраняем исходные данные продуктов для поиска (не развернутые карточки)
-      if (Array.isArray(data) && data.length > 0) {
-        sessionStorage.setItem("catalog:all", JSON.stringify(data));
-        // Отправляем событие обновления каталога
-        window.dispatchEvent(new Event("catalog:update"));
-      }
-    } catch (e) {
-      setProducts([]);
-      setPage(1);
-      setError(e?.message || "Ошибка загрузки");
-    } finally {
       setLoading(false);
+    } catch (error) {
+      // Игнорируем ошибки отмены запроса
+      if (error.name === 'AbortError') {
+        return;
+      }
+      
+      const errorText = error.message || "Ошибка загрузки";
+      console.error("Error fetching cards:", error);
+      setError(errorText);
+      setLoading(false);
+    } finally {
+      // Очищаем ссылку на AbortController, если это был последний запрос
+      if (abortControllerRef.current === abortController) {
+        abortControllerRef.current = null;
+      }
     }
-  };
+  }, [cacheRef, abortControllerRef, loadImagesForCards]);
+
+  // Дебаунсированная версия fetchCards
+  const debouncedFetchCards = useCallback((filtersUrlString = "", useCache = true) => {
+    // Очищаем предыдущий таймер
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+    
+    // Устанавливаем новый таймер (300ms задержка)
+    debounceTimerRef.current = setTimeout(() => {
+      fetchCards(filtersUrlString, useCache);
+    }, 300);
+  }, [fetchCards, debounceTimerRef]);
 
   // Восстановление фильтров при монтировании (если нет параметров в URL)
   useEffect(() => {
@@ -577,7 +637,7 @@ export default function Catalog() {
         const filtersUrlString = queryParams ? `?${queryParams}` : "";
         if (filtersUrlString) {
           window.history.pushState({}, "", filtersUrlString);
-          fetchCards(filtersUrlString);
+          fetchCards(filtersUrlString, true);
         }
       }
       setFiltersRestored(false);
@@ -710,13 +770,13 @@ export default function Catalog() {
       // Обновляем URL без перезагрузки страницы
       window.history.pushState({}, "", finalQueryString || window.location.pathname);
       
-      fetchCards(finalQueryString);
+      fetchCards(finalQueryString, true);
       if (finalQueryString) {
         sessionStorage.setItem("catalog:lastQuery", finalQueryString);
       }
     } else {
       // Если нет параметра category, используем обычную логику
-      fetchCards(queryString);
+      fetchCards(queryString, true);
       if (queryString) {
         sessionStorage.setItem("catalog:lastQuery", queryString);
       }
@@ -797,12 +857,12 @@ export default function Catalog() {
     // сохраняем состояние всех фильтров
     saveFiltersToStorage();
 
-    // отправляем в бэк именно эту строку
-    fetchCards(filtersUrlString);
+    // отправляем в бэк именно эту строку (без дебаунсинга для явного применения фильтров)
+    fetchCards(filtersUrlString, true);
     setMobileFiltersOpen(false);
     // Прокручиваем вверх при применении фильтров
     window.scrollTo({ top: 0, behavior: 'smooth' });
-  }, [generateQueryParams, saveFiltersToStorage]);
+  }, [generateQueryParams, saveFiltersToStorage, fetchCards]);
 
   const handleResetFilters = useCallback(() => {
     setCategoryFilters({
@@ -877,7 +937,7 @@ export default function Catalog() {
     window.history.pushState({}, "", window.location.pathname);
 
     // отправляем пустую строку в filtersUrl
-    fetchCards("");
+    fetchCards("", true);
     setMobileFiltersOpen(false);
     // Прокручиваем вверх при сбросе фильтров
     window.scrollTo({ top: 0, behavior: 'smooth' });
