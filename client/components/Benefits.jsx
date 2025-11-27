@@ -52,7 +52,7 @@ export default function Benefits() {
       ),
     },
     {
-      title: "Доставка по россии",
+      title: "Доставка по России",
       description: "Мы предлагаем доставку ТК в большинство регионов страны",
       icon: (
         <img 

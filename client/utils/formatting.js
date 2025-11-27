@@ -18,28 +18,63 @@ export const formatName = (value) => {
 
 /**
  * Форматирование телефона в формат +7 (999) 123-45-67
+ * Гарантирует, что номер всегда начинается с +7
  * @param {string} value - Входное значение
  * @returns {string} Отформатированный телефон
  */
 export const formatPhone = (value) => {
   // Убираем все нецифровые символы
-  const digits = value.replace(/\D/g, "");
+  let digits = value.replace(/\D/g, "");
   
-  // Если начинается с 8, заменяем на 7
-  let formatted = digits.startsWith("8") ? "7" + digits.slice(1) : digits;
+  if (digits.length === 0) return "";
   
-  // Ограничиваем до 11 цифр
-  if (formatted.length > 11) {
-    formatted = formatted.slice(0, 11);
+  // Если номер начинается с 8, заменяем на 7
+  if (digits.startsWith("8")) {
+    digits = "7" + digits.slice(1);
+  }
+  // Если номер не начинается с 7 или 8, добавляем 7 в начало
+  else if (!digits.startsWith("7")) {
+    // Если у нас 10 цифр (российский номер без кода страны), добавляем 7
+    if (digits.length === 10) {
+      digits = "7" + digits;
+    }
+    // Если начинается с 9 и меньше 10 цифр, это начало российского номера - добавляем 7
+    else if (digits.length < 10 && digits.length > 0) {
+      digits = "7" + digits;
+    }
+  }
+  
+  // Ограничиваем до 11 цифр (7 + 10 цифр российского номера)
+  if (digits.length > 11) {
+    digits = digits.slice(0, 11);
+  }
+  
+  // Гарантируем, что номер начинается с 7 (финальная проверка)
+  if (!digits.startsWith("7") && digits.length > 0) {
+    // Если не начинается с 7, добавляем 7 (но не более 11 цифр)
+    if (digits.length < 11) {
+      digits = "7" + digits;
+    } else {
+      // Если уже 11 цифр и не начинается с 7, заменяем первую на 7
+      digits = "7" + digits.slice(1);
+    }
   }
   
   // Форматируем: +7 (999) 123-45-67
-  if (formatted.length === 0) return "";
-  if (formatted.length <= 1) return `+${formatted}`;
-  if (formatted.length <= 4) return `+${formatted.slice(0, 1)} (${formatted.slice(1)}`;
-  if (formatted.length <= 7) return `+${formatted.slice(0, 1)} (${formatted.slice(1, 4)}) ${formatted.slice(4)}`;
-  if (formatted.length <= 9) return `+${formatted.slice(0, 1)} (${formatted.slice(1, 4)}) ${formatted.slice(4, 7)}-${formatted.slice(7)}`;
-  return `+${formatted.slice(0, 1)} (${formatted.slice(1, 4)}) ${formatted.slice(4, 7)}-${formatted.slice(7, 9)}-${formatted.slice(9, 11)}`;
+  if (digits.length === 0) return "";
+  if (digits.length === 1) {
+    return digits.startsWith("7") ? `+${digits}` : `+7`;
+  }
+  if (digits.length <= 4) {
+    return `+${digits.slice(0, 1)} (${digits.slice(1)}`;
+  }
+  if (digits.length <= 7) {
+    return `+${digits.slice(0, 1)} (${digits.slice(1, 4)}) ${digits.slice(4)}`;
+  }
+  if (digits.length <= 9) {
+    return `+${digits.slice(0, 1)} (${digits.slice(1, 4)}) ${digits.slice(4, 7)}-${digits.slice(7)}`;
+  }
+  return `+${digits.slice(0, 1)} (${digits.slice(1, 4)}) ${digits.slice(4, 7)}-${digits.slice(7, 9)}-${digits.slice(9, 11)}`;
 };
 
 /**

@@ -39,7 +39,7 @@ export default function Cooperation() {
     {
       icon: Building2,
       title: "Оптовые клиенты",
-      description: "Выгодные условия для крупных закупок"
+      description: "Выгодные условия для закупок"
     },
     {
       icon: Truck,
@@ -48,8 +48,8 @@ export default function Cooperation() {
     },
     {
       icon: Users,
-      title: "Сетевые магазины",
-      description: "Специальные условия для розничных сетей"
+      title: "Зоомагазины",
+      description: "Специальные условия для розничной торговли"
     }
   ];
 

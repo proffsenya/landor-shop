@@ -12,6 +12,8 @@ import { AuthToast } from "@/components/AuthToast";
 import { getAuthToken } from "@/utils/auth";
 import { formatName, formatPhone } from "@/utils/formatting";
 import { validateReceiver, validatePhone, validateAddress } from "@/utils/validation";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 
 // Алиас для совместимости
 const formatReceiver = formatName;
@@ -115,6 +117,7 @@ export default function Cart() {
   const [receiver, setReceiver] = useState("");
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
+  const [customerNotes, setCustomerNotes] = useState("");
   const [toast, setToast] = useState("");
   const [showAuthToast, setShowAuthToast] = useState(false);
   const [authToastMessage, setAuthToastMessage] = useState("");
@@ -421,21 +424,39 @@ export default function Cart() {
       // Формат адреса: "г. Москва, ул. Ленина, д. 10, кв. 25"
       const addressParts = address.trim().split(",").map((s) => s.trim());
       
+      // Нормализуем номер телефона для отправки в API (убираем форматирование, оставляем только цифры)
+      // Гарантируем, что номер начинается с 7
+      let normalizedPhone = phone.replace(/[\s\-()\+]/g, "");
+      if (normalizedPhone.startsWith("8")) {
+        normalizedPhone = "7" + normalizedPhone.slice(1);
+      }
+      if (!normalizedPhone.startsWith("7") && normalizedPhone.length === 10) {
+        normalizedPhone = "7" + normalizedPhone;
+      }
+      
       // Формируем адреса (используем один адрес для обоих)
+      // По структуре из API: { name, phone, street }
       const shippingAddress = {
-        fullAddress: address.trim(),
-        city: addressParts.find((p) => p.startsWith("г.")) || "",
-        street: addressParts.find((p) => p.startsWith("ул.") || p.startsWith("проспект") || p.startsWith("пер.")) || "",
-        house: addressParts.find((p) => p.startsWith("д.")) || "",
-        apartment: addressParts.find((p) => p.startsWith("кв.") || p.startsWith("оф.")) || "",
+        name: receiver.trim(),
+        phone: normalizedPhone,
+        street: address.trim(),
       };
 
       const billingAddress = { ...shippingAddress };
 
-      // Формируем customerSnapshot
+      // Парсим ФИО на отдельные части
+      // Порядок: Фамилия Имя Отчество (как в России)
+      const fullNameParts = receiver.trim().split(/\s+/).filter(Boolean);
+      const lastName = fullNameParts[0] || "";      // Фамилия (первое слово)
+      const firstName = fullNameParts[1] || "";     // Имя (второе слово)
+      const middleName = fullNameParts.length >= 3 ? fullNameParts[2] : ""; // Отчество (третье слово, если есть)
+
+      // Формируем customerSnapshot по структуре из API
       const customerSnapshot = {
-        fullName: receiver.trim(),
-        phone: phone.trim(),
+        phone: normalizedPhone,
+        last_name: lastName,
+        middle_name: middleName,
+        first_name: firstName,
         email: "", // Email можно получить из профиля, если нужно
       };
 
@@ -444,7 +465,7 @@ export default function Cart() {
         billingAddress: billingAddress,
         shippingAddress: shippingAddress,
         customerSnapshot: customerSnapshot,
-        customerNotes: "",
+        customerNotes: customerNotes.trim() || "",
       };
 
       const headers = {
@@ -915,7 +936,7 @@ export default function Cart() {
                       {errors.phone ? (
                         <p className="text-red-500 text-xs mt-1">{errors.phone}</p>
                       ) : !phone.trim() ? (
-                        <p className="text-gray-500 text-xs mt-1">Пример: +7 (999) 123-45-67 или 8 (999) 123-45-67</p>
+                        <p className="text-gray-500 text-xs mt-1">Пример: +7 (999) 123-45-67</p>
                       ) : null}
                     </div>
                     <div className="mb-4">
@@ -941,6 +962,27 @@ export default function Cart() {
                         <p className="text-gray-500 text-xs mt-1">Пример: г. Москва, ул. Ленина, д. 10, кв. 25</p>
                       ) : null}
                     </div>
+                    
+                    {/* Комментарий клиента */}
+                    <div className="mb-4">
+                      <Label htmlFor="customerNotes" className="text-[#6F2A2B] text-[15px] mb-2 block">
+                        Комментарий к заказу
+                      </Label>
+                      <Textarea
+                        id="customerNotes"
+                        value={customerNotes}
+                        onChange={(e) => setCustomerNotes(e.target.value)}
+                        placeholder="Например: не звонить, оставить у двери, позвонить за час и т.д."
+                        className="w-full min-h-[100px] border-[#E2E2E2] text-[14px] placeholder:text-[#B0B0B0] resize-y"
+                        maxLength={500}
+                      />
+                      {customerNotes.length > 0 && (
+                        <p className="text-xs text-gray-500 mt-1">
+                          {customerNotes.length}/500 символов
+                        </p>
+                      )}
+                    </div>
+                    
                     <button
                       onClick={onPay}
                       className="w-full h-[48px] sm:h-[50px] rounded bg-[#6F2A2B] text-white text-[15px] sm:text-[16px] hover:bg-[#5a2223]"

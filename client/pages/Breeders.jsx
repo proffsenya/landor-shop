@@ -118,10 +118,6 @@ export default function Breeders() {
       newErrors.city = "Город обязателен для заполнения";
     }
     
-    if (!formData.file) {
-      newErrors.file = "Необходимо прикрепить файл";
-    }
-    
     if (!formData.consent) {
       newErrors.consent = "Необходимо согласие";
     }
@@ -140,12 +136,6 @@ export default function Breeders() {
     try {
       setLoading(true);
 
-      if (!formData.file) {
-        setErrors((prev) => ({ ...prev, file: "Файл обязателен" }));
-        setLoading(false);
-        return;
-      }
-
       const authToken = getAuthToken();
       
       // Проверка авторизации
@@ -159,17 +149,18 @@ export default function Breeders() {
       // Создаем FormData (как в Postman: form-data)
       const formDataToSend = new FormData();
       
-      // 1. Отправляем оригинальный файл с явным указанием Content-Type: image/jpeg
-      // Создаем новый File объект с правильным типом, если тип не установлен
-      let fileToSend = formData.file;
-      if (!fileToSend.type || fileToSend.type !== "image/jpeg") {
-        // Создаем новый File с явным указанием типа image/jpeg
-        fileToSend = new File([fileToSend], fileToSend.name || "registration.jpeg", { 
-          type: "image/jpeg",
-          lastModified: fileToSend.lastModified || Date.now()
-        });
+      // 1. Отправляем оригинальный файл с явным указанием Content-Type: image/jpeg (если файл есть)
+      if (formData.file) {
+        let fileToSend = formData.file;
+        if (!fileToSend.type || fileToSend.type !== "image/jpeg") {
+          // Создаем новый File с явным указанием типа image/jpeg
+          fileToSend = new File([fileToSend], fileToSend.name || "registration.jpeg", { 
+            type: "image/jpeg",
+            lastModified: fileToSend.lastModified || Date.now()
+          });
+        }
+        formDataToSend.append("registrationFile", fileToSend, fileToSend.name || "registration.jpeg");
       }
-      formDataToSend.append("registrationFile", fileToSend, fileToSend.name || "registration.jpeg");
       
       // 2. Создаем JSON объект для nurseryFormDTO (тип: Text, Content-Type: application/json)
       const nurseryFormDTO = {
@@ -178,7 +169,7 @@ export default function Breeders() {
         city: formData.city.trim(),
         email: formData.email.trim(),
         phone: formData.phone.trim(),
-        fileName: formData.file.name || "",
+        fileName: formData.file ? formData.file.name || "" : "",
       };
       
       // Преобразуем JSON в строку
@@ -279,7 +270,7 @@ export default function Breeders() {
             </div>
 
             {/* Benefits List */}
-            <PageFade>
+            {/* <PageFade>
               <div className="bg-gradient-to-r from-[#6F2A2B] to-[#8a3a3c] rounded-2xl p-8 md:p-12 text-white mb-12">
                 <h2 className="mb-6 text-xl font-semibold">
                   Особые условия для заводчиков:
@@ -297,7 +288,7 @@ export default function Breeders() {
                   ))}
                 </ul>
               </div>
-            </PageFade>
+            </PageFade> */}
 
             {/* Benefits Grid */}
             <PageFade>
@@ -458,7 +449,7 @@ export default function Breeders() {
             {/* Файл */}
             <div>
               <Label className="text-base font-medium">
-                Прикрепите копию свидетельства о регистрации питомника или заводской приставки <span className="text-red-500">*</span>
+                Прикрепите копию свидетельства о регистрации питомника или заводской приставки
               </Label>
               <div className="mt-2">
                 <label className="flex items-center gap-3 p-4 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-[#6F2A2B] transition-colors">
