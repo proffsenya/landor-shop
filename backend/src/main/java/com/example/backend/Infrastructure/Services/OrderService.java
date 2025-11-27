@@ -1,6 +1,7 @@
 package com.example.backend.Infrastructure.Services;
 
 import com.example.backend.Domain.DTOs.CreateOrderRequestDTO;
+import com.example.backend.Domain.DTOs.OrderDTO;
 import com.example.backend.Domain.Models.*;
 import com.example.backend.Infrastructure.Exceptions.InvalidRequestException;
 import com.example.backend.Infrastructure.Exceptions.ResourseNotFoundException;
@@ -10,6 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -130,13 +132,28 @@ public class OrderService {
     }
 
     @Transactional(readOnly = true)
-    public List<Order> getOrdersByUserId(Long userId){
+    public List<OrderDTO> getOrdersByUserId(Long userId){
         User user = userRepository.findById(userId).orElseThrow(() -> new InvalidRequestException("User not found"));
-        return orderRepository.findByUser(user);
+        List<Order> ordersList = orderRepository.findByUser(user);
+        List<OrderDTO> orderDTOList = new ArrayList<>();
+        for (Order order : ordersList) {
+            orderDTOList.add(OrderDTO.from(order));
+        }
+        return orderDTOList;
     }
     @Transactional(readOnly = true)
     public Order getOrderById(Long orderId){
         return orderRepository.findById(orderId).orElseThrow(() -> new InvalidRequestException("Order not found"));
+    }
+
+    @Transactional(readOnly = true)
+    public List<OrderDTO> getAllOrders(){
+        List<Order> orders = orderRepository.findAll();
+        List<OrderDTO> orderDTOList = new ArrayList<>();
+        for (Order order : orders) {
+            orderDTOList.add(OrderDTO.from(order));
+        }
+        return orderDTOList;
     }
 
     @Transactional

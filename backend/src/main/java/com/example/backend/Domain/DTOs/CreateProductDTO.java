@@ -14,7 +14,7 @@ public record CreateProductDTO(@Size(max = 100) String name, @Size(max = 1000) S
                                @Size(max = 500) String guaranteedIndicators,
                                @Size(max = 100) String slug,
                                List<Integer> breedIds,
-                               List<Integer> categoryIds,
+                               List<Long> categoryIds,
                                List<Integer> countryIds,
                                List<Integer> typeoffoodIds,
                                List<Long> flavorIds,

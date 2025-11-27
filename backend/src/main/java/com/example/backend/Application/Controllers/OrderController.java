@@ -15,6 +15,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.nio.file.AccessDeniedException;
+import java.util.List;
 
 @RestController
 @Validated
@@ -35,7 +36,7 @@ class OrderController {
     }
 
     @GetMapping("/{orderId}")
-    public ResponseEntity<OrderDTO> getOrdersByUser(@PathVariable Long orderId,
+    public ResponseEntity<OrderDTO> getOrderByIdByUser(@PathVariable Long orderId,
                                                      @AuthenticationPrincipal CustomUserDetails userPrincipal) throws AccessDeniedException {
         Long userId = userPrincipal.getId();
         Order order = orderService.getOrderById(orderId);
@@ -46,4 +47,19 @@ class OrderController {
 
         return ResponseEntity.ok(OrderDTO.from(order));
     }
+
+    @GetMapping("/profile")
+    public ResponseEntity<List<OrderDTO>> getAllOrdersByUser(@AuthenticationPrincipal CustomUserDetails userPrincipal) throws AccessDeniedException{
+        Long userId = userPrincipal.getId();
+        return ResponseEntity.ok(orderService.getOrdersByUserId(userId));
+
+    }
+
+    @GetMapping
+    public ResponseEntity<List<OrderDTO>> getAllOrders() {
+        return ResponseEntity.ok(orderService.getAllOrders());
+    }
+
+
+
 }

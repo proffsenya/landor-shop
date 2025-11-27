@@ -131,8 +131,8 @@ class ProductController {
                                     v.getOldPrice(),
                                     v.getStock(),
                                     v.getWeight(),
-                                    v.getColors().stream().map(c -> new ColorDTO(c.getId(), c.getName())).toList(),
-                                    v.getScents().stream().map(s -> new ScentDTO(s.getId(), s.getName())).toList(),
+                                    v.getColors().stream().map(c -> new ColorDTO(c.getId(), c.getName(), c.getSlug())).toList(),
+                                    v.getScents().stream().map(s -> new ScentDTO(s.getId(), s.getName(), s.getSlug())).toList(),
                                     v.getDisplayName()
                         )).toList(),
                 product.getBrand() != null ? product.getBrand().getId() : null,

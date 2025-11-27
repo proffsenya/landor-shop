@@ -16,7 +16,7 @@ public record UpdateProductDTO(@Size(max = 100) String name, @Size(max = 1000) S
                                @Size(max = 100) String slug, @NotNull Integer quantityInStock,
                                Boolean isActive, Boolean isFeatured, BigDecimal rating,
                                List<Integer> breedIds,
-                               List<Integer> categoryIds,
+                               List<Long> categoryIds,
                                List<Integer> countryIds,
                                List<Integer> typeoffoodIds,
                                List<Long> flavorIds,
