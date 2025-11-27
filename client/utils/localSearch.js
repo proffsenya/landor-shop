@@ -33,7 +33,22 @@ export function localSearch(query, dataset = [], limit = 15) {
       variants.forEach((variant) => {
         const title = variant?.displayName || variant?.display_name || item?.productName || item?.name || "";
         const desc = variant?.description || item?.brand || "";
-        const combined = `${title} ${desc}`.toLowerCase();
+        
+        // Формируем строку веса для поиска
+        let weightStr = "";
+        if (variant?.weight) {
+          if (typeof variant.weight === "number") {
+            // Добавляем разные варианты написания веса: "1", "1 кг", "1.0", "1,0" и т.д.
+            const weightNum = variant.weight;
+            const weightInt = Math.floor(weightNum);
+            const weightDecimal = weightNum % 1 === 0 ? "" : weightNum.toFixed(3);
+            weightStr = `${weightNum} ${weightInt} ${weightDecimal} кг ${weightNum.toString().replace('.', ',')} ${weightNum.toString().replace(',', '.')}`;
+          } else {
+            weightStr = String(variant.weight);
+          }
+        }
+        
+        const combined = `${title} ${desc} ${weightStr}`.toLowerCase().trim();
 
         // Очищаем комбинированную строку так же как запрос
         const cleanCombined = combined
@@ -69,7 +84,30 @@ export function localSearch(query, dataset = [], limit = 15) {
       // Новая структура: плоская карточка (из /api/products/cards/search-by-url)
       const title = item?.displayName || item?.display_name || item?.productName || item?.name || "";
       const desc = item?.description || item?.brand || "";
-      const combined = `${title} ${desc}`.toLowerCase();
+      
+      // Формируем строку веса для поиска
+      let weightStr = "";
+      if (item?.weight) {
+        if (typeof item.weight === "number") {
+          // Добавляем разные варианты написания веса: "1", "1 кг", "1.0", "1,0" и т.д.
+          const weightNum = item.weight;
+          const weightInt = Math.floor(weightNum);
+          const weightDecimal = weightNum % 1 === 0 ? "" : weightNum.toFixed(3);
+          weightStr = `${weightNum} ${weightInt} ${weightDecimal} кг ${weightNum.toString().replace('.', ',')} ${weightNum.toString().replace(',', '.')}`;
+        } else {
+          weightStr = String(item.weight);
+        }
+      }
+      if (item?.weightLabel) {
+        // Извлекаем число из weightLabel для поиска
+        const labelNum = item.weightLabel.match(/[\d,\.]+/);
+        if (labelNum) {
+          weightStr += ` ${labelNum[0]} ${labelNum[0].replace(',', '.')} ${labelNum[0].replace('.', ',')}`;
+        }
+        weightStr += ` ${item.weightLabel} ${item.weightLabel.replace('кг', '').replace(/\s+/g, ' ').trim()}`;
+      }
+      
+      const combined = `${title} ${desc} ${weightStr}`.toLowerCase().trim();
 
       // Очищаем комбинированную строку так же как запрос
       const cleanCombined = combined
@@ -84,18 +122,27 @@ export function localSearch(query, dataset = [], limit = 15) {
 
       if (allWordsFound) {
         const variantId = item?.id ?? item?.variantId;
-        const productId = item?.parentId ?? item?.productId;
+        const productId = item?.parentId ?? item?.productId ?? item?.productId;
         
+        // Сохраняем все поля из исходных данных и дополняем их
         res.push({
+          ...item, // Сохраняем все исходные поля
           id: String(variantId ?? item?.id ?? Math.random()),
-          title: title || "Товар",
-          subtitle: typeof item?.price === "number" ? `${item.price} ₽` : desc,
-          image: item?.imageUrl || "/korm1.svg",
-          url: productId && variantId
+          title: title || item?.title || "Товар",
+          displayName: title || item?.displayName || "Товар",
+          subtitle: typeof item?.price === "number" ? `${item.price} ₽` : (item?.subtitle || desc),
+          image: item?.imageUrl || item?.image || "/korm1.svg",
+          imageUrl: item?.imageUrl || item?.image || "/korm1.svg",
+          price: item?.price ?? null,
+          weight: item?.weight ?? null,
+          weightLabel: item?.weightLabel || (item?.weight ? (typeof item.weight === "number" ? `${item.weight} кг` : item.weight) : null),
+          productId: productId,
+          variantId: variantId,
+          url: item?.url || (productId && variantId
             ? `/product/${encodeURIComponent(productId)}?variant=${encodeURIComponent(variantId)}`
             : variantId
             ? `/product/${encodeURIComponent(variantId)}`
-            : "#",
+            : "#"),
           type: "product",
         });
       }

@@ -200,11 +200,11 @@ function FeedbackFormsTable({ forms, currentPage, itemsPerPage, onPageChange }) 
 
   return (
     <div>
-      <div className="bg-white rounded-lg shadow overflow-hidden">
+    <div className="bg-white rounded-lg shadow overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[800px]">
-            <thead className="bg-gray-50">
-              <tr>
+        <thead className="bg-gray-50">
+          <tr>
                 <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">ID</th>
                 <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Имя</th>
                 <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase hidden md:table-cell">Email</th>
@@ -212,45 +212,45 @@ function FeedbackFormsTable({ forms, currentPage, itemsPerPage, onPageChange }) 
                 <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase hidden lg:table-cell">Город</th>
                 <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase hidden xl:table-cell">Комментарий</th>
                 <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Дата</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {forms.length === 0 ? (
-                <tr>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-gray-200">
+          {forms.length === 0 ? (
+            <tr>
                   <td colSpan="7" className="px-3 sm:px-6 py-4 text-center text-gray-500">
-                    Нет заявок
-                  </td>
-                </tr>
-              ) : (
+                Нет заявок
+              </td>
+            </tr>
+          ) : (
                 paginatedForms.map((form) => (
-                  <tr key={form.id}>
+              <tr key={form.id}>
                     <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-900">{form.id}</td>
                     <td className="px-3 sm:px-6 py-4 text-sm text-gray-900">{form.name || "-"}</td>
                     <td className="px-3 sm:px-6 py-4 text-sm text-gray-500 hidden md:table-cell">
-                      <div className="flex items-center gap-1">
-                        <Mail className="w-3 h-3" />
+                  <div className="flex items-center gap-1">
+                    <Mail className="w-3 h-3" />
                         <span className="truncate max-w-[150px]" title={form.email || "-"}>
-                          {form.email || "-"}
+                    {form.email || "-"}
                         </span>
-                      </div>
-                    </td>
+                  </div>
+                </td>
                     <td className="px-3 sm:px-6 py-4 text-sm text-gray-500 hidden lg:table-cell">
-                      <div className="flex items-center gap-1">
-                        <Phone className="w-3 h-3" />
-                        {form.phone || "-"}
-                      </div>
-                    </td>
+                  <div className="flex items-center gap-1">
+                    <Phone className="w-3 h-3" />
+                    {form.phone || "-"}
+                  </div>
+                </td>
                     <td className="px-3 sm:px-6 py-4 text-sm text-gray-500 hidden lg:table-cell">
-                      <div className="flex items-center gap-1">
-                        <MapPin className="w-3 h-3" />
-                        {form.city || "-"}
-                      </div>
-                    </td>
+                  <div className="flex items-center gap-1">
+                    <MapPin className="w-3 h-3" />
+                    {form.city || "-"}
+                  </div>
+                </td>
                     <td className="px-3 sm:px-6 py-4 text-sm text-gray-500 max-w-xs truncate hidden xl:table-cell" title={form.comment}>
-                      {form.comment || "-"}
-                    </td>
+                  {form.comment || "-"}
+                </td>
                     <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {form.createdAt
+                  {form.createdAt
                         ? new Date(form.createdAt).toLocaleString("ru-RU", {
                             year: "numeric",
                             month: "2-digit",
@@ -261,20 +261,20 @@ function FeedbackFormsTable({ forms, currentPage, itemsPerPage, onPageChange }) 
                           })
                         : form.created_at
                         ? new Date(form.created_at).toLocaleString("ru-RU", {
-                            year: "numeric",
-                            month: "2-digit",
-                            day: "2-digit",
-                            hour: "2-digit",
-                            minute: "2-digit",
+                        year: "numeric",
+                        month: "2-digit",
+                        day: "2-digit",
+                        hour: "2-digit",
+                        minute: "2-digit",
                             second: "2-digit",
-                          })
-                        : "-"}
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+                      })
+                    : "-"}
+                </td>
+              </tr>
+            ))
+          )}
+        </tbody>
+      </table>
         </div>
       </div>
       
@@ -422,11 +422,11 @@ function NurseryFormsTable({ forms, currentPage, itemsPerPage, onPageChange }) {
 
   return (
     <div>
-      <div className="bg-white rounded-lg shadow overflow-hidden">
+    <div className="bg-white rounded-lg shadow overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[900px]">
-            <thead className="bg-gray-50">
-              <tr>
+        <thead className="bg-gray-50">
+          <tr>
                 <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">ID</th>
                 <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Организация</th>
                 <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase hidden md:table-cell">ФИО</th>
@@ -435,64 +435,64 @@ function NurseryFormsTable({ forms, currentPage, itemsPerPage, onPageChange }) {
                 <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase hidden xl:table-cell">Город</th>
                 <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Файл</th>
                 <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Дата</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {forms.length === 0 ? (
-                <tr>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-gray-200">
+          {forms.length === 0 ? (
+            <tr>
                   <td colSpan="8" className="px-3 sm:px-6 py-4 text-center text-gray-500">
-                    Нет заявок
-                  </td>
-                </tr>
-              ) : (
+                Нет заявок
+              </td>
+            </tr>
+          ) : (
                 paginatedForms.map((form) => (
-                  <tr key={form.id}>
+              <tr key={form.id}>
                     <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-900">{form.id}</td>
                     <td className="px-3 sm:px-6 py-4 text-sm text-gray-900">
-                      <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-1">
                         <Building2 className="w-3 h-3 flex-shrink-0" />
                         <span className="truncate max-w-[120px] sm:max-w-none" title={form.organizationName || "-"}>
-                          {form.organizationName || "-"}
+                    {form.organizationName || "-"}
                         </span>
-                      </div>
-                    </td>
+                  </div>
+                </td>
                     <td className="px-3 sm:px-6 py-4 text-sm text-gray-900 hidden md:table-cell">{form.fullName || "-"}</td>
                     <td className="px-3 sm:px-6 py-4 text-sm text-gray-500 hidden lg:table-cell">
-                      <div className="flex items-center gap-1">
-                        <Mail className="w-3 h-3" />
+                  <div className="flex items-center gap-1">
+                    <Mail className="w-3 h-3" />
                         <span className="truncate max-w-[150px]" title={form.email || "-"}>
-                          {form.email || "-"}
+                    {form.email || "-"}
                         </span>
-                      </div>
-                    </td>
+                  </div>
+                </td>
                     <td className="px-3 sm:px-6 py-4 text-sm text-gray-500 hidden lg:table-cell">
-                      <div className="flex items-center gap-1">
-                        <Phone className="w-3 h-3" />
-                        {form.phone || "-"}
-                      </div>
-                    </td>
+                  <div className="flex items-center gap-1">
+                    <Phone className="w-3 h-3" />
+                    {form.phone || "-"}
+                  </div>
+                </td>
                     <td className="px-3 sm:px-6 py-4 text-sm text-gray-500 hidden xl:table-cell">
-                      <div className="flex items-center gap-1">
-                        <MapPin className="w-3 h-3" />
-                        {form.city || "-"}
-                      </div>
-                    </td>
+                  <div className="flex items-center gap-1">
+                    <MapPin className="w-3 h-3" />
+                    {form.city || "-"}
+                  </div>
+                </td>
                     <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm">
-                      {form.registrationFile && form.registrationFile.length > 0 ? (
-                        <button
-                          onClick={() => handleDownloadFile(form)}
-                          className="text-[#6F2A2B] hover:text-[#5a2223] flex items-center gap-1"
-                          title={form.fileName || "Скачать файл"}
-                        >
-                          <Download className="w-4 h-4" />
-                          <span className="hidden sm:inline">{form.fileName || "Файл"}</span>
-                        </button>
-                      ) : (
-                        <span className="text-gray-400">-</span>
-                      )}
-                    </td>
+                  {form.registrationFile && form.registrationFile.length > 0 ? (
+                    <button
+                      onClick={() => handleDownloadFile(form)}
+                      className="text-[#6F2A2B] hover:text-[#5a2223] flex items-center gap-1"
+                      title={form.fileName || "Скачать файл"}
+                    >
+                      <Download className="w-4 h-4" />
+                      <span className="hidden sm:inline">{form.fileName || "Файл"}</span>
+                    </button>
+                  ) : (
+                    <span className="text-gray-400">-</span>
+                  )}
+                </td>
                     <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {form.createdAt
+                  {form.createdAt
                         ? new Date(form.createdAt).toLocaleString("ru-RU", {
                             year: "numeric",
                             month: "2-digit",
@@ -503,20 +503,20 @@ function NurseryFormsTable({ forms, currentPage, itemsPerPage, onPageChange }) {
                           })
                         : form.created_at
                         ? new Date(form.created_at).toLocaleString("ru-RU", {
-                            year: "numeric",
-                            month: "2-digit",
-                            day: "2-digit",
-                            hour: "2-digit",
-                            minute: "2-digit",
+                        year: "numeric",
+                        month: "2-digit",
+                        day: "2-digit",
+                        hour: "2-digit",
+                        minute: "2-digit",
                             second: "2-digit",
-                          })
-                        : "-"}
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+                      })
+                    : "-"}
+                </td>
+              </tr>
+            ))
+          )}
+        </tbody>
+      </table>
         </div>
       </div>
       

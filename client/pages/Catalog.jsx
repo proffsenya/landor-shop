@@ -433,22 +433,22 @@ export default function Catalog() {
     const abortController = new AbortController();
     abortControllerRef.current = abortController;
 
-    // filtersUrlString ожидается в формате "?typeoffood_dry=true&brand_landy=true&category_cat=true&breed_for-sterilized=true"
-    let filtersUrlValue =
-      filtersUrlString || window.location.search || ""; // может быть "" либо "?..."
-    
-    // Убираем начальный "?" если он есть
-    if (filtersUrlValue.startsWith("?")) {
-      filtersUrlValue = filtersUrlValue.substring(1);
-    }
+      // filtersUrlString ожидается в формате "?typeoffood_dry=true&brand_landy=true&category_cat=true&breed_for-sterilized=true"
+      let filtersUrlValue =
+        filtersUrlString || window.location.search || ""; // может быть "" либо "?..."
+      
+      // Убираем начальный "?" если он есть
+      if (filtersUrlValue.startsWith("?")) {
+        filtersUrlValue = filtersUrlValue.substring(1);
+      }
 
-    // Формируем filtersUrl с префиксом "catalog?"
-    // Формат: catalog?flavor_partridge=true&minPrice=800
-    const filtersUrl = filtersUrlValue ? `catalog?${filtersUrlValue}` : "catalog?";
+      // Формируем filtersUrl с префиксом "catalog?"
+      // Формат: catalog?flavor_partridge=true&minPrice=800
+      const filtersUrl = filtersUrlValue ? `catalog?${filtersUrlValue}` : "catalog?";
 
-    const url = `/api/products/cards/search-by-url?filtersUrl=${encodeURIComponent(
-      filtersUrl
-    )}`;
+      const url = `/api/products/cards/search-by-url?filtersUrl=${encodeURIComponent(
+        filtersUrl
+      )}`;
 
     // Проверяем кэш
     const cacheKey = url;
@@ -467,6 +467,30 @@ export default function Catalog() {
           imageUrl: card.image,
         }));
         setProducts(cardsWithFallback);
+        
+        // Сохраняем все товары в sessionStorage для поиска (если еще не сохранено)
+        try {
+          const existing = sessionStorage.getItem("catalog:all");
+          if (!existing) {
+            // Сохраняем полные данные для поиска с картинками, ценами и весом
+            const searchData = cards.map((card) => ({
+              id: card.id || card.variantId,
+              variantId: card.variantId || card.id,
+              productId: card.productId || card.parentId,
+              displayName: card.displayName || card.title || "Товар",
+              title: card.displayName || card.title || "Товар",
+              price: card.price ?? null,
+              weight: card.weight ?? null,
+              weightLabel: card.weightLabel || (card.weight ? (typeof card.weight === "number" ? `${card.weight} кг` : card.weight) : null),
+              imageUrl: card.imageUrl || card.image || "/korm1.svg",
+              image: card.imageUrl || card.image || "/korm1.svg",
+            }));
+            sessionStorage.setItem("catalog:all", JSON.stringify(searchData));
+            window.dispatchEvent(new Event("catalog:update"));
+          }
+        } catch (e) {
+          console.warn("Failed to save catalog:all to sessionStorage:", e);
+        }
         
         // Загружаем изображения в фоне
         loadImagesForCards(cards);
@@ -512,15 +536,25 @@ export default function Catalog() {
             productId = match[1];
           }
         }
+        // Также проверяем, может быть productId уже есть в данных
+        if (!productId && item?.productId) {
+          productId = item.productId;
+        }
         
         return {
           cardId: `p-${productId || 'unknown'}-v-${variantId}`,
           id: variantId,
           parentId: productId,
+          productId: productId,
+          variantId: variantId,
           title: item?.displayName || "Товар",
+          displayName: item?.displayName || "Товар",
           image: imageUrl,
+          imageUrl: imageUrl,
           price: Number(item?.price ?? 0) || 0,
           stock: Number(item?.stock ?? 0) || 0,
+          weight: item?.weight || null,
+          weightLabel: item?.weightLabel || (item?.weight ? `${item.weight} кг` : null),
         };
       });
       
@@ -529,6 +563,32 @@ export default function Catalog() {
         cards,
         timestamp: Date.now(),
       });
+      
+      // Сохраняем все товары в sessionStorage для поиска (catalog:all), только если нет фильтров
+      // Проверяем, есть ли активные фильтры
+      const hasFilters = filtersUrlValue && filtersUrlValue.length > 0;
+      if (!hasFilters) {
+        try {
+          // Сохраняем полные данные для поиска с картинками, ценами и весом
+          const searchData = cards.map((card) => ({
+            id: card.id || card.variantId,
+            variantId: card.variantId || card.id,
+            productId: card.productId || card.parentId,
+            displayName: card.displayName || card.title || "Товар",
+            title: card.displayName || card.title || "Товар",
+            price: card.price ?? null,
+            weight: card.weight ?? null,
+            weightLabel: card.weightLabel || (card.weight ? (typeof card.weight === "number" ? `${card.weight} кг` : card.weight) : null),
+            imageUrl: card.imageUrl || card.image || "/korm1.svg",
+            image: card.imageUrl || card.image || "/korm1.svg",
+          }));
+          sessionStorage.setItem("catalog:all", JSON.stringify(searchData));
+          // Отправляем событие для обновления поиска в Header
+          window.dispatchEvent(new Event("catalog:update"));
+        } catch (e) {
+          console.warn("Failed to save catalog:all to sessionStorage:", e);
+        }
+      }
       
       // Сначала показываем карточки с fallback изображениями для быстрого отображения
       const cardsWithFallback = cards.map((card) => ({
@@ -574,6 +634,69 @@ export default function Catalog() {
       fetchCards(filtersUrlString, useCache);
     }, 300);
   }, [fetchCards, debounceTimerRef]);
+
+  // Загрузка всех товаров для поиска (без фильтров)
+  const loadAllProductsForSearch = useCallback(async () => {
+    // Проверяем, есть ли уже сохраненные товары
+    try {
+      const existing = sessionStorage.getItem("catalog:all");
+      if (existing) {
+        // Если уже есть, не загружаем повторно
+        return;
+      }
+    } catch (e) {
+      // Игнорируем ошибки чтения
+    }
+
+    try {
+      // Загружаем все товары без фильтров
+      const url = `/api/products/cards/search-by-url?filtersUrl=${encodeURIComponent("catalog?")}`;
+      
+      const res = await fetch(url);
+      if (!res.ok) {
+        console.warn("Failed to load all products for search:", res.status);
+        return;
+      }
+
+      const data = await res.json();
+      if (!Array.isArray(data)) {
+        return;
+      }
+
+      // Формируем полные данные для поиска с картинками, ценами и весом
+      const searchData = data.map((item) => {
+        // Извлекаем productId из imageUrl, если он есть
+        let productId = item?.productId;
+        if (!productId && item?.imageUrl && item.imageUrl.startsWith("/api/products/")) {
+          const match = item.imageUrl.match(/\/api\/products\/(\d+)\/images\/(\d+)/);
+          if (match) {
+            productId = parseInt(match[1]);
+          }
+        }
+        
+        return {
+          id: item?.id,
+          variantId: item?.id,
+          productId: productId,
+          displayName: item?.displayName || "Товар",
+          title: item?.displayName || "Товар",
+          price: item?.price ?? null,
+          weight: item?.weight ?? null,
+          weightLabel: item?.weightLabel || (item?.weight ? (typeof item.weight === "number" ? `${item.weight} кг` : item.weight) : null),
+          imageUrl: item?.imageUrl || "/korm1.svg",
+          image: item?.imageUrl || "/korm1.svg",
+        };
+      });
+
+      // Сохраняем в sessionStorage
+      sessionStorage.setItem("catalog:all", JSON.stringify(searchData));
+      
+      // Отправляем событие для обновления поиска в Header
+      window.dispatchEvent(new Event("catalog:update"));
+    } catch (e) {
+      console.warn("Error loading all products for search:", e);
+    }
+  }, []);
 
   // Восстановление фильтров при монтировании (если нет параметров в URL)
   useEffect(() => {
@@ -647,6 +770,12 @@ export default function Catalog() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filtersRestored, searchQuery, priceFrom, priceTo, categoryFilters, catFilters, dogFilters, minicatFilters, minidogFilters, countryFilters, flavorFilters, brandFilters, scentFilters]);
+
+  // Загрузка всех товаров для поиска при первой загрузке
+  useEffect(() => {
+    loadAllProductsForSearch();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // первая загрузка: используем то, что уже есть в адресной строке
   useEffect(() => {
@@ -1714,6 +1843,13 @@ export default function Catalog() {
                           )}?variant=${encodeURIComponent(product.id)}`
                         : `/product/${encodeURIComponent(product.id)}`;
 
+                      // Форматируем вес
+                      const weightDisplay = product.weight 
+                        ? (typeof product.weight === "number" 
+                          ? `${product.weight % 1 === 0 ? product.weight : product.weight.toFixed(3)} кг`
+                          : product.weight)
+                        : product.weightLabel || null;
+
                       return (
                         <ProductCard
                           key={product.cardId}
@@ -1726,6 +1862,7 @@ export default function Catalog() {
                             product.price ?? 0
                           ).toLocaleString()} ₽`}
                           stock={product.stock}
+                          weight={weightDisplay}
                         />
                       );
                     })}

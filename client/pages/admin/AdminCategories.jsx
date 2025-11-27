@@ -129,25 +129,25 @@ export default function AdminCategories() {
             <div className="bg-white rounded-lg shadow overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full min-w-[700px]">
-                  <thead className="bg-gray-50">
-                    <tr>
+                <thead className="bg-gray-50">
+                  <tr>
                       <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">ID</th>
                       <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Название</th>
                       <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase hidden md:table-cell">Slug</th>
                       <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase hidden lg:table-cell">Родитель</th>
                       <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Активна</th>
                       <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Действия</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-200">
-                    {categories.length === 0 ? (
-                      <tr>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200">
+                  {categories.length === 0 ? (
+                    <tr>
                         <td colSpan="6" className="px-3 sm:px-6 py-4 text-center text-gray-500">
-                          Нет категорий
-                        </td>
-                      </tr>
-                    ) : (
-                      categories.map((category) => (
+                        Нет категорий
+                      </td>
+                    </tr>
+                  ) : (
+                    categories.map((category) => (
                       <tr key={category.id}>
                         <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-900">{category.id}</td>
                         <td className="px-3 sm:px-6 py-4 text-sm text-gray-900">{category.name}</td>
@@ -164,23 +164,23 @@ export default function AdminCategories() {
                         </td>
                         <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm">
                           <div className="flex items-center gap-2 sm:gap-4">
-                            <button
-                              onClick={() => {
-                                setEditingCategory(category);
-                                setShowForm(true);
-                              }}
+                          <button
+                            onClick={() => {
+                              setEditingCategory(category);
+                              setShowForm(true);
+                            }}
                               className="text-[#6F2A2B] hover:text-[#5a2223]"
                               title="Редактировать"
-                            >
-                              <Edit className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={() => handleDelete(category.id)}
-                              className="text-red-600 hover:text-red-800"
+                          >
+                            <Edit className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(category.id)}
+                            className="text-red-600 hover:text-red-800"
                               title="Удалить"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
                           </div>
                         </td>
                       </tr>

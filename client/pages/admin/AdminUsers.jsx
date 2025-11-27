@@ -137,8 +137,8 @@ export default function AdminUsers() {
             <div className="bg-white rounded-lg shadow overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full min-w-[900px]">
-                  <thead className="bg-gray-50">
-                    <tr>
+                <thead className="bg-gray-50">
+                  <tr>
                       <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">№</th>
                       <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
                       <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase hidden md:table-cell">ФИО</th>
@@ -147,18 +147,18 @@ export default function AdminUsers() {
                       <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Staff</th>
                       <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase hidden md:table-cell">Super User</th>
                       <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Действия</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-200">
-                    {users.length === 0 ? (
-                      <tr>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200">
+                  {users.length === 0 ? (
+                    <tr>
                         <td colSpan="8" className="px-3 sm:px-6 py-4 text-center text-gray-500">
-                          Нет пользователей
-                        </td>
-                      </tr>
-                    ) : (
-                      users.map((user, index) => (
-                        <tr key={user.email || index}>
+                        Нет пользователей
+                      </td>
+                    </tr>
+                  ) : (
+                    users.map((user, index) => (
+                      <tr key={user.email || index}>
                           <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-900">{index + 1}</td>
                           <td className="px-3 sm:px-6 py-4 text-sm text-gray-900">
                             <span className="truncate block max-w-[150px] sm:max-w-none" title={user.email || "-"}>
@@ -166,56 +166,56 @@ export default function AdminUsers() {
                             </span>
                           </td>
                           <td className="px-3 sm:px-6 py-4 text-sm text-gray-500 hidden md:table-cell">
-                            {user.firstName && user.lastName
-                              ? `${user.firstName} ${user.lastName}${user.middleName ? ` ${user.middleName}` : ""}`
-                              : user.firstName || user.lastName || "-"}
-                          </td>
+                          {user.firstName && user.lastName
+                            ? `${user.firstName} ${user.lastName}${user.middleName ? ` ${user.middleName}` : ""}`
+                            : user.firstName || user.lastName || "-"}
+                        </td>
                           <td className="px-3 sm:px-6 py-4 text-sm text-gray-500 hidden lg:table-cell">{user.phone || "-"}</td>
                           <td className="px-3 sm:px-6 py-4 text-sm text-gray-500 hidden lg:table-cell">
-                            {user.createdAt
-                              ? new Date(user.createdAt).toLocaleDateString("ru-RU")
-                              : "-"}
-                          </td>
+                          {user.createdAt
+                            ? new Date(user.createdAt).toLocaleDateString("ru-RU")
+                            : "-"}
+                        </td>
                           <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
-                            <span className={`px-2 py-1 text-xs rounded-full ${
-                              user.isStaff ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"
-                            }`}>
-                              {user.isStaff ? "Да" : "Нет"}
-                            </span>
-                          </td>
+                          <span className={`px-2 py-1 text-xs rounded-full ${
+                            user.isStaff ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"
+                          }`}>
+                            {user.isStaff ? "Да" : "Нет"}
+                          </span>
+                        </td>
                           <td className="px-3 sm:px-6 py-4 whitespace-nowrap hidden md:table-cell">
-                            <span className={`px-2 py-1 text-xs rounded-full ${
-                              user.isSuperUser ? "bg-purple-100 text-purple-800" : "bg-gray-100 text-gray-800"
-                            }`}>
-                              {user.isSuperUser ? "Да" : "Нет"}
-                            </span>
-                          </td>
+                          <span className={`px-2 py-1 text-xs rounded-full ${
+                            user.isSuperUser ? "bg-purple-100 text-purple-800" : "bg-gray-100 text-gray-800"
+                          }`}>
+                            {user.isSuperUser ? "Да" : "Нет"}
+                          </span>
+                        </td>
                           <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm">
                             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-1 sm:gap-2">
-                              {!user.isSuperUser && (
-                                <button
-                                  onClick={() => toggleStaff(user.email, user.isStaff)}
+                          {!user.isSuperUser && (
+                            <button
+                              onClick={() => toggleStaff(user.email, user.isStaff)}
                                   className={`px-2 sm:px-3 py-1 rounded text-xs font-medium transition-colors whitespace-nowrap ${
-                                    user.isStaff
-                                      ? "bg-red-100 text-red-700 hover:bg-red-200"
-                                      : "bg-green-100 text-green-700 hover:bg-green-200"
-                                  }`}
-                                >
-                                  {user.isStaff ? (
-                                    <>
-                                      <UserCheck className="w-3 h-3 inline mr-1" />
+                                user.isStaff
+                                  ? "bg-red-100 text-red-700 hover:bg-red-200"
+                                  : "bg-green-100 text-green-700 hover:bg-green-200"
+                              }`}
+                            >
+                              {user.isStaff ? (
+                                <>
+                                  <UserCheck className="w-3 h-3 inline mr-1" />
                                       <span className="hidden sm:inline">Убрать Staff</span>
                                       <span className="sm:hidden">Убрать</span>
-                                    </>
-                                  ) : (
-                                    <>
-                                      <Shield className="w-3 h-3 inline mr-1" />
+                                </>
+                              ) : (
+                                <>
+                                  <Shield className="w-3 h-3 inline mr-1" />
                                       <span className="hidden sm:inline">Назначить Staff</span>
                                       <span className="sm:hidden">Staff</span>
-                                    </>
-                                  )}
-                                </button>
+                                </>
                               )}
+                            </button>
+                          )}
                               {!user.isSuperUser && (
                                 <button
                                   onClick={() => handleDeleteUser(user.id || user.userId)}
@@ -227,12 +227,12 @@ export default function AdminUsers() {
                                 </button>
                               )}
                             </div>
-                          </td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
               </div>
             </div>
           </div>

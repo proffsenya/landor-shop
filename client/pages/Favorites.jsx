@@ -95,7 +95,7 @@ export default function Favorites() {
             setShowAuthToast(true);
           }
         } else {
-          console.warn("Ошибка загрузки избранного:", e);
+        console.warn("Ошибка загрузки избранного:", e);
           if (mounted) {
             setFavorites([]);
             setLoading(false);

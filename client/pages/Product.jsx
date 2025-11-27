@@ -605,7 +605,7 @@ export default function Product() {
       } catch (err) {
         console.warn("Ошибка при добавлении в корзину:", err);
         if (!handleApiError(err, "Не удалось добавить в корзину")) {
-          showToast("Не удалось добавить в корзину", 2000);
+        showToast("Не удалось добавить в корзину", 2000);
         }
       } finally {
         setAdding(false);

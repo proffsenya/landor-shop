@@ -95,68 +95,68 @@ export default function AdminOrders() {
             <div className="bg-white rounded-lg shadow overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full min-w-[800px]">
-                  <thead className="bg-gray-50">
-                    <tr>
+                <thead className="bg-gray-50">
+                  <tr>
                       <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">ID</th>
                       <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Дата</th>
                       <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase hidden md:table-cell">Клиент</th>
                       <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Сумма</th>
                       <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Статус</th>
                       <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Действия</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-200">
-                    {orders.length === 0 ? (
-                      <tr>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200">
+                  {orders.length === 0 ? (
+                    <tr>
                         <td colSpan="6" className="px-3 sm:px-6 py-4 text-center text-gray-500">
-                          Нет заказов
-                        </td>
-                      </tr>
-                    ) : (
-                      orders.map((order) => (
-                        <tr key={order.id}>
+                        Нет заказов
+                      </td>
+                    </tr>
+                  ) : (
+                    orders.map((order) => (
+                      <tr key={order.id}>
                           <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-900">#{order.id}</td>
                           <td className="px-3 sm:px-6 py-4 text-sm text-gray-500">
-                            {new Date(order.createdAt).toLocaleDateString("ru-RU")}
-                          </td>
+                          {new Date(order.createdAt).toLocaleDateString("ru-RU")}
+                        </td>
                           <td className="px-3 sm:px-6 py-4 text-sm text-gray-900 hidden md:table-cell">
                             <span className="truncate block max-w-[200px]" title={order.customerSnapshot?.email || order.customerEmail || "-"}>
-                              {order.customerSnapshot?.email || order.customerEmail || "-"}
+                          {order.customerSnapshot?.email || order.customerEmail || "-"}
                             </span>
-                          </td>
+                        </td>
                           <td className="px-3 sm:px-6 py-4 text-sm text-gray-900">
-                            {new Intl.NumberFormat("ru-RU", {
-                              style: "currency",
-                              currency: "RUB",
-                            }).format(order.totalAmount || 0)}
-                          </td>
+                          {new Intl.NumberFormat("ru-RU", {
+                            style: "currency",
+                            currency: "RUB",
+                          }).format(order.totalAmount || 0)}
+                        </td>
                           <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
-                            <select
-                              value={order.orderStatus || "PENDING"}
-                              onChange={(e) => updateOrderStatus(order.id, e.target.value)}
+                          <select
+                            value={order.orderStatus || "PENDING"}
+                            onChange={(e) => updateOrderStatus(order.id, e.target.value)}
                               className="text-xs sm:text-sm px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-[#6F2A2B] w-full sm:w-auto"
-                            >
-                              <option value="PENDING">Ожидает</option>
-                              <option value="PROCESSING">В обработке</option>
-                              <option value="SHIPPED">Отправлен</option>
-                              <option value="DELIVERED">Доставлен</option>
-                              <option value="CANCELLED">Отменен</option>
-                            </select>
-                          </td>
+                          >
+                            <option value="PENDING">Ожидает</option>
+                            <option value="PROCESSING">В обработке</option>
+                            <option value="SHIPPED">Отправлен</option>
+                            <option value="DELIVERED">Доставлен</option>
+                            <option value="CANCELLED">Отменен</option>
+                          </select>
+                        </td>
                           <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm">
-                            <button
-                              onClick={() => setSelectedOrder(order)}
+                          <button
+                            onClick={() => setSelectedOrder(order)}
                               className="text-[#6F2A2B] hover:text-[#5a2223] p-1"
                               title="Просмотр"
-                            >
-                              <Eye className="w-4 h-4" />
-                            </button>
-                          </td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
+                          >
+                            <Eye className="w-4 h-4" />
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
               </div>
             </div>
 

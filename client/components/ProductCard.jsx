@@ -131,6 +131,7 @@ const ProductCard = memo(function ProductCard({
   price,
   to,
   stock,
+  weight,
 }) {
   const productUrl =
     to ??
@@ -283,16 +284,16 @@ const handleToggleFavorite = useCallback(async (e) => {
   } else {
     // удалить из избранного
     try {
-      const ok = await apiDeleteFavorite(vidNum, authToken);
-      if (ok) {
-        window.dispatchEvent(new Event("favorites:update"));
-        showToast("Товар удалён из избранного");
-      } else {
-        // откат
-        setIsFavorite(true);
-        const rb = loadSet(favsKey); rb.add(vidStr); saveSet(favsKey, rb);
-        console.warn("Не удалось удалить из избранного");
-        showToast("Не удалось удалить из избранного", 2000);
+    const ok = await apiDeleteFavorite(vidNum, authToken);
+    if (ok) {
+      window.dispatchEvent(new Event("favorites:update"));
+      showToast("Товар удалён из избранного");
+    } else {
+      // откат
+      setIsFavorite(true);
+      const rb = loadSet(favsKey); rb.add(vidStr); saveSet(favsKey, rb);
+      console.warn("Не удалось удалить из избранного");
+      showToast("Не удалось удалить из избранного", 2000);
       }
     } catch (e) {
       if (e.message === "401 Unauthorized") {
@@ -345,7 +346,7 @@ const handleToggleFavorite = useCallback(async (e) => {
               <img
                 src={imageError || !image ? "/korm1.svg" : image}
                 alt={title}
-                className="object-contain w-32 mx-auto h-56 sm:h-72 sm:w-40 lg:h-80 lg:w-48"
+                className="object-contain w-32 h-56 mx-auto sm:h-72 sm:w-40 lg:h-80 lg:w-48"
                 loading="lazy"
                 onError={() => setImageError(true)}
               />
@@ -360,9 +361,16 @@ const handleToggleFavorite = useCallback(async (e) => {
               title={title}
               aria-label={title || "Товар"}
             >
-              <p className="text-[#1E1E1E] text-sm sm:text-base mb-6 line-clamp-3 h-[4.5rem] sm:h-[5rem]">
+              <p className="text-[#1E1E1E] text-sm sm:text-base mb-2">
                 {title}
               </p>
+              {weight && (
+                <p className="text-[#8B8B8B] text-xs sm:text-sm mb-4"> 
+                  {typeof weight === "number" 
+                    ? ` ${weight % 1 === 0 ? weight : weight.toFixed(3)} кг`
+                    : weight}
+                </p>
+              )}
             </Link>
 
             {/* Цена + кнопка */}

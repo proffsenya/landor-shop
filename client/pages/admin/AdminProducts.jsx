@@ -283,24 +283,24 @@ export default function AdminProducts() {
             <div className="bg-white rounded-lg shadow overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full min-w-[640px]">
-                  <thead className="bg-gray-50">
-                    <tr>
+                <thead className="bg-gray-50">
+                  <tr>
                       <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">ID</th>
                       <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Название</th>
                       <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase hidden md:table-cell">Slug</th>
                       <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Действия</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-200">
-                    {products.length === 0 ? (
-                      <tr>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200">
+                  {products.length === 0 ? (
+                    <tr>
                         <td colSpan="4" className="px-3 sm:px-6 py-4 text-center text-gray-500">
-                          Нет товаров
-                        </td>
-                      </tr>
-                    ) : (
-                      products.map((product) => (
-                        <tr key={product.id}>
+                        Нет товаров
+                      </td>
+                    </tr>
+                  ) : (
+                    products.map((product) => (
+                      <tr key={product.id}>
                           <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-900">{product.id}</td>
                           <td className="px-3 sm:px-6 py-4 text-sm text-gray-900">{product.name || product.productName}</td>
                           <td className="px-3 sm:px-6 py-4 text-sm text-gray-500 hidden md:table-cell">{product.slug || "-"}</td>
