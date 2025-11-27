@@ -8,5 +8,6 @@ import java.io.Serializable;
 /**
  * DTO for {@link com.example.backend.Domain.Models.Color}
  */
-public record ColorDTO(Long id, @NotNull @Size(max = 100) String name, String slug) implements Serializable {
+public record ColorCreateDTO(@NotNull @Size(max = 100) String name,
+                             @Size(max = 100) String slug) implements Serializable {
 }

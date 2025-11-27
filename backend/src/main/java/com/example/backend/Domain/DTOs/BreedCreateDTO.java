@@ -9,5 +9,6 @@ import java.io.Serializable;
  * DTO for {@link com.example.backend.Domain.Models.Breed}
  */
 public record BreedCreateDTO(@NotNull @Size(max = 100) String name,
-                             @Size(max = 100) String slug) implements Serializable {
+                             @Size(max = 100) String slug,
+                             Long categoryId) implements Serializable {
 }

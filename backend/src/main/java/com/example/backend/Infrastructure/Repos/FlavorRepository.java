@@ -8,4 +8,5 @@ import java.util.Optional;
 
 public interface FlavorRepository extends JpaRepository<Flavor, Long> {
     Optional<Flavor> findByCanonicalName(String canonical);
+    Optional<Flavor> findByName(String name);
 }

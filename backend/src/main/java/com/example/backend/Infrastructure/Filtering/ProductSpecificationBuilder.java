@@ -81,7 +81,7 @@ public class ProductSpecificationBuilder {
                 if (query != null) query.distinct(true);
                 Join<ProductVariant, Product> product = root.join("product");
                 Join<Product, ProductType> types = product.join("productType");
-                Expression<String> expr = cb.lower(types.get("canonicalName"));
+                Expression<String> expr = cb.lower(types.get("slug"));
                 Set<String> lowered = f.productTypes.stream().map(String::toLowerCase).collect(Collectors.toSet());
                 return expr.in(lowered);
             });
