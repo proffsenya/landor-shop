@@ -78,31 +78,31 @@ export default function AdminProducts() {
         scentsRes,
         productTypesRes,
       ] = await Promise.all([
-        fetch("/api/admin/categories", {
+        fetch("/api/categories", {
           headers: { Authorization: `Bearer ${adminToken}` },
         }),
-        fetch("/api/admin/brands", {
+        fetch("/api/brands", {
           headers: { Authorization: `Bearer ${adminToken}` },
         }),
-        fetch("/api/admin/breeds", {
+        fetch("/api/breeds", {
           headers: { Authorization: `Bearer ${adminToken}` },
         }),
-        fetch("/api/admin/countries", {
+        fetch("/api/countries", {
           headers: { Authorization: `Bearer ${adminToken}` },
         }),
-        fetch("/api/admin/typeoffood", {
+        fetch("/api/typeOfFoods", {
           headers: { Authorization: `Bearer ${adminToken}` },
         }),
-        fetch("/api/admin/flavors", {
+        fetch("/api/flavors", {
           headers: { Authorization: `Bearer ${adminToken}` },
         }),
-        fetch("/api/admin/colors", {
+        fetch("/api/colors", {
           headers: { Authorization: `Bearer ${adminToken}` },
         }),
-        fetch("/api/admin/scents", {
+        fetch("/api/scents", {
           headers: { Authorization: `Bearer ${adminToken}` },
         }),
-        fetch("/api/admin/producttypes", {
+        fetch("/api/productTypes", {
           headers: { Authorization: `Bearer ${adminToken}` },
         }),
       ]);

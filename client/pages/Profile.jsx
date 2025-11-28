@@ -4,6 +4,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import BreadcrumbNav from "@/components/BreadcrumbNav";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { PageFade, ToastMotion } from "@/utils/PageAnimations";
 import { getAuthToken } from "@/utils/auth";
 import { formatName, formatPhone } from "@/utils/formatting";
@@ -20,19 +21,6 @@ const mockUser = {
   phone: "",
   avatar: null,
 };
-
-const mockOrders = [
-  { id: "134534", date: "01.09.2025" },
-  { id: "134535", date: "02.09.2025" },
-  { id: "134536", date: "03.09.2025" },
-  { id: "134537", date: "04.09.2025" },
-  { id: "134538", date: "05.09.2025" },
-  { id: "134539", date: "06.09.2025" },
-  { id: "134540", date: "07.09.2025" },
-  { id: "134541", date: "08.09.2025" },
-  { id: "134542", date: "09.09.2025" },
-  { id: "134543", date: "10.09.2025" },
-];
 
 // Ряд с инпутом и маленькой кнопкой справа (адаптив)
 function RowWithButton({
@@ -87,7 +75,12 @@ function RowWithButton({
 export default function Profile() {
   const navigate = useNavigate();
   const [user, setUser] = useState(mockUser);
-  const [orders] = useState(mockOrders);
+  const [orders, setOrders] = useState([]);
+  const [ordersLoading, setOrdersLoading] = useState(false);
+  const [selectedOrder, setSelectedOrder] = useState(null);
+  const [orderDetails, setOrderDetails] = useState(null);
+  const [orderDetailsLoading, setOrderDetailsLoading] = useState(false);
+  const [isOrderDialogOpen, setIsOrderDialogOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [isStaff, setIsStaff] = useState(false);
@@ -181,6 +174,117 @@ export default function Profile() {
 
     fetchProfile();
   }, []);
+
+  // Загрузка заказов
+  useEffect(() => {
+    const fetchOrders = async () => {
+      const authToken = getAuthToken();
+      if (!authToken || authToken === "guest") {
+        return;
+      }
+
+      try {
+        setOrdersLoading(true);
+        const res = await fetch("/api/orders/profile", {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${authToken}`,
+          },
+        });
+
+        if (!res.ok) {
+          throw new Error(`HTTP ${res.status}`);
+        }
+
+        const data = await res.json();
+        setOrders(Array.isArray(data) ? data : []);
+      } catch (e) {
+        console.error("Error fetching orders:", e);
+        setOrders([]);
+      } finally {
+        setOrdersLoading(false);
+      }
+    };
+
+    fetchOrders();
+  }, []);
+
+  // Загрузка деталей заказа
+  const fetchOrderDetails = async (orderId) => {
+    const authToken = getAuthToken();
+    if (!authToken || authToken === "guest") {
+      showToast("Необходима авторизация", 3000);
+      return;
+    }
+
+    try {
+      setOrderDetailsLoading(true);
+      const res = await fetch(`/api/orders/${orderId}`, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${authToken}`,
+        },
+      });
+
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status}`);
+      }
+
+      const data = await res.json();
+      setOrderDetails(data);
+    } catch (e) {
+      console.error("Error fetching order details:", e);
+      showToast("Не удалось загрузить детали заказа", 3000);
+      setOrderDetails(null);
+    } finally {
+      setOrderDetailsLoading(false);
+    }
+  };
+
+  // Открытие заказа
+  const handleOpenOrder = async (orderId) => {
+    setSelectedOrder(orderId);
+    setIsOrderDialogOpen(true);
+    await fetchOrderDetails(orderId);
+  };
+
+  // Форматирование даты
+  const formatDate = (dateString) => {
+    if (!dateString) return "";
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleDateString("ru-RU", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+      });
+    } catch {
+      return dateString;
+    }
+  };
+
+  // Форматирование статуса заказа
+  const formatOrderStatus = (status) => {
+    const statusMap = {
+      pending: "Ожидает обработки",
+      processing: "В обработке",
+      shipped: "Отправлен",
+      delivered: "Доставлен",
+      cancelled: "Отменен",
+    };
+    return statusMap[status] || status;
+  };
+
+  // Форматирование статуса оплаты
+  const formatPaymentStatus = (status) => {
+    const statusMap = {
+      pending: "Ожидает оплаты",
+      paid: "Оплачен",
+      failed: "Ошибка оплаты",
+      refunded: "Возвращен",
+    };
+    return statusMap[status] || status;
+  };
 
   // Изменение пароля
   const changePassword = async () => {
@@ -766,33 +870,50 @@ export default function Profile() {
                 История заказов
               </h2>
 
-              <div className="mt-3 overflow-x-auto">
-                <table className="w-full min-w-[420px]">
-                  <thead>
-                    <tr className="text-[#1E1E1E] border-b border-[#E8E8E8]">
-                      <th className="py-2 text-left font-normal text-[13px] sm:text-[14px]">Номер</th>
-                      <th className="py-2 text-left font-normal text-[13px] sm:text-[14px]">Дата</th>
-                      <th className="py-2 text-left font-normal text-[13px] sm:text-[14px]"></th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {orders.map((o, idx) => (
-                      <tr key={idx} className="border-b border-[#F3F3F3]">
-                        <td className="py-2 text-[13px] sm:text-[14px]">Заказ №{o.id}</td>
-                        <td className="py-2 text-[13px] sm:text-[14px] text-[#6F6F6F]">{o.date}</td>
-                        <td className="py-2">
-                          <button
-                            type="button"
-                            className="text-[#6F2A2B] text-[13px] sm:text-[14px] hover:opacity-80"
-                          >
-                            Открыть
-                          </button>
-                        </td>
+              {ordersLoading ? (
+                <div className="mt-3 py-8 text-center text-gray-500">Загрузка заказов…</div>
+              ) : orders.length === 0 ? (
+                <div className="mt-3 py-8 text-center text-gray-500">У вас пока нет заказов</div>
+              ) : (
+                <div className="mt-3 overflow-x-auto">
+                  <table className="w-full min-w-[420px]">
+                    <thead>
+                      <tr className="text-[#1E1E1E] border-b border-[#E8E8E8]">
+                        <th className="py-2 text-left font-normal text-[13px] sm:text-[14px]">Номер</th>
+                        <th className="py-2 text-left font-normal text-[13px] sm:text-[14px]">Дата</th>
+                        <th className="py-2 text-left font-normal text-[13px] sm:text-[14px]">Сумма</th>
+                        <th className="py-2 text-left font-normal text-[13px] sm:text-[14px]">Статус</th>
+                        <th className="py-2 text-left font-normal text-[13px] sm:text-[14px]"></th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                    </thead>
+                    <tbody>
+                      {orders.map((order) => (
+                        <tr key={order.id} className="border-b border-[#F3F3F3]">
+                          <td className="py-2 text-[13px] sm:text-[14px]">Заказ №{order.id}</td>
+                          <td className="py-2 text-[13px] sm:text-[14px] text-[#6F6F6F]">
+                            {formatDate(order.createdAt)}
+                          </td>
+                          <td className="py-2 text-[13px] sm:text-[14px] text-[#6F6F6F]">
+                            {order.totalAmount ? `${order.totalAmount.toLocaleString("ru-RU")} ₽` : "-"}
+                          </td>
+                          <td className="py-2 text-[13px] sm:text-[14px] text-[#6F6F6F]">
+                            {formatOrderStatus(order.orderStatus)}
+                          </td>
+                          <td className="py-2">
+                            <button
+                              type="button"
+                              onClick={() => handleOpenOrder(order.id)}
+                              className="text-[#6F2A2B] text-[13px] sm:text-[14px] hover:opacity-80"
+                            >
+                              Открыть
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
 
             </div>
             </PageFade>
@@ -803,6 +924,138 @@ export default function Profile() {
       </div>
       <Footer />
       <ToastMotion show={!!toast}>{toast}</ToastMotion>
+
+      {/* Модальное окно с деталями заказа */}
+      <Dialog open={isOrderDialogOpen} onOpenChange={setIsOrderDialogOpen}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Заказ №{selectedOrder}</DialogTitle>
+          </DialogHeader>
+          
+          {orderDetailsLoading ? (
+            <div className="py-8 text-center text-gray-500">Загрузка деталей заказа…</div>
+          ) : orderDetails ? (
+            <div className="space-y-6">
+              {/* Общая информация */}
+              <div className="border-b border-[#E8E8E8] pb-4">
+                <h3 className="text-lg font-semibold text-[#1E1E1E] mb-3">Общая информация</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <span className="text-[#6F6F6F]">Статус заказа:</span>
+                    <span className="ml-2 font-medium text-[#1E1E1E]">
+                      {formatOrderStatus(orderDetails.orderStatus)}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-[#6F6F6F]">Статус оплаты:</span>
+                    <span className="ml-2 font-medium text-[#1E1E1E]">
+                      {formatPaymentStatus(orderDetails.paymentStatus)}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-[#6F6F6F]">Дата создания:</span>
+                    <span className="ml-2 font-medium text-[#1E1E1E]">
+                      {formatDate(orderDetails.createdAt)}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-[#6F6F6F]">Сумма заказа:</span>
+                    <span className="ml-2 font-medium text-[#1E1E1E]">
+                      {orderDetails.totalAmount ? `${orderDetails.totalAmount.toLocaleString("ru-RU")} ₽` : "-"}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Товары в заказе */}
+              {orderDetails.items && orderDetails.items.length > 0 && (
+                <div className="border-b border-[#E8E8E8] pb-4">
+                  <h3 className="text-lg font-semibold text-[#1E1E1E] mb-3">Товары</h3>
+                  <div className="space-y-3">
+                    {orderDetails.items.map((item) => (
+                      <div key={item.id} className="flex justify-between items-start p-3 bg-gray-50 rounded-lg">
+                        <div className="flex-1">
+                          <div className="font-medium text-[#1E1E1E]">{item.productName}</div>
+                          <div className="text-sm text-[#6F6F6F] mt-1">
+                            Количество: {item.quantity}
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="font-medium text-[#1E1E1E]">
+                            {item.totalPrice ? `${item.totalPrice.toLocaleString("ru-RU")} ₽` : "-"}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Адрес доставки */}
+              {orderDetails.shippingAddress && (
+                <div className="border-b border-[#E8E8E8] pb-4">
+                  <h3 className="text-lg font-semibold text-[#1E1E1E] mb-3">Адрес доставки</h3>
+                  <div className="text-sm text-[#1E1E1E] space-y-1">
+                    {orderDetails.shippingAddress.name && (
+                      <div><strong>Получатель:</strong> {orderDetails.shippingAddress.name}</div>
+                    )}
+                    {orderDetails.shippingAddress.phone && (
+                      <div><strong>Телефон:</strong> {orderDetails.shippingAddress.phone}</div>
+                    )}
+                    {orderDetails.shippingAddress.street && (
+                      <div><strong>Адрес:</strong> {orderDetails.shippingAddress.street}</div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Адрес оплаты */}
+              {orderDetails.billingAddress && (
+                <div className="border-b border-[#E8E8E8] pb-4">
+                  <h3 className="text-lg font-semibold text-[#1E1E1E] mb-3">Адрес оплаты</h3>
+                  <div className="text-sm text-[#1E1E1E] space-y-1">
+                    {orderDetails.billingAddress.name && (
+                      <div><strong>Получатель:</strong> {orderDetails.billingAddress.name}</div>
+                    )}
+                    {orderDetails.billingAddress.phone && (
+                      <div><strong>Телефон:</strong> {orderDetails.billingAddress.phone}</div>
+                    )}
+                    {orderDetails.billingAddress.street && (
+                      <div><strong>Адрес:</strong> {orderDetails.billingAddress.street}</div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Информация о клиенте */}
+              {orderDetails.customerSnapshot && Object.keys(orderDetails.customerSnapshot).length > 0 && (
+                <div>
+                  <h3 className="text-lg font-semibold text-[#1E1E1E] mb-3">Информация о клиенте</h3>
+                  <div className="text-sm text-[#1E1E1E] space-y-1">
+                    {orderDetails.customerSnapshot.last_name && (
+                      <div><strong>Фамилия:</strong> {orderDetails.customerSnapshot.last_name}</div>
+                    )}
+                    {orderDetails.customerSnapshot.first_name && (
+                      <div><strong>Имя:</strong> {orderDetails.customerSnapshot.first_name}</div>
+                    )}
+                    {orderDetails.customerSnapshot.middle_name && (
+                      <div><strong>Отчество:</strong> {orderDetails.customerSnapshot.middle_name}</div>
+                    )}
+                    {orderDetails.customerSnapshot.email && (
+                      <div><strong>Email:</strong> {orderDetails.customerSnapshot.email}</div>
+                    )}
+                    {orderDetails.customerSnapshot.phone && (
+                      <div><strong>Телефон:</strong> {formatPhone(orderDetails.customerSnapshot.phone)}</div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="py-8 text-center text-gray-500">Не удалось загрузить детали заказа</div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -1,0 +1,564 @@
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import AdminSidebar from "@/components/admin/AdminSidebar";
+import AdminHeader from "@/components/admin/AdminHeader";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Plus, Edit, Trash2 } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { checkAdminAccess, getAdminToken } from "@/utils/adminAuth";
+
+// Конфигурация типов фильтров
+const FILTER_TYPES = {
+  brands: {
+    label: "Бренды",
+    endpoint: "/api/brands",
+    adminEndpoint: "/api/admin/brands",
+    fields: [
+      { key: "name", label: "Название", required: true },
+      { key: "slug", label: "Slug", required: true },
+    ],
+  },
+  breeds: {
+    label: "Породы",
+    endpoint: "/api/breeds",
+    adminEndpoint: "/api/admin/breeds",
+    fields: [
+      { key: "name", label: "Название", required: true },
+      { key: "slug", label: "Slug", required: true },
+    ],
+  },
+  categories: {
+    label: "Категории",
+    endpoint: "/api/categories",
+    adminEndpoint: "/api/admin/categories",
+    fields: [
+      { key: "name", label: "Название", required: true },
+      { key: "slug", label: "Slug", required: true },
+      { key: "description", label: "Описание", required: false, type: "textarea" },
+      { key: "parentId", label: "Родительская категория", required: false, type: "select" },
+      { key: "isActive", label: "Активна", required: false, type: "checkbox" },
+    ],
+  },
+  colors: {
+    label: "Цвета",
+    endpoint: "/api/colors",
+    adminEndpoint: "/api/admin/colors",
+    fields: [
+      { key: "name", label: "Название", required: true },
+      { key: "slug", label: "Slug", required: true },
+    ],
+  },
+  countries: {
+    label: "Страны",
+    endpoint: "/api/countries",
+    adminEndpoint: "/api/admin/countries",
+    fields: [
+      { key: "name", label: "Название", required: true },
+      { key: "slug", label: "Slug", required: true },
+    ],
+  },
+  flavors: {
+    label: "Вкусы",
+    endpoint: "/api/flavors",
+    adminEndpoint: "/api/admin/flavors",
+    fields: [
+      { key: "name", label: "Название", required: true },
+      { key: "slug", label: "Slug", required: true },
+    ],
+  },
+  productTypes: {
+    label: "Типы продуктов",
+    endpoint: "/api/productTypes",
+    adminEndpoint: "/api/admin/producttypes",
+    fields: [
+      { key: "name", label: "Название", required: true },
+      { key: "slug", label: "Slug", required: true },
+    ],
+  },
+  scents: {
+    label: "Запахи",
+    endpoint: "/api/scents",
+    adminEndpoint: "/api/admin/scents",
+    fields: [
+      { key: "name", label: "Название", required: true },
+      { key: "slug", label: "Slug", required: true },
+    ],
+  },
+  typeOfFoods: {
+    label: "Типы корма",
+    endpoint: "/api/typeOfFoods",
+    adminEndpoint: "/api/admin/typeoffood",
+    fields: [
+      { key: "name", label: "Название", required: true },
+      { key: "slug", label: "Slug", required: true },
+    ],
+  },
+};
+
+export default function AdminFilters() {
+  const navigate = useNavigate();
+  const [isSuperUser, setIsSuperUser] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [selectedFilterType, setSelectedFilterType] = useState("");
+  const [items, setItems] = useState([]);
+  const [itemsLoading, setItemsLoading] = useState(false);
+  const [showForm, setShowForm] = useState(false);
+  const [editingItem, setEditingItem] = useState(null);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  useEffect(() => {
+    const { isSuperUser: superUser, hasAccess } = checkAdminAccess();
+
+    if (!hasAccess) {
+      navigate("/admin/login");
+      return;
+    }
+
+    setIsSuperUser(superUser);
+    setLoading(false);
+  }, [navigate]);
+
+  // Загрузка элементов выбранного фильтра
+  const loadItems = async (filterType) => {
+    if (!filterType || !FILTER_TYPES[filterType]) return;
+
+    try {
+      setItemsLoading(true);
+      const adminToken = getAdminToken();
+      const config = FILTER_TYPES[filterType];
+      const res = await fetch(config.endpoint, {
+        headers: { Authorization: `Bearer ${adminToken}` },
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setItems(Array.isArray(data) ? data : []);
+      } else {
+        console.error("Failed to load items:", res.status);
+        setItems([]);
+      }
+    } catch (e) {
+      console.error("Error loading items:", e);
+      setItems([]);
+    } finally {
+      setItemsLoading(false);
+    }
+  };
+
+  // Загрузка отдельного элемента
+  const loadItem = async (filterType, itemId) => {
+    if (!filterType || !FILTER_TYPES[filterType] || !itemId) return null;
+
+    try {
+      const adminToken = getAdminToken();
+      const config = FILTER_TYPES[filterType];
+      const res = await fetch(`${config.endpoint}/${itemId}`, {
+        headers: { Authorization: `Bearer ${adminToken}` },
+      });
+
+      if (res.ok) {
+        return await res.json();
+      }
+      return null;
+    } catch (e) {
+      console.error("Error loading item:", e);
+      return null;
+    }
+  };
+
+  // Обработка изменения типа фильтра
+  const handleFilterTypeChange = (value) => {
+    setSelectedFilterType(value);
+    setShowForm(false);
+    setEditingItem(null);
+    if (value) {
+      loadItems(value);
+    } else {
+      setItems([]);
+    }
+  };
+
+  // Удаление элемента
+  const handleDelete = async (itemId) => {
+    if (!confirm("Удалить элемент?")) return;
+
+    try {
+      const adminToken = getAdminToken();
+      const config = FILTER_TYPES[selectedFilterType];
+      const res = await fetch(`${config.endpoint}/${itemId}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${adminToken}` },
+      });
+
+      if (res.ok) {
+        loadItems(selectedFilterType);
+      } else {
+        const errorText = await res.text();
+        alert(`Ошибка при удалении: ${errorText || res.statusText}`);
+      }
+    } catch (e) {
+      console.error("Error deleting item:", e);
+      alert("Ошибка при удалении");
+    }
+  };
+
+  // Открытие формы редактирования
+  const handleEdit = async (item) => {
+    // Загружаем полные данные элемента
+    const fullItem = await loadItem(selectedFilterType, item.id);
+    if (fullItem) {
+      setEditingItem(fullItem);
+      setShowForm(true);
+    } else {
+      // Если не удалось загрузить, используем данные из списка
+      setEditingItem(item);
+      setShowForm(true);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#6F2A2B]"></div>
+      </div>
+    );
+  }
+
+  const config = selectedFilterType ? FILTER_TYPES[selectedFilterType] : null;
+
+  return (
+    <div className="min-h-screen bg-gray-100">
+      <AdminHeader 
+        isSuperUser={isSuperUser} 
+        onMenuClick={() => setSidebarOpen(!sidebarOpen)}
+      />
+      <div className="flex">
+        <AdminSidebar 
+          isSuperUser={isSuperUser} 
+          isOpen={sidebarOpen}
+          onClose={() => setSidebarOpen(false)}
+        />
+        <main className="flex-1 p-4 sm:p-6 lg:p-8 w-full lg:w-auto">
+          <div className="max-w-7xl mx-auto">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4 sm:mb-6">
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Фильтры</h1>
+            </div>
+
+            {/* Выбор типа фильтра */}
+            <div className="bg-white rounded-lg shadow p-4 sm:p-6 mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Выберите тип фильтра
+              </label>
+              <Select value={selectedFilterType} onValueChange={handleFilterTypeChange}>
+                <SelectTrigger className="w-full sm:w-[300px]">
+                  <SelectValue placeholder="Выберите тип фильтра" />
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.entries(FILTER_TYPES).map(([key, value]) => (
+                    <SelectItem key={key} value={key}>
+                      {value.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Форма создания/редактирования */}
+            {showForm && config && (
+              <FilterForm
+                filterType={selectedFilterType}
+                config={config}
+                item={editingItem}
+                items={items}
+                onClose={() => {
+                  setShowForm(false);
+                  setEditingItem(null);
+                }}
+                onSave={() => {
+                  setShowForm(false);
+                  setEditingItem(null);
+                  loadItems(selectedFilterType);
+                }}
+              />
+            )}
+
+            {/* Таблица элементов */}
+            {selectedFilterType && config && (
+              <div className="bg-white rounded-lg shadow overflow-hidden">
+                <div className="p-4 sm:p-6 border-b border-gray-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                  <h2 className="text-xl font-semibold text-gray-900">{config.label}</h2>
+                  <Button
+                    onClick={() => {
+                      setEditingItem(null);
+                      setShowForm(true);
+                    }}
+                    className="bg-[#6F2A2B] text-white hover:bg-[#5a2223] w-full sm:w-auto"
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Добавить
+                  </Button>
+                </div>
+
+                {itemsLoading ? (
+                  <div className="p-8 text-center text-gray-500">Загрузка...</div>
+                ) : items.length === 0 ? (
+                  <div className="p-8 text-center text-gray-500">Нет элементов</div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full min-w-[600px]">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">ID</th>
+                          <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Название</th>
+                          <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase hidden md:table-cell">Slug</th>
+                          {config.fields.some(f => f.key === "isActive") && (
+                            <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Активна</th>
+                          )}
+                          <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Действия</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-200">
+                        {items.map((item) => (
+                          <tr key={item.id}>
+                            <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-900">{item.id}</td>
+                            <td className="px-3 sm:px-6 py-4 text-sm text-gray-900">{item.name || "-"}</td>
+                            <td className="px-3 sm:px-6 py-4 text-sm text-gray-500 hidden md:table-cell">{item.slug || "-"}</td>
+                            {config.fields.some(f => f.key === "isActive") && (
+                              <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
+                                <span className={`px-2 py-1 text-xs rounded-full ${
+                                  item.isActive ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"
+                                }`}>
+                                  {item.isActive ? "Да" : "Нет"}
+                                </span>
+                              </td>
+                            )}
+                            <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm">
+                              <div className="flex items-center gap-2 sm:gap-4">
+                                <button
+                                  onClick={() => handleEdit(item)}
+                                  className="text-[#6F2A2B] hover:text-[#5a2223]"
+                                  title="Редактировать"
+                                >
+                                  <Edit className="w-4 h-4" />
+                                </button>
+                                <button
+                                  onClick={() => handleDelete(item.id)}
+                                  className="text-red-600 hover:text-red-800"
+                                  title="Удалить"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </main>
+      </div>
+    </div>
+  );
+}
+
+// Компонент формы для создания/редактирования
+function FilterForm({ filterType, config, item, items, onClose, onSave }) {
+  const [formData, setFormData] = useState({});
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    // Инициализация формы данными элемента или пустыми значениями
+    const initialData = {};
+    config.fields.forEach((field) => {
+      if (field.type === "checkbox") {
+        initialData[field.key] = item?.[field.key] !== undefined ? item[field.key] : false;
+      } else if (field.type === "select") {
+        initialData[field.key] = item?.[field.key] ? String(item[field.key]) : "";
+      } else {
+        initialData[field.key] = item?.[field.key] || "";
+      }
+    });
+    setFormData(initialData);
+  }, [item, config]);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    
+    // Валидация обязательных полей
+    const requiredFields = config.fields.filter(f => f.required);
+    for (const field of requiredFields) {
+      if (!formData[field.key] || formData[field.key].toString().trim() === "") {
+        alert(`Заполните поле "${field.label}"`);
+        return;
+      }
+    }
+
+    try {
+      setLoading(true);
+      const adminToken = getAdminToken();
+      const url = item
+        ? `${config.adminEndpoint}/${item.id}`
+        : config.adminEndpoint;
+      const method = item ? "PUT" : "POST";
+
+      // Подготовка данных для отправки
+      const payload = { ...formData };
+      
+      // Преобразование типов данных
+      config.fields.forEach((field) => {
+        if (field.type === "select" && payload[field.key]) {
+          payload[field.key] = payload[field.key] ? Number(payload[field.key]) : null;
+        } else if (field.type === "checkbox") {
+          payload[field.key] = Boolean(payload[field.key]);
+        }
+      });
+
+      const res = await fetch(url, {
+        method,
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${adminToken}`,
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (res.ok) {
+        onSave();
+      } else {
+        const errorText = await res.text();
+        alert(`Ошибка при сохранении: ${errorText || res.statusText}`);
+      }
+    } catch (e) {
+      console.error("Error saving item:", e);
+      alert("Ошибка при сохранении");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Получение опций для select полей
+  const getSelectOptions = (fieldKey) => {
+    if (fieldKey === "parentId" && filterType === "categories") {
+      return items.filter((cat) => cat.id !== item?.id);
+    }
+    return [];
+  };
+
+  return (
+    <div className="bg-white rounded-lg shadow p-6 mb-6">
+      <h2 className="text-xl font-semibold mb-4">
+        {item ? `Редактировать ${config.label.toLowerCase()}` : `Добавить ${config.label.toLowerCase()}`}
+      </h2>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        {config.fields.map((field) => {
+          if (field.type === "checkbox") {
+            return (
+              <div key={field.key} className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id={field.key}
+                  checked={formData[field.key] || false}
+                  onChange={(e) => setFormData({ ...formData, [field.key]: e.target.checked })}
+                  className="w-4 h-4 text-[#6F2A2B] border-gray-300 rounded focus:ring-[#6F2A2B]"
+                />
+                <label htmlFor={field.key} className="text-sm font-medium text-gray-700">
+                  {field.label}
+                </label>
+              </div>
+            );
+          }
+
+          if (field.type === "textarea") {
+            return (
+              <div key={field.key}>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  {field.label} {field.required && "*"}
+                </label>
+                <textarea
+                  value={formData[field.key] || ""}
+                  onChange={(e) => setFormData({ ...formData, [field.key]: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#6F2A2B]"
+                  rows="3"
+                  required={field.required}
+                />
+              </div>
+            );
+          }
+
+          if (field.type === "select") {
+            const options = getSelectOptions(field.key);
+            return (
+              <div key={field.key}>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  {field.label} {field.required && "*"}
+                </label>
+                <Select
+                  value={formData[field.key] || ""}
+                  onValueChange={(value) => setFormData({ ...formData, [field.key]: value })}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder={`Выберите ${field.label.toLowerCase()}`} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">Нет</SelectItem>
+                    {options.map((option) => (
+                      <SelectItem key={option.id} value={String(option.id)}>
+                        {option.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            );
+          }
+
+          // Обычное текстовое поле
+          return (
+            <div key={field.key}>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                {field.label} {field.required && "*"}
+              </label>
+              <Input
+                value={formData[field.key] || ""}
+                onChange={(e) => {
+                  let value = e.target.value;
+                  // Автоматическое форматирование slug
+                  if (field.key === "slug") {
+                    value = value.toLowerCase().replace(/\s+/g, "-");
+                  }
+                  setFormData({ ...formData, [field.key]: value });
+                }}
+                placeholder={field.key === "slug" ? "example-slug" : ""}
+                required={field.required}
+              />
+            </div>
+          );
+        })}
+        <div className="flex gap-3">
+          <Button 
+            type="submit" 
+            className="bg-[#6F2A2B] text-white hover:bg-[#5a2223]"
+            disabled={loading}
+          >
+            {loading ? "Сохранение..." : "Сохранить"}
+          </Button>
+          <Button type="button" onClick={onClose} variant="outline" disabled={loading}>
+            Отмена
+          </Button>
+        </div>
+      </form>
+    </div>
+  );
+}
+

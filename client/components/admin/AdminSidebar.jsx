@@ -9,7 +9,8 @@ import {
   FolderTree,
   LogOut,
   FileText,
-  X
+  X,
+  Sliders
 } from "lucide-react";
 
 export default function AdminSidebar({ isSuperUser, isOpen, onClose }) {
@@ -110,6 +111,20 @@ export default function AdminSidebar({ isSuperUser, isOpen, onClose }) {
         >
           <FolderTree className="w-4 h-4 lg:w-5 lg:h-5" />
           <span>Категории</span>
+        </NavLink>
+        <NavLink
+          to="/admin/filters"
+          onClick={handleNavClick}
+          className={({ isActive }) =>
+            `flex items-center gap-3 px-3 lg:px-4 py-2 lg:py-3 rounded-lg transition-colors text-sm lg:text-base ${
+              isActive
+                ? "bg-[#6F2A2B] text-white"
+                : "text-gray-300 hover:bg-gray-800"
+            }`
+          }
+        >
+          <Sliders className="w-4 h-4 lg:w-5 lg:h-5" />
+          <span>Фильтры</span>
         </NavLink>
         <NavLink
           to="/admin/forms"

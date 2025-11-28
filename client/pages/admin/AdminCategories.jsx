@@ -38,7 +38,7 @@ export default function AdminCategories() {
   const loadCategories = async () => {
     try {
       const adminToken = getAdminToken();
-      const res = await fetch("/api/admin/categories", {
+      const res = await fetch("/api/categories", {
         headers: { Authorization: `Bearer ${adminToken}` },
       });
 
