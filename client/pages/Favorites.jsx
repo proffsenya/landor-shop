@@ -71,6 +71,9 @@ export default function Favorites() {
               // ВАЖНО: variantId — то, что требуется для move-to-cart и для добавления в корзину
               variantId: Number(item.variantId ?? item.variantID ?? item.variant_id ?? item.id),
 
+              // productId для навигации на страницу товара
+              productId: Number(item.productId ?? item.productID ?? item.product_id ?? NaN),
+
               name: item.displayName,
               price: Number(item.price ?? 0),
               image: item.imageUrl || "/korm1.svg",
@@ -119,6 +122,25 @@ export default function Favorites() {
       currency: "RUB",
       minimumFractionDigits: 0,
     }).format(price);
+
+  // Функция для получения URL страницы товара
+  const getProductUrl = (item) => {
+    // Если есть productId, используем его
+    if (item.productId && Number.isFinite(item.productId)) {
+      return `/product/${item.productId}${item.variantId && Number.isFinite(item.variantId) ? `?variant=${item.variantId}` : ''}`;
+    }
+    // Если productId нет, пытаемся извлечь из imageUrl
+    if (item.image && item.image.startsWith("/api/products/")) {
+      const match = item.image.match(/\/api\/products\/(\d+)\/images\/(\d+)/);
+      if (match) {
+        const productId = match[1];
+        const variantId = match[2];
+        return `/product/${productId}?variant=${variantId}`;
+      }
+    }
+    // Если ничего не найдено, возвращаем null (ссылка не будет показана)
+    return null;
+  };
 
   const showToast = (msg, ms = 1500) => {
     setToast(msg);
@@ -461,13 +483,33 @@ async function moveFavoritesToCart(variantIdsRaw) {
                         </div>
 
                         <div className="flex-shrink-0 w-20 overflow-hidden rounded-md h-28 bg-gray-50">
-                          <img src={item.image} alt={item.name} className="object-contain w-full h-full" />
+                          {getProductUrl(item) ? (
+                            <Link
+                              to={getProductUrl(item)}
+                              className="block focus:outline-none focus:ring-2 focus:ring-[#6F2A2B] rounded h-full"
+                            >
+                              <img src={item.image} alt={item.name} className="object-contain w-full h-full" />
+                            </Link>
+                          ) : (
+                            <img src={item.image} alt={item.name} className="object-contain w-full h-full" />
+                          )}
                         </div>
 
                         <div className="flex-1 min-w-0">
-                          <div className="text-[15px] text-[#1E1E1E] leading-tight line-clamp-3">
-                            {item.name}
-                          </div>
+                          {getProductUrl(item) ? (
+                            <Link
+                              to={getProductUrl(item)}
+                              className="block focus:outline-none focus:ring-2 focus:ring-[#6F2A2B] rounded hover:text-[#6F2A2B] transition-colors"
+                            >
+                              <div className="text-[15px] text-[#1E1E1E] leading-tight line-clamp-3">
+                                {item.name}
+                              </div>
+                            </Link>
+                          ) : (
+                            <div className="text-[15px] text-[#1E1E1E] leading-tight line-clamp-3">
+                              {item.name}
+                            </div>
+                          )}
 
                           <div className="flex flex-wrap items-center mt-2 text-sm gap-x-4 gap-y-1">
                             <span className="text-[#1E1E1E]">Вес: {item.weight}</span>
@@ -571,10 +613,28 @@ async function moveFavoritesToCart(variantIdsRaw) {
                             <td className="px-5 py-6">
                               <div className="flex items-center gap-6">
                                 <div className="w-[64px] h-[96px] overflow-hidden flex-shrink-0">
-                                  <img src={item.image} alt={item.name} className="object-contain w-full h-full" />
+                                  {getProductUrl(item) ? (
+                                    <Link
+                                      to={getProductUrl(item)}
+                                      className="block focus:outline-none focus:ring-2 focus:ring-[#6F2A2B] rounded h-full"
+                                    >
+                                      <img src={item.image} alt={item.name} className="object-contain w-full h-full" />
+                                    </Link>
+                                  ) : (
+                                    <img src={item.image} alt={item.name} className="object-contain w-full h-full" />
+                                  )}
                                 </div>
                                 <div className="text-[15px] text-[#1E1E1E] leading-tight pr-6 line-clamp-3">
-                                  {item.name}
+                                  {getProductUrl(item) ? (
+                                    <Link
+                                      to={getProductUrl(item)}
+                                      className="block focus:outline-none focus:ring-2 focus:ring-[#6F2A2B] rounded hover:text-[#6F2A2B] transition-colors"
+                                    >
+                                      {item.name}
+                                    </Link>
+                                  ) : (
+                                    item.name
+                                  )}
                                 </div>
                               </div>
                             </td>

@@ -87,6 +87,14 @@ const fmtMoney = (n) =>
 const pluralGoods = (n) =>
   n === 1 ? "товар" : n > 1 && n < 5 ? "товара" : "товаров";
 
+// Функция для получения URL страницы товара
+const getProductUrl = (item) => {
+  if (item.productId && Number.isFinite(item.productId) && item.productId > 0) {
+    return `/product/${item.productId}${item.variantId && Number.isFinite(item.variantId) ? `?variant=${item.variantId}` : ''}`;
+  }
+  return null;
+};
+
 // Приводим ответ бэкенда к виду, понятному UI
 const mapCartResponse = (data) => {
   const items = Array.isArray(data?.cartItems) ? data.cartItems : [];
@@ -669,20 +677,47 @@ export default function Cart() {
                             </div>
 
                             <div className="pl-4">
-                              <img
-                                src={imageUrls.get(i.id) || i.image || "/korm1.svg"}
-                                alt={i.name}
-                                className="w-[80px] h-[110px] object-contain"
-                                onError={(e) => {
-                                  e.currentTarget.src = "/korm1.svg";
-                                }}
-                              />
+                              {getProductUrl(i) ? (
+                                <Link
+                                  to={getProductUrl(i)}
+                                  className="block focus:outline-none focus:ring-2 focus:ring-[#6F2A2B] rounded"
+                                >
+                                  <img
+                                    src={imageUrls.get(i.id) || i.image || "/korm1.svg"}
+                                    alt={i.name}
+                                    className="w-[80px] h-[110px] object-contain"
+                                    onError={(e) => {
+                                      e.currentTarget.src = "/korm1.svg";
+                                    }}
+                                  />
+                                </Link>
+                              ) : (
+                                <img
+                                  src={imageUrls.get(i.id) || i.image || "/korm1.svg"}
+                                  alt={i.name}
+                                  className="w-[80px] h-[110px] object-contain"
+                                  onError={(e) => {
+                                    e.currentTarget.src = "/korm1.svg";
+                                  }}
+                                />
+                              )}
                             </div>
 
                             <div className="pl-2">
-                              <p className="text-[15px] text-[#1E1E1E] leading-tight">
-                                {i.name}
-                              </p>
+                              {getProductUrl(i) ? (
+                                <Link
+                                  to={getProductUrl(i)}
+                                  className="block focus:outline-none focus:ring-2 focus:ring-[#6F2A2B] rounded hover:text-[#6F2A2B] transition-colors"
+                                >
+                                  <p className="text-[15px] text-[#1E1E1E] leading-tight">
+                                    {i.name}
+                                  </p>
+                                </Link>
+                              ) : (
+                                <p className="text-[15px] text-[#1E1E1E] leading-tight">
+                                  {i.name}
+                                </p>
+                              )}
                               {i.weight ? (
                                 <p className="text-sm text-[#7A7A7A] mt-2">
                                   Вес: {i.weight}
@@ -749,19 +784,46 @@ export default function Cart() {
                           <div>
                             <div className="flex gap-3">
                               <div className="flex-shrink-0 w-16 h-24">
-                                <img
-                                  src={imageUrls.get(i.id) || i.image || "/korm1.svg"}
-                                  alt={i.name}
-                                  className="object-contain w-full h-full"
-                                  onError={(e) => {
-                                    e.currentTarget.src = "/korm1.svg";
-                                  }}
-                                />
+                                {getProductUrl(i) ? (
+                                  <Link
+                                    to={getProductUrl(i)}
+                                    className="block focus:outline-none focus:ring-2 focus:ring-[#6F2A2B] rounded h-full"
+                                  >
+                                    <img
+                                      src={imageUrls.get(i.id) || i.image || "/korm1.svg"}
+                                      alt={i.name}
+                                      className="object-contain w-full h-full"
+                                      onError={(e) => {
+                                        e.currentTarget.src = "/korm1.svg";
+                                      }}
+                                    />
+                                  </Link>
+                                ) : (
+                                  <img
+                                    src={imageUrls.get(i.id) || i.image || "/korm1.svg"}
+                                    alt={i.name}
+                                    className="object-contain w-full h-full"
+                                    onError={(e) => {
+                                      e.currentTarget.src = "/korm1.svg";
+                                    }}
+                                  />
+                                )}
                               </div>
                               <div className="flex-1">
-                                <p className="text-[15px] text-[#1E1E1E] leading-tight">
-                                  {i.name}
-                                </p>
+                                {getProductUrl(i) ? (
+                                  <Link
+                                    to={getProductUrl(i)}
+                                    className="block focus:outline-none focus:ring-2 focus:ring-[#6F2A2B] rounded hover:text-[#6F2A2B] transition-colors"
+                                  >
+                                    <p className="text-[15px] text-[#1E1E1E] leading-tight">
+                                      {i.name}
+                                    </p>
+                                  </Link>
+                                ) : (
+                                  <p className="text-[15px] text-[#1E1E1E] leading-tight">
+                                    {i.name}
+                                  </p>
+                                )}
                                 {i.weight ? (
                                   <p className="text-sm text-[#7A7A7A] mt-1">
                                     Вес: {i.weight}
