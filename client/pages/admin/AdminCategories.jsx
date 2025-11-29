@@ -65,6 +65,8 @@ export default function AdminCategories() {
 
       if (res.ok) {
         loadCategories();
+        // Отправляем событие для обновления каталога
+        window.dispatchEvent(new Event("catalog:categories-updated"));
       } else {
         alert("Ошибка при удалении");
       }
@@ -236,6 +238,8 @@ function CategoryForm({ category, categories, onClose, onSave }) {
 
       if (res.ok) {
         onSave();
+        // Отправляем событие для обновления каталога
+        window.dispatchEvent(new Event("catalog:categories-updated"));
       } else {
         alert("Ошибка при сохранении");
       }

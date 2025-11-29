@@ -12,6 +12,7 @@ import AccordionMotion from "@/utils/AccordionMotion";
 import { motion } from "framer-motion";
 import { ScrollFade, StaggerParent } from "@/utils/CatalogAnimations";
 import { PageFade, ToastMotion } from "@/utils/PageAnimations";
+import { getAdminToken } from "@/utils/adminAuth";
 
 // -------- Вспомогательные блоки ----------
 const FilterSection = memo(({ title, children, isExpanded = true }) => {
@@ -183,6 +184,24 @@ export default function Catalog() {
 
   // мобильное состояние
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
+
+  // Загруженные данные фильтров из API
+  const [availableFilters, setAvailableFilters] = useState({
+    brands: [],
+    flavors: [],
+    scents: [],
+    countries: [],
+    breeds: [],
+    categories: [],
+    typeOfFoods: [],
+    breedsByCategory: {
+      cat: [],
+      dog: [],
+      minicat: [],
+      minidog: [],
+    },
+    loading: true,
+  });
 
   // фильтры
   const [categoryFilters, setCategoryFilters] = useState({
@@ -771,14 +790,257 @@ export default function Catalog() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filtersRestored, searchQuery, priceFrom, priceTo, categoryFilters, catFilters, dogFilters, minicatFilters, minidogFilters, countryFilters, flavorFilters, brandFilters, scentFilters]);
 
+  // Загрузка фильтров из API
+  const loadFilters = useCallback(async () => {
+    try {
+      // Получаем токен для авторизации
+      const token = getAdminToken();
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+
+      const [brandsRes, flavorsRes, scentsRes, countriesRes, breedsRes, categoriesRes, typeOfFoodsRes] = await Promise.all([
+        fetch("/api/brands", { headers }),
+        fetch("/api/flavors", { headers }),
+        fetch("/api/scents", { headers }),
+        fetch("/api/countries", { headers }),
+        fetch("/api/breeds", { headers }),
+        fetch("/api/categories", { headers }),
+        fetch("/api/typeOfFoods", { headers }),
+      ]);
+
+      const [brands, flavors, scents, countries, breeds, categories, typeOfFoods] = await Promise.all([
+        brandsRes.ok ? brandsRes.json() : [],
+        flavorsRes.ok ? flavorsRes.json() : [],
+        scentsRes.ok ? scentsRes.json() : [],
+        countriesRes.ok ? countriesRes.json() : [],
+        breedsRes.ok ? breedsRes.json() : [],
+        categoriesRes.ok ? categoriesRes.json() : [],
+        typeOfFoodsRes.ok ? typeOfFoodsRes.json() : [],
+      ]);
+
+      setAvailableFilters({
+        brands: Array.isArray(brands) ? brands.filter((b) => b.isActive !== false) : [],
+        flavors: Array.isArray(flavors) ? flavors : [],
+        scents: Array.isArray(scents) ? scents : [],
+        countries: Array.isArray(countries) ? countries : [],
+        breeds: Array.isArray(breeds) ? breeds : [],
+        categories: Array.isArray(categories) ? categories.filter((c) => c.isActive !== false) : [],
+        typeOfFoods: Array.isArray(typeOfFoods) ? typeOfFoods : [],
+        loading: false,
+      });
+
+      // Группируем породы по категориям
+      // category_id: 101=cat, 102=dog, 103=minicat, 104=minidog
+      const breedsByCategory = {
+        cat: Array.isArray(breeds) ? breeds.filter((b) => b.categoryId === 101 || b.category_id === 101) : [],
+        dog: Array.isArray(breeds) ? breeds.filter((b) => b.categoryId === 102 || b.category_id === 102) : [],
+        minicat: Array.isArray(breeds) ? breeds.filter((b) => b.categoryId === 103 || b.category_id === 103) : [],
+        minidog: Array.isArray(breeds) ? breeds.filter((b) => b.categoryId === 104 || b.category_id === 104) : [],
+      };
+
+      // Инициализируем фильтры на основе загруженных данных
+      // Обновляем только если фильтры пустые или если нужно добавить новые
+      setBrandFilters((prev) => {
+        const newFilters = { ...prev };
+        if (Array.isArray(brands)) {
+          brands.forEach((brand) => {
+            if (!(brand.slug in newFilters)) {
+              newFilters[brand.slug] = false;
+            }
+          });
+        }
+        return newFilters;
+      });
+      setFlavorFilters((prev) => {
+        const newFilters = { ...prev };
+        if (Array.isArray(flavors)) {
+          flavors.forEach((flavor) => {
+            if (!(flavor.slug in newFilters)) {
+              newFilters[flavor.slug] = false;
+            }
+          });
+        }
+        return newFilters;
+      });
+      setScentFilters((prev) => {
+        const newFilters = { ...prev };
+        if (Array.isArray(scents)) {
+          scents.forEach((scent) => {
+            if (!(scent.slug in newFilters)) {
+              newFilters[scent.slug] = false;
+            }
+          });
+        }
+        return newFilters;
+      });
+      setCountryFilters((prev) => {
+        const newFilters = { ...prev };
+        if (Array.isArray(countries)) {
+          countries.forEach((country) => {
+            if (!(country.slug in newFilters)) {
+              newFilters[country.slug] = false;
+            }
+          });
+        }
+        return newFilters;
+      });
+      
+      // Инициализируем фильтры типов корма (typeOfFoods) для categoryFilters
+      setCategoryFilters((prev) => {
+        const newFilters = { ...prev };
+        if (Array.isArray(typeOfFoods)) {
+          typeOfFoods.forEach((type) => {
+            if (!(type.slug in newFilters)) {
+              newFilters[type.slug] = false;
+            }
+          });
+        }
+        // Если есть filler, добавляем его
+        if (Array.isArray(categories)) {
+          const fillerCategory = categories.find((c) => c.slug === "filler");
+          if (fillerCategory && !("filler" in newFilters)) {
+            newFilters.filler = false;
+          }
+        }
+        return newFilters;
+      });
+
+      // Инициализируем фильтры пород по категориям
+      setCatFilters((prev) => {
+        const newFilters = { ...prev };
+        breedsByCategory.cat.forEach((breed) => {
+          if (!(breed.slug in newFilters)) {
+            newFilters[breed.slug] = false;
+          }
+        });
+        return newFilters;
+      });
+      setDogFilters((prev) => {
+        const newFilters = { ...prev };
+        breedsByCategory.dog.forEach((breed) => {
+          if (!(breed.slug in newFilters)) {
+            newFilters[breed.slug] = false;
+          }
+        });
+        return newFilters;
+      });
+      setMiniCatFilters((prev) => {
+        const newFilters = { ...prev };
+        breedsByCategory.minicat.forEach((breed) => {
+          if (!(breed.slug in newFilters)) {
+            newFilters[breed.slug] = false;
+          }
+        });
+        return newFilters;
+      });
+      setMiniDogFilters((prev) => {
+        const newFilters = { ...prev };
+        breedsByCategory.minidog.forEach((breed) => {
+          if (!(breed.slug in newFilters)) {
+            newFilters[breed.slug] = false;
+          }
+        });
+        return newFilters;
+      });
+
+      // Сохраняем все загруженные данные фильтров
+      setAvailableFilters({
+        brands: Array.isArray(brands) ? brands.filter((b) => b.isActive !== false) : [],
+        flavors: Array.isArray(flavors) ? flavors : [],
+        scents: Array.isArray(scents) ? scents : [],
+        countries: Array.isArray(countries) ? countries : [],
+        breeds: Array.isArray(breeds) ? breeds : [],
+        categories: Array.isArray(categories) ? categories.filter((c) => c.isActive !== false) : [],
+        typeOfFoods: Array.isArray(typeOfFoods) ? typeOfFoods : [],
+        breedsByCategory,
+        loading: false,
+      });
+    } catch (e) {
+      console.error("Error loading filters:", e);
+      setAvailableFilters((prev) => ({ ...prev, loading: false }));
+    }
+  }, []);
+
+  // Загрузка фильтров при монтировании
+  useEffect(() => {
+    loadFilters();
+  }, [loadFilters]);
+
+  // Обновление фильтров при событиях от админки
+  useEffect(() => {
+    const handleFiltersUpdated = () => {
+      loadFilters();
+    };
+
+    window.addEventListener("catalog:filters-updated", handleFiltersUpdated);
+    window.addEventListener("catalog:categories-updated", handleFiltersUpdated);
+
+    return () => {
+      window.removeEventListener("catalog:filters-updated", handleFiltersUpdated);
+      window.removeEventListener("catalog:categories-updated", handleFiltersUpdated);
+    };
+  }, [loadFilters]);
+
   // Загрузка всех товаров для поиска при первой загрузке
   useEffect(() => {
     loadAllProductsForSearch();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Слушатель событий для обновления при изменении фильтров/категорий в админке
+  useEffect(() => {
+    const handleFiltersUpdated = () => {
+      // Очищаем кэш товаров
+      try {
+        sessionStorage.removeItem("catalog:all");
+      } catch (e) {
+        console.warn("Failed to clear catalog cache:", e);
+      }
+      
+      // Очищаем кэш запросов каталога
+      cacheRef.clear();
+      
+      // Перезагружаем товары с текущими фильтрами
+      const queryString = window.location.search || "";
+      fetchCards(queryString, false); // false = не использовать кэш
+      
+      // Перезагружаем все товары для поиска
+      loadAllProductsForSearch();
+    };
+
+    const handleCategoriesUpdated = () => {
+      // Очищаем кэш товаров
+      try {
+        sessionStorage.removeItem("catalog:all");
+      } catch (e) {
+        console.warn("Failed to clear catalog cache:", e);
+      }
+      
+      // Очищаем кэш запросов каталога
+      cacheRef.clear();
+      
+      // Перезагружаем товары с текущими фильтрами
+      const queryString = window.location.search || "";
+      fetchCards(queryString, false); // false = не использовать кэш
+      
+      // Перезагружаем все товары для поиска
+      loadAllProductsForSearch();
+    };
+
+    window.addEventListener("catalog:filters-updated", handleFiltersUpdated);
+    window.addEventListener("catalog:categories-updated", handleCategoriesUpdated);
+
+    return () => {
+      window.removeEventListener("catalog:filters-updated", handleFiltersUpdated);
+      window.removeEventListener("catalog:categories-updated", handleCategoriesUpdated);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // первая загрузка: используем то, что уже есть в адресной строке
   useEffect(() => {
+    // Ждем загрузки фильтров перед обработкой категорий из URL
+    if (availableFilters.loading) return;
+
     const queryString = window.location.search || "";
     const urlParams = new URLSearchParams(queryString);
     const categoryParam = urlParams.get("category");
@@ -787,50 +1049,47 @@ export default function Catalog() {
     if (categoryParam) {
       const categoryQueryParams = new URLSearchParams();
       
-      // Маппинг категорий на query параметры API
-      // Формат параметров: "category_<slug>", "breed_<slug>", "producttype_<slug>"
+      // Маппинг категорий на query параметры API с использованием динамических данных
       const categoryMapping = {
         cat: () => {
           // Для кошек - активируем категорию и ВСЕ подфильтры кошек
           categoryQueryParams.append("category_cat", "true");
-          categoryQueryParams.append("breed_for-sterilized", "true");
-          categoryQueryParams.append("breed_for-skin-and-coat-health", "true");
-          categoryQueryParams.append("breed_for-sensitive-digestion", "true");
-          categoryQueryParams.append("breed_for-picky", "true");
-          categoryQueryParams.append("breed_for-indoor", "true");
+          const catBreeds = availableFilters.breedsByCategory?.cat || [];
+          catBreeds.forEach((breed) => {
+            categoryQueryParams.append(`breed_${breed.slug}`, "true");
+          });
         },
         minicat: () => {
           // Для котят - активируем категорию и подфильтр
           categoryQueryParams.append("category_minicat", "true");
-          categoryQueryParams.append("breed_for-kittens", "true");
+          const minicatBreeds = availableFilters.breedsByCategory?.minicat || [];
+          minicatBreeds.forEach((breed) => {
+            categoryQueryParams.append(`breed_${breed.slug}`, "true");
+          });
         },
         dog: () => {
           // Для собак - активируем категорию и ВСЕ подфильтры собак
           categoryQueryParams.append("category_dog", "true");
-          categoryQueryParams.append("breed_for-small-breeds", "true");
-          categoryQueryParams.append("breed_for-medium-breeds", "true");
-          categoryQueryParams.append("breed_for-large-breeds", "true");
+          const dogBreeds = availableFilters.breedsByCategory?.dog || [];
+          dogBreeds.forEach((breed) => {
+            categoryQueryParams.append(`breed_${breed.slug}`, "true");
+          });
         },
         minidog: () => {
           // Для щенков - активируем категорию и ВСЕ подфильтры щенков
           categoryQueryParams.append("category_minidog", "true");
-          categoryQueryParams.append("breed_for-small-breeds", "true");
-          categoryQueryParams.append("breed_for-medium-breeds", "true");
-          categoryQueryParams.append("breed_for-large-breeds", "true");
+          const minidogBreeds = availableFilters.breedsByCategory?.minidog || [];
+          minidogBreeds.forEach((breed) => {
+            categoryQueryParams.append(`breed_${breed.slug}`, "true");
+          });
         },
         filler: () => {
           // Для наполнителей - используем producttype_filler и активируем ВСЕ запахи
           categoryQueryParams.append("producttype_filler", "true");
-          categoryQueryParams.append("scent_classic", "true");
-          categoryQueryParams.append("scent_vanilla", "true");
-          categoryQueryParams.append("scent_banana", "true");
-          categoryQueryParams.append("scent_coconut", "true");
-          categoryQueryParams.append("scent_green-tea", "true");
-          categoryQueryParams.append("scent_rose", "true");
-          categoryQueryParams.append("scent_apple", "true");
-          categoryQueryParams.append("scent_lemon", "true");
-          categoryQueryParams.append("scent_no-flavor", "true");
-          categoryQueryParams.append("scent_milk", "true");
+          const scents = availableFilters.scents || [];
+          scents.forEach((scent) => {
+            categoryQueryParams.append(`scent_${scent.slug}`, "true");
+          });
         },
       };
 
@@ -849,29 +1108,35 @@ export default function Catalog() {
       // Устанавливаем фильтры в состояние для отображения в UI
       if (categoryParam === "cat") {
         // Активируем ВСЕ фильтры для кошек
-        setCatFilters({
-          "for-sterilized": true,
-          "for-skin-and-coat-health": true,
-          "for-sensitive-digestion": true,
-          "for-picky": true,
-          "for-indoor": true,
+        const catBreeds = availableFilters.breedsByCategory?.cat || [];
+        const newCatFilters = {};
+        catBreeds.forEach((breed) => {
+          newCatFilters[breed.slug] = true;
         });
+        setCatFilters(newCatFilters);
       } else if (categoryParam === "minicat") {
-        setMiniCatFilters({ "for-kittens": true });
+        const minicatBreeds = availableFilters.breedsByCategory?.minicat || [];
+        const newMiniCatFilters = {};
+        minicatBreeds.forEach((breed) => {
+          newMiniCatFilters[breed.slug] = true;
+        });
+        setMiniCatFilters(newMiniCatFilters);
       } else if (categoryParam === "dog") {
         // Активируем ВСЕ фильтры для собак
-        setDogFilters({
-          "for-small-breeds": true,
-          "for-medium-breeds": true,
-          "for-large-breeds": true,
+        const dogBreeds = availableFilters.breedsByCategory?.dog || [];
+        const newDogFilters = {};
+        dogBreeds.forEach((breed) => {
+          newDogFilters[breed.slug] = true;
         });
+        setDogFilters(newDogFilters);
       } else if (categoryParam === "minidog") {
         // Активируем ВСЕ фильтры для щенков
-        setMiniDogFilters({
-          "for-small-breeds": true,
-          "for-medium-breeds": true,
-          "for-large-breeds": true,
+        const minidogBreeds = availableFilters.breedsByCategory?.minidog || [];
+        const newMiniDogFilters = {};
+        minidogBreeds.forEach((breed) => {
+          newMiniDogFilters[breed.slug] = true;
         });
+        setMiniDogFilters(newMiniDogFilters);
       } else if (categoryParam === "filler") {
         // Для наполнителей устанавливаем фильтр категории и ВСЕ запахи
         setCategoryFilters((prev) => ({
@@ -879,18 +1144,12 @@ export default function Catalog() {
           all: false,
           filler: true,
         }));
-        setScentFilters({
-          classic: true,
-          vanilla: true,
-          banana: true,
-          coconut: true,
-          "green-tea": true,
-          rose: true,
-          apple: true,
-          lemon: true,
-          "no-flavor": true,
-          milk: true,
+        const scents = availableFilters.scents || [];
+        const newScentFilters = {};
+        scents.forEach((scent) => {
+          newScentFilters[scent.slug] = true;
         });
+        setScentFilters(newScentFilters);
       }
 
       // Вызываем fetchCards с правильными параметрами
@@ -911,7 +1170,7 @@ export default function Catalog() {
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [availableFilters.loading, availableFilters.breedsByCategory, availableFilters.scents]);
 
   // клиентская фильтрация по поиску (фильтрация по цене работает через API)
   const filtered = useMemo(() => {
@@ -994,70 +1253,47 @@ export default function Catalog() {
   }, [generateQueryParams, saveFiltersToStorage, fetchCards]);
 
   const handleResetFilters = useCallback(() => {
-    setCategoryFilters({
-      all: true,
-      dry: false,
-      wet: false,
-      filler: false,
+    // Сбрасываем категории корма
+    const resetCategoryFilters = { all: true };
+    availableFilters.typeOfFoods.forEach((type) => {
+      resetCategoryFilters[type.slug] = false;
     });
-    setCatFilters({
-      "for-sterilized": false,
-      "for-skin-and-coat-health": false,
-      "for-sensitive-digestion": false,
-      "for-picky": false,
-      "for-indoor": false,
+    if (availableFilters.categories.find((c) => c.slug === "filler")) {
+      resetCategoryFilters.filler = false;
+    }
+    setCategoryFilters(resetCategoryFilters);
+    
+    // Сбрасываем все остальные фильтры (породы остаются как есть, просто сбрасываем значения)
+    setCatFilters({});
+    setDogFilters({});
+    setMiniCatFilters({});
+    setMiniDogFilters({});
+    
+    // Сбрасываем динамические фильтры
+    const resetCountryFilters = {};
+    availableFilters.countries.forEach((country) => {
+      resetCountryFilters[country.slug] = false;
     });
-    setDogFilters({
-      "for-small-breeds": false,
-      "for-medium-breeds": false,
-      "for-large-breeds": false,
+    setCountryFilters(resetCountryFilters);
+    
+    const resetFlavorFilters = {};
+    availableFilters.flavors.forEach((flavor) => {
+      resetFlavorFilters[flavor.slug] = false;
     });
-    setMiniCatFilters({
-      "for-kittens": false,
+    setFlavorFilters(resetFlavorFilters);
+    
+    const resetBrandFilters = {};
+    availableFilters.brands.forEach((brand) => {
+      resetBrandFilters[brand.slug] = false;
     });
-    setMiniDogFilters({
-      "for-small-breeds": false,
-      "for-medium-breeds": false,
-      "for-large-breeds": false,
+    setBrandFilters(resetBrandFilters);
+    
+    const resetScentFilters = {};
+    availableFilters.scents.forEach((scent) => {
+      resetScentFilters[scent.slug] = false;
     });
-    setCountryFilters({
-      spain: false,
-      germany: false,
-      russia: false,
-      belarus: false,
-      china: false,
-    });
-    setFlavorFilters({
-      rabbit: false,
-      chicken: false,
-      partridge: false,
-      salmon: false,
-      quail: false,
-      fish: false,
-      veal: false,
-      duck: false,
-      lamb: false,
-      goose: false,
-      beef: false,
-    });
-    setBrandFilters({
-      landor: false,
-      landy: false,
-      "fresh-pet-profbalance": false,
-      "chistye-pushistye": false,
-    });
-    setScentFilters({
-      classic: false,
-      vanilla: false,
-      banana: false,
-      coconut: false,
-      "green-tea": false,
-      rose: false,
-      apple: false,
-      lemon: false,
-      "no-flavor": false,
-      milk: false,
-    });
+    setScentFilters(resetScentFilters);
+    
     setPriceFrom("");
     setPriceTo("");
     setSearchQuery("");
@@ -1070,7 +1306,7 @@ export default function Catalog() {
     setMobileFiltersOpen(false);
     // Прокручиваем вверх при сбросе фильтров
     window.scrollTo({ top: 0, behavior: 'smooth' });
-  }, []);
+  }, [availableFilters]);
 
   // Мобильные фильтры
   const MobileFilters = () => (
@@ -1099,27 +1335,25 @@ export default function Catalog() {
                   />
                   <span className="text-sm">Все корма</span>
                 </label>
-                <label className="flex items-center space-x-2">
-                  <Checkbox
-                    checked={categoryFilters.dry}
-                    onCheckedChange={() => handleCategoryChange("dry")}
-                  />
-                  <span className="text-sm">Сухие корма</span>
-                </label>
-                <label className="flex items-center space-x-2">
-                  <Checkbox
-                    checked={categoryFilters.wet}
-                    onCheckedChange={() => handleCategoryChange("wet")}
-                  />
-                  <span className="text-sm">Влажные корма</span>
-                </label>
-                <label className="flex items-center space-x-2">
-                  <Checkbox
-                    checked={categoryFilters.filler}
-                    onCheckedChange={() => handleCategoryChange("filler")}
-                  />
-                  <span className="text-sm">Наполнитель</span>
-                </label>
+                {availableFilters.typeOfFoods.map((type) => (
+                  <label key={type.id} className="flex items-center space-x-2">
+                    <Checkbox
+                      checked={categoryFilters[type.slug] || false}
+                      onCheckedChange={() => handleCategoryChange(type.slug)}
+                    />
+                    <span className="text-sm">{type.name}</span>
+                  </label>
+                ))}
+                {/* Наполнитель (если есть в категориях) */}
+                {availableFilters.categories.find((c) => c.slug === "filler") && (
+                  <label className="flex items-center space-x-2">
+                    <Checkbox
+                      checked={categoryFilters.filler || false}
+                      onCheckedChange={() => handleCategoryChange("filler")}
+                    />
+                    <span className="text-sm">Наполнитель</span>
+                  </label>
+                )}
               </div>
             </FilterSection>
 
@@ -1141,219 +1375,113 @@ export default function Catalog() {
             </FilterSection>
 
             {/* Котенок */}
-            <FilterSection title="Котенок">
-              <div className="space-y-2">
-                <label className="flex items-center space-x-2">
-                  <Checkbox
-                    checked={minicatFilters["for-kittens"]}
-                    onCheckedChange={(c) =>
-                      setMiniCatFilters((prev) => ({
-                        ...prev,
-                        "for-kittens": c,
-                      }))
-                    }
-                  />
-                  <span className="text-sm">Для котят</span>
-                </label>
-              </div>
-            </FilterSection>
+            {availableFilters.breedsByCategory?.minicat && availableFilters.breedsByCategory.minicat.length > 0 && (
+              <FilterSection title="Котенок">
+                <div className="space-y-2">
+                  {availableFilters.breedsByCategory.minicat.map((breed) => (
+                    <label key={breed.id} className="flex items-center space-x-2">
+                      <Checkbox
+                        checked={minicatFilters[breed.slug] || false}
+                        onCheckedChange={(c) =>
+                          setMiniCatFilters((prev) => ({
+                            ...prev,
+                            [breed.slug]: c,
+                          }))
+                        }
+                      />
+                      <span className="text-sm">{breed.name}</span>
+                    </label>
+                  ))}
+                </div>
+              </FilterSection>
+            )}
 
             {/* Кошка */}
-            <FilterSection title="Кошка">
-              <div className="space-y-2">
-                <label className="flex items-center space-x-2">
-                  <Checkbox
-                    checked={catFilters["for-sterilized"]}
-                    onCheckedChange={(c) =>
-                      setCatFilters((prev) => ({ ...prev, "for-sterilized": c }))
-                    }
-                  />
-                  <span className="text-sm">Для стерилизованных</span>
-                </label>
-                <label className="flex items-center space-x-2">
-                  <Checkbox
-                    checked={catFilters["for-skin-and-coat-health"]}
-                    onCheckedChange={(c) =>
-                      setCatFilters((prev) => ({ ...prev, "for-skin-and-coat-health": c }))
-                    }
-                  />
-                  <span className="text-sm">
-                    Для здоровья кожи и шерсти
-                  </span>
-                </label>
-                <label className="flex items-center space-x-2">
-                  <Checkbox
-                    checked={catFilters["for-sensitive-digestion"]}
-                    onCheckedChange={(c) =>
-                      setCatFilters((prev) => ({ ...prev, "for-sensitive-digestion": c }))
-                    }
-                  />
-                  <span className="text-sm">
-                    Для чувствительного пищеварения
-                  </span>
-                </label>
-                <label className="flex items-center space-x-2">
-                  <Checkbox
-                    checked={catFilters["for-picky"]}
-                    onCheckedChange={(c) =>
-                      setCatFilters((prev) => ({ ...prev, "for-picky": c }))
-                    }
-                  />
-                  <span className="text-sm">Для привередливых</span>
-                </label>
-                <label className="flex items-center space-x-2">
-                  <Checkbox
-                    checked={catFilters["for-indoor"]}
-                    onCheckedChange={(c) =>
-                      setCatFilters((prev) => ({ ...prev, "for-indoor": c }))
-                    }
-                  />
-                  <span className="text-sm">Для домашних</span>
-                </label>
-              </div>
-            </FilterSection>
+            {availableFilters.breedsByCategory?.cat && availableFilters.breedsByCategory.cat.length > 0 && (
+              <FilterSection title="Кошка">
+                <div className="space-y-2">
+                  {availableFilters.breedsByCategory.cat.map((breed) => (
+                    <label key={breed.id} className="flex items-center space-x-2">
+                      <Checkbox
+                        checked={catFilters[breed.slug] || false}
+                        onCheckedChange={(c) =>
+                          setCatFilters((prev) => ({ ...prev, [breed.slug]: c }))
+                        }
+                      />
+                      <span className="text-sm">{breed.name}</span>
+                    </label>
+                  ))}
+                </div>
+              </FilterSection>
+            )}
 
             {/* Щенок */}
-            <FilterSection title="Щенок">
-              <div className="space-y-2">
-                <label className="flex items-center space-x-2">
-                  <Checkbox
-                    checked={minidogFilters["for-small-breeds"]}
-                    onCheckedChange={(c) =>
-                      setMiniDogFilters((prev) => ({ ...prev, "for-small-breeds": c }))
-                    }
-                  />
-                  <span className="text-sm">Для мелких пород</span>
-                </label>
-                <label className="flex items-center space-x-2">
-                  <Checkbox
-                    checked={minidogFilters["for-medium-breeds"]}
-                    onCheckedChange={(c) =>
-                      setMiniDogFilters((prev) => ({ ...prev, "for-medium-breeds": c }))
-                    }
-                  />
-                  <span className="text-sm">Для средних пород</span>
-                </label>
-                <label className="flex items-center space-x-2">
-                  <Checkbox
-                    checked={minidogFilters["for-large-breeds"]}
-                    onCheckedChange={(c) =>
-                      setMiniDogFilters((prev) => ({ ...prev, "for-large-breeds": c }))
-                    }
-                  />
-                  <span className="text-sm">Для крупных пород</span>
-                </label>
-              </div>
-            </FilterSection>
+            {availableFilters.breedsByCategory?.minidog && availableFilters.breedsByCategory.minidog.length > 0 && (
+              <FilterSection title="Щенок">
+                <div className="space-y-2">
+                  {availableFilters.breedsByCategory.minidog.map((breed) => (
+                    <label key={breed.id} className="flex items-center space-x-2">
+                      <Checkbox
+                        checked={minidogFilters[breed.slug] || false}
+                        onCheckedChange={(c) =>
+                          setMiniDogFilters((prev) => ({ ...prev, [breed.slug]: c }))
+                        }
+                      />
+                      <span className="text-sm">{breed.name}</span>
+                    </label>
+                  ))}
+                </div>
+              </FilterSection>
+            )}
 
             {/* Собака */}
-            <FilterSection title="Собака">
-              <div className="space-y-2">
-                <label className="flex items-center space-x-2">
-                  <Checkbox
-                    checked={dogFilters["for-small-breeds"]}
-                    onCheckedChange={(c) =>
-                      setDogFilters((prev) => ({ ...prev, "for-small-breeds": c }))
-                    }
-                  />
-                  <span className="text-sm">Для мелких пород</span>
-                </label>
-                <label className="flex items-center space-x-2">
-                  <Checkbox
-                    checked={dogFilters["for-medium-breeds"]}
-                    onCheckedChange={(c) =>
-                      setDogFilters((prev) => ({ ...prev, "for-medium-breeds": c }))
-                    }
-                  />
-                  <span className="text-sm">Для средних пород</span>
-                </label>
-                <label className="flex items-center space-x-2">
-                  <Checkbox
-                    checked={dogFilters["for-large-breeds"]}
-                    onCheckedChange={(c) =>
-                      setDogFilters((prev) => ({ ...prev, "for-large-breeds": c }))
-                    }
-                  />
-                  <span className="text-sm">Для крупных пород</span>
-                </label>
-              </div>
-            </FilterSection>
+            {availableFilters.breedsByCategory?.dog && availableFilters.breedsByCategory.dog.length > 0 && (
+              <FilterSection title="Собака">
+                <div className="space-y-2">
+                  {availableFilters.breedsByCategory.dog.map((breed) => (
+                    <label key={breed.id} className="flex items-center space-x-2">
+                      <Checkbox
+                        checked={dogFilters[breed.slug] || false}
+                        onCheckedChange={(c) =>
+                          setDogFilters((prev) => ({ ...prev, [breed.slug]: c }))
+                        }
+                      />
+                      <span className="text-sm">{breed.name}</span>
+                    </label>
+                  ))}
+                </div>
+              </FilterSection>
+            )}
 
             {/* Страна */}
             <FilterSection title="Страна производства">
               <div className="space-y-2">
-                <label className="flex items-center space-x-2">
-                  <Checkbox
-                    checked={countryFilters.spain}
-                    onCheckedChange={(c) =>
-                      setCountryFilters((prev) => ({ ...prev, spain: c }))
-                    }
-                  />
-                  <span className="text-sm">Испания</span>
-                </label>
-                <label className="flex items-center space-x-2">
-                  <Checkbox
-                    checked={countryFilters.germany}
-                    onCheckedChange={(c) =>
-                      setCountryFilters((prev) => ({ ...prev, germany: c }))
-                    }
-                  />
-                  <span className="text-sm">Германия</span>
-                </label>
-                <label className="flex items-center space-x-2">
-                  <Checkbox
-                    checked={countryFilters.russia}
-                    onCheckedChange={(c) =>
-                      setCountryFilters((prev) => ({ ...prev, russia: c }))
-                    }
-                  />
-                  <span className="text-sm">Россия</span>
-                </label>
-                <label className="flex items-center space-x-2">
-                  <Checkbox
-                    checked={countryFilters.belarus}
-                    onCheckedChange={(c) =>
-                      setCountryFilters((prev) => ({ ...prev, belarus: c }))
-                    }
-                  />
-                  <span className="text-sm">Беларусь</span>
-                </label>
-                <label className="flex items-center space-x-2">
-                  <Checkbox
-                    checked={countryFilters.china}
-                    onCheckedChange={(c) =>
-                      setCountryFilters((prev) => ({ ...prev, china: c }))
-                    }
-                  />
-                  <span className="text-sm">Китай</span>
-                </label>
+                {availableFilters.countries.map((country) => (
+                  <label key={country.id} className="flex items-center space-x-2">
+                    <Checkbox
+                      checked={countryFilters[country.slug] || false}
+                      onCheckedChange={(c) =>
+                        setCountryFilters((prev) => ({ ...prev, [country.slug]: c }))
+                      }
+                    />
+                    <span className="text-sm">{country.name}</span>
+                  </label>
+                ))}
               </div>
             </FilterSection>
 
             {/* Вкус */}
             <FilterSection title="Вкус">
               <div className="grid grid-cols-2 gap-2">
-                {[
-                  ["rabbit", "Кролик"],
-                  ["chicken", "Курица"],
-                  ["partridge", "Куропатка"],
-                  ["salmon", "Лосось"],
-                  ["quail", "Перепелка"],
-                  ["fish", "Рыба"],
-                  ["veal", "Телятина"],
-                  ["duck", "Утка"],
-                  ["lamb", "Ягненок"],
-                  ["goose", "Гусь"],
-                  ["beef", "Говядина"],
-                ].map(([key, label]) => (
-                  <label key={key} className="flex items-center space-x-2">
+                {availableFilters.flavors.map((flavor) => (
+                  <label key={flavor.id} className="flex items-center space-x-2">
                     <Checkbox
-                      checked={flavorFilters[key]}
+                      checked={flavorFilters[flavor.slug] || false}
                       onCheckedChange={(c) =>
-                        setFlavorFilters((prev) => ({ ...prev, [key]: c }))
+                        setFlavorFilters((prev) => ({ ...prev, [flavor.slug]: c }))
                       }
                     />
-                    <span className="text-sm">{label}</span>
+                    <span className="text-sm">{flavor.name}</span>
                   </label>
                 ))}
               </div>
@@ -1362,26 +1490,15 @@ export default function Catalog() {
             {/* Запахи */}
             <FilterSection title="Запахи">
               <div className="grid grid-cols-2 gap-2">
-                {[
-                  ["classic", "Классический"],
-                  ["vanilla", "Ванильный"],
-                  ["banana", "Банановый"],
-                  ["coconut", "Кокосовый"],
-                  ["green-tea", "Зеленый чай"],
-                  ["rose", "Аромат розы"],
-                  ["apple", "Яблоко"],
-                  ["lemon", "Лимон"],
-                  ["no-flavor", "Без амортизатора"],
-                  ["milk", "Молоко"],
-                ].map(([key, label]) => (
-                  <label key={key} className="flex items-center space-x-2">
+                {availableFilters.scents.map((scent) => (
+                  <label key={scent.id} className="flex items-center space-x-2">
                     <Checkbox
-                      checked={scentFilters[key]}
+                      checked={scentFilters[scent.slug] || false}
                       onCheckedChange={(c) =>
-                        setScentFilters((prev) => ({ ...prev, [key]: c }))
+                        setScentFilters((prev) => ({ ...prev, [scent.slug]: c }))
                       }
                     />
-                    <span className="text-sm">{label}</span>
+                    <span className="text-sm">{scent.name}</span>
                   </label>
                 ))}
               </div>
@@ -1390,20 +1507,15 @@ export default function Catalog() {
             {/* Бренд */}
             <FilterSection title="Бренд">
               <div className="space-y-2">
-                {[
-                  ["landor", "LANDOR"],
-                  ["landy", "LANDY"],
-                  ["fresh-pet-profbalance", "FRESH PET PROFBALANCE"],
-                  ["chistye-pushistye", "ЧИСТЫЕ ПУШИСТЫЕ"],
-                ].map(([key, label]) => (
-                  <label key={key} className="flex items-center space-x-2">
+                {availableFilters.brands.map((brand) => (
+                  <label key={brand.id} className="flex items-center space-x-2">
                     <Checkbox
-                      checked={brandFilters[key]}
+                      checked={brandFilters[brand.slug] || false}
                       onCheckedChange={(c) =>
-                        setBrandFilters((prev) => ({ ...prev, [key]: c }))
+                        setBrandFilters((prev) => ({ ...prev, [brand.slug]: c }))
                       }
                     />
-                    <span className="text-sm">{label}</span>
+                    <span className="text-sm">{brand.name}</span>
                   </label>
                 ))}
               </div>
@@ -1458,37 +1570,35 @@ export default function Catalog() {
 
               {/* Те же фильтры, что и в MobileFilters */}
               <FilterSection title="По категории">
-                <div className="space-y-2">
-                  <label className="flex items-center space-x-2">
+              <div className="space-y-2">
+                <label className="flex items-center space-x-2">
+                  <Checkbox
+                    checked={categoryFilters.all}
+                    onCheckedChange={() => handleCategoryChange("all")}
+                  />
+                  <span className="text-sm">Все корма</span>
+                </label>
+                {availableFilters.typeOfFoods.map((type) => (
+                  <label key={type.id} className="flex items-center space-x-2">
                     <Checkbox
-                      checked={categoryFilters.all}
-                      onCheckedChange={() => handleCategoryChange("all")}
+                      checked={categoryFilters[type.slug] || false}
+                      onCheckedChange={() => handleCategoryChange(type.slug)}
                     />
-                    <span className="text-sm">Все корма</span>
+                    <span className="text-sm">{type.name}</span>
                   </label>
+                ))}
+                {/* Наполнитель (если есть в категориях) */}
+                {availableFilters.categories.find((c) => c.slug === "filler") && (
                   <label className="flex items-center space-x-2">
                     <Checkbox
-                      checked={categoryFilters.dry}
-                      onCheckedChange={() => handleCategoryChange("dry")}
-                    />
-                    <span className="text-sm">Сухие корма</span>
-                  </label>
-                  <label className="flex items-center space-x-2">
-                    <Checkbox
-                      checked={categoryFilters.wet}
-                      onCheckedChange={() => handleCategoryChange("wet")}
-                    />
-                    <span className="text-sm">Влажные корма</span>
-                  </label>
-                  <label className="flex items-center space-x-2">
-                    <Checkbox
-                      checked={categoryFilters.filler}
+                      checked={categoryFilters.filler || false}
                       onCheckedChange={() => handleCategoryChange("filler")}
                     />
                     <span className="text-sm">Наполнитель</span>
                   </label>
-                </div>
-              </FilterSection>
+                )}
+              </div>
+            </FilterSection>
 
               <FilterSection title="По стоимости">
                 <div className="flex space-x-2">
@@ -1508,222 +1618,116 @@ export default function Catalog() {
               </FilterSection>
 
               {/* Котенок */}
-              <FilterSection title="Котенок">
-                <div className="space-y-2">
-                  <label className="flex items-center space-x-2">
-                    <Checkbox
-                      checked={minicatFilters["for-kittens"]}
-                      onCheckedChange={(c) =>
-                        setMiniCatFilters((prev) => ({
-                          ...prev,
-                          "for-kittens": c,
-                        }))
-                      }
-                    />
-                    <span className="text-sm">Для котят</span>
-                  </label>
-                </div>
-              </FilterSection>
+              {availableFilters.breedsByCategory?.minicat && availableFilters.breedsByCategory.minicat.length > 0 && (
+                <FilterSection title="Котенок">
+                  <div className="space-y-2">
+                    {availableFilters.breedsByCategory.minicat.map((breed) => (
+                      <label key={breed.id} className="flex items-center space-x-2">
+                        <Checkbox
+                          checked={minicatFilters[breed.slug] || false}
+                          onCheckedChange={(c) =>
+                            setMiniCatFilters((prev) => ({
+                              ...prev,
+                              [breed.slug]: c,
+                            }))
+                          }
+                        />
+                        <span className="text-sm">{breed.name}</span>
+                      </label>
+                    ))}
+                  </div>
+                </FilterSection>
+              )}
 
               {/* Кошка */}
-              <FilterSection title="Кошка">
-                <div className="space-y-2">
-                  <label className="flex items-center space-x-2">
-                    <Checkbox
-                      checked={catFilters["for-sterilized"]}
-                      onCheckedChange={(c) =>
-                        setCatFilters((prev) => ({ ...prev, "for-sterilized": c }))
-                      }
-                    />
-                    <span className="text-sm">Для стерилизованных</span>
-                  </label>
-                  <label className="flex items-center space-x-2">
-                    <Checkbox
-                      checked={catFilters["for-skin-and-coat-health"]}
-                      onCheckedChange={(c) =>
-                        setCatFilters((prev) => ({ ...prev, "for-skin-and-coat-health": c }))
-                      }
-                    />
-                    <span className="text-sm">
-                      Для здоровья кожи и блеска шерсти
-                    </span>
-                  </label>
-                  <label className="flex items-center space-x-2">
-                    <Checkbox
-                      checked={catFilters["for-sensitive-digestion"]}
-                      onCheckedChange={(c) =>
-                        setCatFilters((prev) => ({ ...prev, "for-sensitive-digestion": c }))
-                      }
-                    />
-                    <span className="text-sm">
-                      Для чувствительного пищеварения
-                    </span>
-                  </label>
-                  <label className="flex items-center space-x-2">
-                    <Checkbox
-                      checked={catFilters["for-picky"]}
-                      onCheckedChange={(c) =>
-                        setCatFilters((prev) => ({ ...prev, "for-picky": c }))
-                      }
-                    />
-                    <span className="text-sm">Для привередливых</span>
-                  </label>
-                  <label className="flex items-center space-x-2">
-                    <Checkbox
-                      checked={catFilters["for-indoor"]}
-                      onCheckedChange={(c) =>
-                        setCatFilters((prev) => ({ ...prev, "for-indoor": c }))
-                      }
-                    />
-                    <span className="text-sm">Для домашних</span>
-                  </label>
-                </div>
-              </FilterSection>
+              {availableFilters.breedsByCategory?.cat && availableFilters.breedsByCategory.cat.length > 0 && (
+                <FilterSection title="Кошка">
+                  <div className="space-y-2">
+                    {availableFilters.breedsByCategory.cat.map((breed) => (
+                      <label key={breed.id} className="flex items-center space-x-2">
+                        <Checkbox
+                          checked={catFilters[breed.slug] || false}
+                          onCheckedChange={(c) =>
+                            setCatFilters((prev) => ({ ...prev, [breed.slug]: c }))
+                          }
+                        />
+                        <span className="text-sm">{breed.name}</span>
+                      </label>
+                    ))}
+                  </div>
+                </FilterSection>
+              )}
 
               {/* Щенок */}
-              <FilterSection title="Щенок">
-                <div className="space-y-2">
-                  <label className="flex items-center space-x-2">
-                    <Checkbox
-                      checked={minidogFilters["for-small-breeds"]}
-                      onCheckedChange={(c) =>
-                        setMiniDogFilters((prev) => ({ ...prev, "for-small-breeds": c }))
-                      }
-                    />
-                    <span className="text-sm">Для мелких пород</span>
-                  </label>
-                  <label className="flex items-center space-x-2">
-                    <Checkbox
-                      checked={minidogFilters["for-medium-breeds"]}
-                      onCheckedChange={(c) =>
-                        setMiniDogFilters((prev) => ({ ...prev, "for-medium-breeds": c }))
-                      }
-                    />
-                    <span className="text-sm">Для средних пород</span>
-                  </label>
-                  <label className="flex items-center space-x-2">
-                    <Checkbox
-                      checked={minidogFilters["for-large-breeds"]}
-                      onCheckedChange={(c) =>
-                        setMiniDogFilters((prev) => ({ ...prev, "for-large-breeds": c }))
-                      }
-                    />
-                    <span className="text-sm">Для крупных пород</span>
-                  </label>
-                </div>
-              </FilterSection>
+              {availableFilters.breedsByCategory?.minidog && availableFilters.breedsByCategory.minidog.length > 0 && (
+                <FilterSection title="Щенок">
+                  <div className="space-y-2">
+                    {availableFilters.breedsByCategory.minidog.map((breed) => (
+                      <label key={breed.id} className="flex items-center space-x-2">
+                        <Checkbox
+                          checked={minidogFilters[breed.slug] || false}
+                          onCheckedChange={(c) =>
+                            setMiniDogFilters((prev) => ({ ...prev, [breed.slug]: c }))
+                          }
+                        />
+                        <span className="text-sm">{breed.name}</span>
+                      </label>
+                    ))}
+                  </div>
+                </FilterSection>
+              )}
 
               {/* Собака */}
-              <FilterSection title="Собака">
-                <div className="space-y-2">
-                  <label className="flex items-center space-x-2">
-                    <Checkbox
-                      checked={dogFilters["for-small-breeds"]}
-                      onCheckedChange={(c) =>
-                        setDogFilters((prev) => ({ ...prev, "for-small-breeds": c }))
-                      }
-                    />
-                    <span className="text-sm">Для мелких пород</span>
-                  </label>
-                  <label className="flex items-center space-x-2">
-                    <Checkbox
-                      checked={dogFilters["for-medium-breeds"]}
-                      onCheckedChange={(c) =>
-                        setDogFilters((prev) => ({ ...prev, "for-medium-breeds": c }))
-                      }
-                    />
-                    <span className="text-sm">Для средних пород</span>
-                  </label>
-                  <label className="flex items-center space-x-2">
-                    <Checkbox
-                      checked={dogFilters["for-large-breeds"]}
-                      onCheckedChange={(c) =>
-                        setDogFilters((prev) => ({ ...prev, "for-large-breeds": c }))
-                      }
-                    />
-                    <span className="text-sm">Для крупных пород</span>
-                  </label>
-                </div>
-              </FilterSection>
+              {availableFilters.breedsByCategory?.dog && availableFilters.breedsByCategory.dog.length > 0 && (
+                <FilterSection title="Собака">
+                  <div className="space-y-2">
+                    {availableFilters.breedsByCategory.dog.map((breed) => (
+                      <label key={breed.id} className="flex items-center space-x-2">
+                        <Checkbox
+                          checked={dogFilters[breed.slug] || false}
+                          onCheckedChange={(c) =>
+                            setDogFilters((prev) => ({ ...prev, [breed.slug]: c }))
+                          }
+                        />
+                        <span className="text-sm">{breed.name}</span>
+                      </label>
+                    ))}
+                  </div>
+                </FilterSection>
+              )}
 
               {/* Страна */}
               <FilterSection title="Страна производства">
                 <div className="space-y-2">
-                  <label className="flex items-center space-x-2">
-                    <Checkbox
-                      checked={countryFilters.spain}
-                      onCheckedChange={(c) =>
-                        setCountryFilters((prev) => ({ ...prev, spain: c }))
-                      }
-                    />
-                    <span className="text-sm">Испания</span>
-                  </label>
-                  <label className="flex items-center space-x-2">
-                    <Checkbox
-                      checked={countryFilters.germany}
-                      onCheckedChange={(c) =>
-                        setCountryFilters((prev) => ({ ...prev, germany: c }))
-                      }
-                    />
-                    <span className="text-sm">Германия</span>
-                  </label>
-                  <label className="flex items-center space-x-2">
-                    <Checkbox
-                      checked={countryFilters.russia}
-                      onCheckedChange={(c) =>
-                        setCountryFilters((prev) => ({ ...prev, russia: c }))
-                      }
-                    />
-                    <span className="text-sm">Россия</span>
-                  </label>
-                  <label className="flex items-center space-x-2">
-                    <Checkbox
-                      checked={countryFilters.belarus}
-                      onCheckedChange={(c) =>
-                        setCountryFilters((prev) => ({ ...prev, belarus: c }))
-                      }
-                    />
-                    <span className="text-sm">Беларусь</span>
-                  </label>
-                  <label className="flex items-center space-x-2">
-                    <Checkbox
-                      checked={countryFilters.china}
-                      onCheckedChange={(c) =>
-                        setCountryFilters((prev) => ({ ...prev, china: c }))
-                      }
-                    />
-                    <span className="text-sm">Китай</span>
-                  </label>
+                  {availableFilters.countries.map((country) => (
+                    <label key={country.id} className="flex items-center space-x-2">
+                      <Checkbox
+                        checked={countryFilters[country.slug] || false}
+                        onCheckedChange={(c) =>
+                          setCountryFilters((prev) => ({ ...prev, [country.slug]: c }))
+                        }
+                      />
+                      <span className="text-sm">{country.name}</span>
+                    </label>
+                  ))}
                 </div>
               </FilterSection>
 
               {/* Вкус */}
               <FilterSection title="Вкус">
                 <div className="grid grid-cols-2 gap-2">
-                  {[
-                    ["rabbit", "Кролик"],
-                    ["chicken", "Курица"],
-                    ["partridge", "Куропатка"],
-                    ["salmon", "Лосось"],
-                    ["quail", "Перепелка"],
-                    ["fish", "Рыба"],
-                    ["veal", "Телятина"],
-                    ["duck", "Утка"],
-                    ["lamb", "Ягнёнок"],
-                    ["goose", "Гусь"],
-                    ["beef", "Говядина"],
-                  ].map(([key, label]) => (
-                    <label key={key} className="flex items-center space-x-2">
+                  {availableFilters.flavors.map((flavor) => (
+                    <label key={flavor.id} className="flex items-center space-x-2">
                       <Checkbox
-                        checked={flavorFilters[key]}
+                        checked={flavorFilters[flavor.slug] || false}
                         onCheckedChange={(c) =>
                           setFlavorFilters((prev) => ({
                             ...prev,
-                            [key]: c,
+                            [flavor.slug]: c,
                           }))
                         }
                       />
-                      <span className="text-sm">{label}</span>
+                      <span className="text-sm">{flavor.name}</span>
                     </label>
                   ))}
                 </div>
@@ -1732,26 +1736,15 @@ export default function Catalog() {
               {/* Запахи */}
               <FilterSection title="Запахи">
                 <div className="grid grid-cols-2 gap-2">
-                  {[
-                    ["classic", "Классический"],
-                    ["vanilla", "Ванильный"],
-                    ["banana", "Банановый"],
-                    ["coconut", "Кокосовый"],
-                    ["green-tea", "Зеленый чай"],
-                    ["rose", "Аромат розы"],
-                    ["apple", "Яблоко"],
-                    ["lemon", "Лимон"],
-                    ["no-flavor", "Без амортизатора"],
-                    ["milk", "Молоко"],
-                  ].map(([key, label]) => (
-                    <label key={key} className="flex items-center space-x-2">
+                  {availableFilters.scents.map((scent) => (
+                    <label key={scent.id} className="flex items-center space-x-2">
                       <Checkbox
-                        checked={scentFilters[key]}
+                        checked={scentFilters[scent.slug] || false}
                         onCheckedChange={(c) =>
-                          setScentFilters((prev) => ({ ...prev, [key]: c }))
+                          setScentFilters((prev) => ({ ...prev, [scent.slug]: c }))
                         }
                       />
-                      <span className="text-sm">{label}</span>
+                      <span className="text-sm">{scent.name}</span>
                     </label>
                   ))}
                 </div>
@@ -1760,23 +1753,18 @@ export default function Catalog() {
               {/* Бренд */}
               <FilterSection title="Бренд">
                 <div className="space-y-2">
-                  {[
-                    ["landor", "LANDOR"],
-                    ["landy", "LANDY"],
-                    ["fresh-pet-profbalance", "FRESH PET PROFBALANCE"],
-                    ["chistye-pushistye", "ЧИСТЫЕ ПУШИСТЫЕ"],
-                  ].map(([key, label]) => (
-                    <label key={key} className="flex items-center space-x-2">
+                  {availableFilters.brands.map((brand) => (
+                    <label key={brand.id} className="flex items-center space-x-2">
                       <Checkbox
-                        checked={brandFilters[key]}
+                        checked={brandFilters[brand.slug] || false}
                         onCheckedChange={(c) =>
                           setBrandFilters((prev) => ({
                             ...prev,
-                            [key]: c,
+                            [brand.slug]: c,
                           }))
                         }
                       />
-                      <span className="text-sm">{label}</span>
+                      <span className="text-sm">{brand.name}</span>
                     </label>
                   ))}
                 </div>

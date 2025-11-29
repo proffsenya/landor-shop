@@ -64,23 +64,82 @@ export default function Favorites() {
 
         // ВАЖНО: храним и favoriteId (id записи), и variantId (что нужно для DELETE /favorites/{variantId})
         const mapped = Array.isArray(data)
-          ? data.map((item) => ({
-              // id — это id записи избранного (нужен для удаления конкретной записи)
-              id: Number(item.id),
+          ? data.map((item) => {
+              // Сначала пробуем извлечь из imageUrl, так как там точно есть productId и variantId (imageId может совпадать с variantId)
+              let productId = NaN;
+              let variantId = NaN;
+              
+              if (item.imageUrl && item.imageUrl.startsWith("/api/products/")) {
+                const match = item.imageUrl.match(/\/api\/products\/(\d+)\/images\/(\d+)/);
+                if (match) {
+                  // Первое число в пути - это productId
+                  productId = Number(match[1]);
+                  // Второе число в пути - это imageId, который может быть variantId
+                  const imageId = Number(match[2]);
+                  // Проверяем, может ли это быть variantId (обычно imageId совпадает с variantId)
+                  variantId = imageId;
+                }
+              }
+              
+              // Затем перезаписываем, если есть явные поля в ответе API
+              
+              // СНАЧАЛА извлекаем variantId (чтобы не перепутать с productId)
+              if (item.variantId !== undefined && item.variantId !== null) {
+                variantId = Number(item.variantId);
+              } else if (item.variantID !== undefined && item.variantID !== null) {
+                variantId = Number(item.variantID);
+              } else if (item.variant_id !== undefined && item.variant_id !== null) {
+                variantId = Number(item.variant_id);
+              } else if (item.variant !== undefined && item.variant !== null) {
+                variantId = Number(item.variant);
+              }
+              
+              // ПОТОМ извлекаем productId (отдельно, чтобы не перепутать)
+              if (item.productId !== undefined && item.productId !== null) {
+                productId = Number(item.productId);
+              } else if (item.productID !== undefined && item.productID !== null) {
+                productId = Number(item.productID);
+              } else if (item.product_id !== undefined && item.product_id !== null) {
+                productId = Number(item.product_id);
+              } else if (item.parentId !== undefined && item.parentId !== null && Number.isFinite(Number(item.parentId))) {
+                productId = Number(item.parentId);
+              }
+              
+              // КРИТИЧЕСКАЯ ПРОВЕРКА: если variantId равен productId - это ошибка!
+              // В таком случае, вероятно, variantId был неправильно извлечен
+              if (Number.isFinite(variantId) && Number.isFinite(productId) && variantId === productId) {
+                console.warn("[Favorites] ОШИБКА: variantId равен productId! Перепутаны поля.", { item, variantId, productId });
+                // Если variantId равен productId, значит мы неправильно извлекли variantId
+                // Сбрасываем variantId и пробуем извлечь из imageUrl
+                variantId = NaN;
+                if (item.imageUrl && item.imageUrl.startsWith("/api/products/")) {
+                  const match = item.imageUrl.match(/\/api\/products\/(\d+)\/images\/(\d+)/);
+                  if (match && productId === Number(match[1])) {
+                    // productId совпадает, значит imageId в пути - это variantId
+                    variantId = Number(match[2]);
+                  }
+                }
+              }
+              
+              return {
+                // id — это id записи избранного (нужен для удаления конкретной записи)
+                id: Number(item.id),
 
-              // ВАЖНО: variantId — то, что требуется для move-to-cart и для добавления в корзину
-              variantId: Number(item.variantId ?? item.variantID ?? item.variant_id ?? item.id),
+                // ВАЖНО: variantId — то, что требуется для move-to-cart и для добавления в корзину
+                // variantId НЕ должен быть равен productId!
+                variantId: Number.isFinite(variantId) && variantId > 0 && variantId !== productId ? variantId : NaN,
 
-              // productId для навигации на страницу товара
-              productId: Number(item.productId ?? item.productID ?? item.product_id ?? NaN),
+                // productId для навигации на страницу товара
+                productId: Number.isFinite(productId) && productId > 0 ? productId : NaN,
 
-              name: item.displayName,
-              price: Number(item.price ?? 0),
-              image: item.imageUrl || "/korm1.svg",
-              isInStock: Number(item.stock) > 0,
-              weight: item.weight || "—",
-              dateAdded: new Date().toLocaleDateString("ru-RU"),
-            }))
+                name: item.displayName,
+                price: Number(item.price ?? 0),
+                image: item.imageUrl || "/korm1.svg",
+                isInStock: Number(item.stock) > 0,
+                weight: item.weight || "—",
+                dateAdded: new Date().toLocaleDateString("ru-RU"),
+              };
+            })
           : [];
 
 
@@ -122,25 +181,6 @@ export default function Favorites() {
       currency: "RUB",
       minimumFractionDigits: 0,
     }).format(price);
-
-  // Функция для получения URL страницы товара
-  const getProductUrl = (item) => {
-    // Если есть productId, используем его
-    if (item.productId && Number.isFinite(item.productId)) {
-      return `/product/${item.productId}${item.variantId && Number.isFinite(item.variantId) ? `?variant=${item.variantId}` : ''}`;
-    }
-    // Если productId нет, пытаемся извлечь из imageUrl
-    if (item.image && item.image.startsWith("/api/products/")) {
-      const match = item.image.match(/\/api\/products\/(\d+)\/images\/(\d+)/);
-      if (match) {
-        const productId = match[1];
-        const variantId = match[2];
-        return `/product/${productId}?variant=${variantId}`;
-      }
-    }
-    // Если ничего не найдено, возвращаем null (ссылка не будет показана)
-    return null;
-  };
 
   const showToast = (msg, ms = 1500) => {
     setToast(msg);
@@ -483,33 +523,13 @@ async function moveFavoritesToCart(variantIdsRaw) {
                         </div>
 
                         <div className="flex-shrink-0 w-20 overflow-hidden rounded-md h-28 bg-gray-50">
-                          {getProductUrl(item) ? (
-                            <Link
-                              to={getProductUrl(item)}
-                              className="block focus:outline-none focus:ring-2 focus:ring-[#6F2A2B] rounded h-full"
-                            >
-                              <img src={item.image} alt={item.name} className="object-contain w-full h-full" />
-                            </Link>
-                          ) : (
-                            <img src={item.image} alt={item.name} className="object-contain w-full h-full" />
-                          )}
+                          <img src={item.image} alt={item.name} className="object-contain w-full h-full" />
                         </div>
 
                         <div className="flex-1 min-w-0">
-                          {getProductUrl(item) ? (
-                            <Link
-                              to={getProductUrl(item)}
-                              className="block focus:outline-none focus:ring-2 focus:ring-[#6F2A2B] rounded hover:text-[#6F2A2B] transition-colors"
-                            >
-                              <div className="text-[15px] text-[#1E1E1E] leading-tight line-clamp-3">
-                                {item.name}
-                              </div>
-                            </Link>
-                          ) : (
-                            <div className="text-[15px] text-[#1E1E1E] leading-tight line-clamp-3">
-                              {item.name}
-                            </div>
-                          )}
+                          <div className="text-[15px] text-[#1E1E1E] leading-tight line-clamp-3">
+                            {item.name}
+                          </div>
 
                           <div className="flex flex-wrap items-center mt-2 text-sm gap-x-4 gap-y-1">
                             <span className="text-[#1E1E1E]">Вес: {item.weight}</span>
@@ -613,28 +633,10 @@ async function moveFavoritesToCart(variantIdsRaw) {
                             <td className="px-5 py-6">
                               <div className="flex items-center gap-6">
                                 <div className="w-[64px] h-[96px] overflow-hidden flex-shrink-0">
-                                  {getProductUrl(item) ? (
-                                    <Link
-                                      to={getProductUrl(item)}
-                                      className="block focus:outline-none focus:ring-2 focus:ring-[#6F2A2B] rounded h-full"
-                                    >
-                                      <img src={item.image} alt={item.name} className="object-contain w-full h-full" />
-                                    </Link>
-                                  ) : (
-                                    <img src={item.image} alt={item.name} className="object-contain w-full h-full" />
-                                  )}
+                                  <img src={item.image} alt={item.name} className="object-contain w-full h-full" />
                                 </div>
                                 <div className="text-[15px] text-[#1E1E1E] leading-tight pr-6 line-clamp-3">
-                                  {getProductUrl(item) ? (
-                                    <Link
-                                      to={getProductUrl(item)}
-                                      className="block focus:outline-none focus:ring-2 focus:ring-[#6F2A2B] rounded hover:text-[#6F2A2B] transition-colors"
-                                    >
-                                      {item.name}
-                                    </Link>
-                                  ) : (
-                                    item.name
-                                  )}
+                                  {item.name}
                                 </div>
                               </div>
                             </td>

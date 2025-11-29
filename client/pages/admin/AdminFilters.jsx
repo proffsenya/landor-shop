@@ -20,6 +20,7 @@ const FILTER_TYPES = {
     label: "Бренды",
     endpoint: "/api/brands",
     adminEndpoint: "/api/admin/brands",
+    createEndpoint: "/api/brands", // Для POST используем обычный эндпоинт
     fields: [
       { key: "name", label: "Название", required: true },
       { key: "slug", label: "Slug", required: true },
@@ -29,15 +30,18 @@ const FILTER_TYPES = {
     label: "Породы",
     endpoint: "/api/breeds",
     adminEndpoint: "/api/admin/breeds",
+    createEndpoint: "/api/breeds", // Для POST используем обычный эндпоинт
     fields: [
       { key: "name", label: "Название", required: true },
       { key: "slug", label: "Slug", required: true },
+      { key: "categoryId", label: "Категория", required: true, type: "select", selectType: "categories" },
     ],
   },
   categories: {
     label: "Категории",
     endpoint: "/api/categories",
     adminEndpoint: "/api/admin/categories",
+    createEndpoint: "/api/categories", // Для POST используем обычный эндпоинт
     fields: [
       { key: "name", label: "Название", required: true },
       { key: "slug", label: "Slug", required: true },
@@ -50,6 +54,7 @@ const FILTER_TYPES = {
     label: "Цвета",
     endpoint: "/api/colors",
     adminEndpoint: "/api/admin/colors",
+    createEndpoint: "/api/colors", // Для POST используем обычный эндпоинт
     fields: [
       { key: "name", label: "Название", required: true },
       { key: "slug", label: "Slug", required: true },
@@ -59,6 +64,7 @@ const FILTER_TYPES = {
     label: "Страны",
     endpoint: "/api/countries",
     adminEndpoint: "/api/admin/countries",
+    createEndpoint: "/api/countries", // Для POST используем обычный эндпоинт
     fields: [
       { key: "name", label: "Название", required: true },
       { key: "slug", label: "Slug", required: true },
@@ -68,9 +74,10 @@ const FILTER_TYPES = {
     label: "Вкусы",
     endpoint: "/api/flavors",
     adminEndpoint: "/api/admin/flavors",
+    createEndpoint: "/api/flavors", // Для POST используем обычный эндпоинт
     fields: [
       { key: "name", label: "Название", required: true },
-      { key: "slug", label: "Slug", required: true },
+      { key: "canonicalName", label: "Каноническое название", required: true },
     ],
   },
   productTypes: {
@@ -81,11 +88,13 @@ const FILTER_TYPES = {
       { key: "name", label: "Название", required: true },
       { key: "slug", label: "Slug", required: true },
     ],
+    createEndpoint: "/api/productTypes", // Для создания используем обычный эндпоинт
   },
   scents: {
     label: "Запахи",
     endpoint: "/api/scents",
     adminEndpoint: "/api/admin/scents",
+    createEndpoint: "/api/scents", // Для POST используем обычный эндпоинт
     fields: [
       { key: "name", label: "Название", required: true },
       { key: "slug", label: "Slug", required: true },
@@ -95,6 +104,7 @@ const FILTER_TYPES = {
     label: "Типы корма",
     endpoint: "/api/typeOfFoods",
     adminEndpoint: "/api/admin/typeoffood",
+    createEndpoint: "/api/typeOfFoods", // Для POST используем обычный эндпоинт
     fields: [
       { key: "name", label: "Название", required: true },
       { key: "slug", label: "Slug", required: true },
@@ -199,6 +209,8 @@ export default function AdminFilters() {
 
       if (res.ok) {
         loadItems(selectedFilterType);
+        // Отправляем событие для обновления каталога
+        window.dispatchEvent(new Event("catalog:filters-updated"));
       } else {
         const errorText = await res.text();
         alert(`Ошибка при удалении: ${errorText || res.statusText}`);
@@ -376,6 +388,34 @@ export default function AdminFilters() {
 function FilterForm({ filterType, config, item, items, onClose, onSave }) {
   const [formData, setFormData] = useState({});
   const [loading, setLoading] = useState(false);
+  const [categories, setCategories] = useState([]);
+  const [categoriesLoading, setCategoriesLoading] = useState(false);
+
+  // Загрузка категорий для выбора categoryId при добавлении породы
+  useEffect(() => {
+    const categoryField = config.fields.find(f => f.key === "categoryId" && f.selectType === "categories");
+    if (categoryField) {
+      loadCategories();
+    }
+  }, [config, filterType]);
+
+  const loadCategories = async () => {
+    try {
+      setCategoriesLoading(true);
+      const adminToken = getAdminToken();
+      const res = await fetch("/api/categories", {
+        headers: { Authorization: `Bearer ${adminToken}` },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setCategories(Array.isArray(data) ? data : []);
+      }
+    } catch (e) {
+      console.error("Error loading categories:", e);
+    } finally {
+      setCategoriesLoading(false);
+    }
+  };
 
   useEffect(() => {
     // Инициализация формы данными элемента или пустыми значениями
@@ -407,9 +447,11 @@ function FilterForm({ filterType, config, item, items, onClose, onSave }) {
     try {
       setLoading(true);
       const adminToken = getAdminToken();
+      
+      // Для POST используем обычный endpoint (createEndpoint), для PUT/DELETE - admin endpoint
       const url = item
         ? `${config.adminEndpoint}/${item.id}`
-        : config.adminEndpoint;
+        : (config.createEndpoint || config.endpoint || config.adminEndpoint);
       const method = item ? "PUT" : "POST";
 
       // Подготовка данных для отправки
@@ -423,6 +465,11 @@ function FilterForm({ filterType, config, item, items, onClose, onSave }) {
           payload[field.key] = Boolean(payload[field.key]);
         }
       });
+      
+      // Удаляем поля, которые не нужны в API запросе (например, для flavors убираем slug если он был)
+      if (filterType === "flavors" && payload.slug) {
+        delete payload.slug;
+      }
 
       const res = await fetch(url, {
         method,
@@ -435,6 +482,8 @@ function FilterForm({ filterType, config, item, items, onClose, onSave }) {
 
       if (res.ok) {
         onSave();
+        // Отправляем событие для обновления каталога
+        window.dispatchEvent(new Event("catalog:filters-updated"));
       } else {
         const errorText = await res.text();
         alert(`Ошибка при сохранении: ${errorText || res.statusText}`);
@@ -448,9 +497,12 @@ function FilterForm({ filterType, config, item, items, onClose, onSave }) {
   };
 
   // Получение опций для select полей
-  const getSelectOptions = (fieldKey) => {
+  const getSelectOptions = (fieldKey, selectType) => {
     if (fieldKey === "parentId" && filterType === "categories") {
       return items.filter((cat) => cat.id !== item?.id);
+    }
+    if (fieldKey === "categoryId" && selectType === "categories") {
+      return categories.filter((cat) => cat.isActive !== false);
     }
     return [];
   };
@@ -497,7 +549,8 @@ function FilterForm({ filterType, config, item, items, onClose, onSave }) {
           }
 
           if (field.type === "select") {
-            const options = getSelectOptions(field.key);
+            const options = getSelectOptions(field.key, field.selectType);
+            const showEmptyOption = !field.required && field.key !== "categoryId";
             return (
               <div key={field.key}>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -506,17 +559,22 @@ function FilterForm({ filterType, config, item, items, onClose, onSave }) {
                 <Select
                   value={formData[field.key] || ""}
                   onValueChange={(value) => setFormData({ ...formData, [field.key]: value })}
+                  required={field.required}
                 >
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder={`Выберите ${field.label.toLowerCase()}`} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Нет</SelectItem>
-                    {options.map((option) => (
-                      <SelectItem key={option.id} value={String(option.id)}>
-                        {option.name}
-                      </SelectItem>
-                    ))}
+                    {showEmptyOption && <SelectItem value="">Нет</SelectItem>}
+                    {categoriesLoading ? (
+                      <SelectItem value="" disabled>Загрузка...</SelectItem>
+                    ) : (
+                      options.map((option) => (
+                        <SelectItem key={option.id} value={String(option.id)}>
+                          {option.name}
+                        </SelectItem>
+                      ))
+                    )}
                   </SelectContent>
                 </Select>
               </div>
@@ -533,13 +591,13 @@ function FilterForm({ filterType, config, item, items, onClose, onSave }) {
                 value={formData[field.key] || ""}
                 onChange={(e) => {
                   let value = e.target.value;
-                  // Автоматическое форматирование slug
+                  // Автоматическое форматирование slug (только для полей slug, не для canonicalName)
                   if (field.key === "slug") {
-                    value = value.toLowerCase().replace(/\s+/g, "-");
+                    value = value.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
                   }
                   setFormData({ ...formData, [field.key]: value });
                 }}
-                placeholder={field.key === "slug" ? "example-slug" : ""}
+                placeholder={field.key === "slug" ? "example-slug" : field.key === "canonicalName" ? "Каноническое название" : ""}
                 required={field.required}
               />
             </div>
