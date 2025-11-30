@@ -157,8 +157,11 @@ public class OrderService {
     }
 
     @Transactional
-    public Order updateOrderStatus(Long orderId, String status){
+    public Order updateOrderStatus(Long userId, Long orderId, String status){
         Order order = orderRepository.findById(orderId).orElseThrow(() -> new InvalidRequestException("Order not found"));
+        if (!order.getUser().getId().equals(userId)) {
+            throw new  InvalidRequestException("User not allowed to update order");
+        }
         order.setOrderStatus(status);
         order.setUpdatedAt(Instant.now());
         return orderRepository.save(order);

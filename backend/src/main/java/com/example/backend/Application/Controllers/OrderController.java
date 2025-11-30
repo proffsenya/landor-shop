@@ -61,5 +61,12 @@ class OrderController {
     }
 
 
+    @PutMapping("/{orderId}")
+    public ResponseEntity<OrderDTO> updateOrder(@PathVariable Long orderId, @RequestBody String status,
+                                                @AuthenticationPrincipal CustomUserDetails userPrincipal) throws AccessDeniedException {
+        Long userId = userPrincipal.getId();
+        Order order = orderService.updateOrderStatus(userId, orderId, status);
+        return ResponseEntity.ok(OrderDTO.from(order));
+    }
 
 }

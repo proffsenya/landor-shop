@@ -109,7 +109,7 @@ class ProductController {
                 product.getRating(),
 
 
-                product.getBreeds().stream().map(b -> new BreedDTO(b.getId(), b.getName(), b.getSlug())).toList(),
+                product.getBreeds().stream().map(b -> new BreedDTO(b.getId(), b.getName(), b.getSlug(), b.getCategory().getId())).toList(),
                 product.getCategories().stream().map(c -> new CategoryDTO(c.getId(), c.getName(), c.getSlug())).toList(),
                 product.getCountries().stream().map(c -> new CountryDTO(c.getId(), c.getName(), c.getSlug())).toList(),
                 product.getTypeoffoods().stream().map(t -> new TypeOfFoodDTO(t.getId(), t.getName(), t.getSlug())).toList(),

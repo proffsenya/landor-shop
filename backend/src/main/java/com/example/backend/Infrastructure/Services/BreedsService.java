@@ -74,7 +74,8 @@ public class BreedsService {
         return new BreedDTO(
                 newbreed.getId(),
                 newbreed.getName(),
-                newbreed.getSlug()
+                newbreed.getSlug(),
+                newbreed.getCategory().getId()
         );
     }
 
@@ -90,7 +91,8 @@ public class BreedsService {
         return new BreedDTO(
                 currentBreed.getId(),
                 currentBreed.getName(),
-                currentBreed.getSlug()
+                currentBreed.getSlug(),
+                currentBreed.getCategory().getId()
         );
     }
 
@@ -102,7 +104,8 @@ public class BreedsService {
             BreedDTO dto = new BreedDTO(
                     breed.getId(),
                     breed.getName(),
-                    breed.getSlug()
+                    breed.getSlug(),
+                    breed.getCategory().getId()
             );
             breedDTOS.add(dto);
         }

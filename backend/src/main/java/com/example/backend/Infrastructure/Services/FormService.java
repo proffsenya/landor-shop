@@ -12,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.time.Instant;
 import java.util.List;
 
 @Service
@@ -31,6 +32,7 @@ public class FormService {
         nurseryForm.setEmail(formDto.email());
         nurseryForm.setPhone(formDto.phone());
         nurseryForm.setFullName(formDto.fullName());
+        nurseryForm.setCreatedAt(Instant.now());
 
         if (file != null && !file.isEmpty()) {
             String ct = file.getContentType() == null ? "" : file.getContentType().toLowerCase();
@@ -61,6 +63,7 @@ public class FormService {
         form.setEmail(dto.email());
         form.setCity(dto.city());
         form.setComment(dto.comment());
+        form.setCreatedAt(Instant.now());
         return feedbackFormRepository.save(form);
     }
 
