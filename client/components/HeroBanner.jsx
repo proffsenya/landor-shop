@@ -1,7 +1,8 @@
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useState, useEffect, useRef } from "react";
 
 export default function HeroBanner() {
+  const navigate = useNavigate();
   const [currentSlide, setCurrentSlide] = useState(0);
   const intervalRef = useRef(null);
 
@@ -75,11 +76,12 @@ export default function HeroBanner() {
                           Ваш любимец — наш{" "}
                           <span className="block">главный дегустатор</span>
                         </h1>
-                        <Link to="/catalog">
-                          <button className="bg-[#6F2A2B] text-white px-7 py-3 rounded-full translate-x-[80px] hover:bg-[#5a2223] transition-colors text-[16px] font-semibold shadow-md">
-                            {banner.buttonText}
-                          </button>
-                        </Link>
+                        <button 
+                          onClick={() => navigate("/catalog")}
+                          className="bg-[#6F2A2B] text-white px-7 py-3 rounded-full translate-x-[80px] hover:bg-[#5a2223] transition-colors text-[16px] font-semibold shadow-md cursor-pointer z-10 relative"
+                        >
+                          {banner.buttonText}
+                        </button>
                       </div>
                     </div>
 

@@ -49,24 +49,50 @@ export default function Categories() {
         const data = await res.json();
         console.log("[Categories] Loaded categories from API:", data);
         
-        // Фильтруем только активные категории (если поле есть) и берем все категории для отображения
-        const processedCategories = Array.isArray(data)
-          ? data
-              .filter((cat) => {
-                // Если поле isActive отсутствует, считаем категорию активной
-                return cat.isActive === undefined || cat.isActive !== false;
-              })
-              .map((cat) => {
-                const config = categoryConfig[cat.slug] || defaultConfig;
-                return {
-                  id: cat.id,
-                  name: cat.name,
-                  slug: cat.slug,
-                  image: config.image,
-                  bgColor: config.bgColor,
-                };
-              })
-          : [];
+        // Определяем порядок категорий: cat, minicat, filler (посередине), dog, minidog
+        const allowedSlugs = ["cat", "minicat", "filler", "dog", "minidog"];
+        
+        // Маппинг названий категорий (на случай, если в API другие названия)
+        const categoryNames = {
+          cat: "Кошка",
+          minicat: "Котенок",
+          filler: "Наполнитель",
+          dog: "Собака",
+          minidog: "Щенок",
+        };
+        
+        // Фильтруем только нужные категории в правильном порядке
+        const processedCategories = allowedSlugs
+          .map((slug) => {
+            // Ищем категорию в данных из API
+            const cat = Array.isArray(data)
+              ? data.find((c) => c.slug === slug && (c.isActive === undefined || c.isActive !== false))
+              : null;
+            
+            const config = categoryConfig[slug] || defaultConfig;
+            
+            // Если категория найдена в API, используем её данные
+            if (cat) {
+              return {
+                id: cat.id,
+                name: cat.name,
+                slug: cat.slug,
+                image: config.image,
+                bgColor: config.bgColor,
+              };
+            }
+            
+            // Если категории нет в API, создаем дефолтную категорию
+            // Это гарантирует, что все нужные категории будут отображены
+            return {
+              id: slug, // Используем slug как временный ID
+              name: categoryNames[slug] || slug,
+              slug: slug,
+              image: config.image,
+              bgColor: config.bgColor,
+            };
+          })
+          .filter(Boolean); // Убираем null значения (на всякий случай)
         
         console.log("[Categories] Processed categories:", processedCategories);
         setCategories(processedCategories);

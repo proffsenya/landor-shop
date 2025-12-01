@@ -204,68 +204,16 @@ export default function Catalog() {
     loading: true,
   });
 
-  // фильтры
-  const [categoryFilters, setCategoryFilters] = useState({
-    all: true,
-    dry: false,
-    wet: false,
-    filler: false,
-  });
-  const [catFilters, setCatFilters] = useState({
-    "for-sterilized": false,
-    "for-skin-and-coat-health": false,
-    "for-sensitive-digestion": false,
-    "for-picky": false,
-    "for-indoor": false,
-  });
-  const [dogFilters, setDogFilters] = useState({
-    "for-small-breeds": false,
-    "for-medium-breeds": false,
-    "for-large-breeds": false,
-  });
-  const [minicatFilters, setMiniCatFilters] = useState({
-    "for-kittens": false,
-  });
-  const [minidogFilters, setMiniDogFilters] = useState({
-    "for-small-breeds": false,
-    "for-medium-breeds": false,
-    "for-large-breeds": false,
-  });
-  const [countryFilters, setCountryFilters] = useState({
-    spain: false,
-    germany: false,
-    russia: false,
-    belarus: false,
-    china: false,
-  });
-  const [flavorFilters, setFlavorFilters] = useState({
-    salmon: false,
-    quail: false,
-    fish: false,
-    veal: false,
-    duck: false,
-    lamb: false,
-    goose: false,
-    beef: false,
-  });
-  const [brandFilters, setBrandFilters] = useState({
-    landor: false,
-    landy: false,
-    "fresh-pet-profbalance": false,
-    "chistye-pushistye": false,
-  });
-  const [scentFilters, setScentFilters] = useState({
-    classic: false,
-    vanilla: false,
-    banana: false,
-    coconut: false,
-    "green-tea": false,
-    rose: false,
-    apple: false,
-    lemon: false,
-    "no-flavor": false,
-    milk: false,
-  });
+  // фильтры (инициализируются динамически из API в loadFilters)
+  const [categoryFilters, setCategoryFilters] = useState({});
+  const [catFilters, setCatFilters] = useState({});
+  const [dogFilters, setDogFilters] = useState({});
+  const [minicatFilters, setMiniCatFilters] = useState({});
+  const [minidogFilters, setMiniDogFilters] = useState({});
+  const [countryFilters, setCountryFilters] = useState({});
+  const [flavorFilters, setFlavorFilters] = useState({});
+  const [brandFilters, setBrandFilters] = useState({});
+  const [scentFilters, setScentFilters] = useState({});
   const [productTypeFilters, setProductTypeFilters] = useState({});
 
   // пагинация
@@ -341,7 +289,13 @@ export default function Catalog() {
     
     // breed: подфильтры для всех категорий (таблица breeds)
     Object.keys(catFilters).forEach((key) => {
-      if (catFilters[key]) queryParams.append("breed_" + key, "true");
+      if (catFilters[key]) {
+        // Если ключ содержит префикс категории (для новых категорий), убираем префикс
+        const breedKey = key.includes('_') && !['cat', 'dog', 'minicat', 'minidog'].some(prefix => key.startsWith(prefix + '_'))
+          ? key.split('_').slice(1).join('_') 
+          : key;
+        queryParams.append("breed_" + breedKey, "true");
+      }
     });
     Object.keys(dogFilters).forEach((key) => {
       if (dogFilters[key]) queryParams.append("breed_" + key, "true");
@@ -783,15 +737,18 @@ export default function Catalog() {
         if (filtersUrlString) {
           window.history.pushState({}, "", filtersUrlString);
           fetchCards(filtersUrlString, true);
+          // НЕ прокручиваем вверх при восстановлении фильтров
         }
       }
+      // Сбрасываем filtersRestored сразу после первой проверки, чтобы не срабатывать при изменении фильтров
       setFiltersRestored(false);
     } catch (e) {
       console.warn("Failed to apply restored filters:", e);
       setFiltersRestored(false);
     }
+    // Зависимости только от filtersRestored, чтобы срабатывать только один раз
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filtersRestored, searchQuery, priceFrom, priceTo, categoryFilters, catFilters, dogFilters, minicatFilters, minidogFilters, countryFilters, flavorFilters, brandFilters, scentFilters, productTypeFilters]);
+  }, [filtersRestored]);
 
   // Загрузка фильтров из API
   const loadFilters = useCallback(async () => {
@@ -926,6 +883,7 @@ export default function Catalog() {
       // Инициализируем фильтры типов корма (typeOfFoods) для categoryFilters
       setCategoryFilters((prev) => {
         const newFilters = { ...prev };
+        // НЕ устанавливаем "all" в true по умолчанию
         if (Array.isArray(typeOfFoods)) {
           typeOfFoods.forEach((type) => {
             if (!(type.slug in newFilters)) {
@@ -944,53 +902,67 @@ export default function Catalog() {
       });
 
       // Динамически инициализируем фильтры пород для ВСЕХ категорий
-      // Для совместимости со старым кодом обновляем существующие фильтры
+      // Используем общий подход для всех категорий
       Object.keys(breedsByCategory).forEach((categorySlug) => {
         const breeds = breedsByCategory[categorySlug] || [];
         
         // Обновляем соответствующий state фильтров в зависимости от slug категории
         if (categorySlug === "cat") {
-      setCatFilters((prev) => {
-        const newFilters = { ...prev };
+          setCatFilters((prev) => {
+            const newFilters = { ...prev };
             breeds.forEach((breed) => {
-          if (!(breed.slug in newFilters)) {
-            newFilters[breed.slug] = false;
-          }
-        });
-        return newFilters;
-      });
+              if (!(breed.slug in newFilters)) {
+                newFilters[breed.slug] = false;
+              }
+            });
+            return newFilters;
+          });
         } else if (categorySlug === "dog") {
-      setDogFilters((prev) => {
-        const newFilters = { ...prev };
+          setDogFilters((prev) => {
+            const newFilters = { ...prev };
             breeds.forEach((breed) => {
-          if (!(breed.slug in newFilters)) {
-            newFilters[breed.slug] = false;
-          }
-        });
-        return newFilters;
-      });
+              if (!(breed.slug in newFilters)) {
+                newFilters[breed.slug] = false;
+              }
+            });
+            return newFilters;
+          });
         } else if (categorySlug === "minicat") {
-      setMiniCatFilters((prev) => {
-        const newFilters = { ...prev };
+          setMiniCatFilters((prev) => {
+            const newFilters = { ...prev };
             breeds.forEach((breed) => {
-          if (!(breed.slug in newFilters)) {
-            newFilters[breed.slug] = false;
-          }
-        });
-        return newFilters;
-      });
+              if (!(breed.slug in newFilters)) {
+                newFilters[breed.slug] = false;
+              }
+            });
+            return newFilters;
+          });
         } else if (categorySlug === "minidog") {
-      setMiniDogFilters((prev) => {
-        const newFilters = { ...prev };
+          setMiniDogFilters((prev) => {
+            const newFilters = { ...prev };
             breeds.forEach((breed) => {
-          if (!(breed.slug in newFilters)) {
-            newFilters[breed.slug] = false;
-          }
-        });
-        return newFilters;
+              if (!(breed.slug in newFilters)) {
+                newFilters[breed.slug] = false;
+              }
+            });
+            return newFilters;
+          });
+        } else {
+          // Для новых категорий используем общий механизм через catFilters, dogFilters и т.д.
+          // Или создаем динамический state для новых категорий
+          // Пока используем catFilters как fallback для новых категорий
+          setCatFilters((prev) => {
+            const newFilters = { ...prev };
+            breeds.forEach((breed) => {
+              // Используем префикс категории для уникальности
+              const breedKey = `${categorySlug}_${breed.slug}`;
+              if (!(breedKey in newFilters)) {
+                newFilters[breedKey] = false;
+              }
+            });
+            return newFilters;
           });
         }
-        // Для новых категорий можно добавить общий state или обрабатывать отдельно
       });
 
       // Сохраняем все загруженные данные фильтров
@@ -1288,8 +1260,8 @@ export default function Catalog() {
   }, [generateQueryParams, saveFiltersToStorage, fetchCards]);
 
   const handleResetFilters = useCallback(() => {
-    // Сбрасываем категории корма
-    const resetCategoryFilters = { all: true };
+    // Сбрасываем категории корма (без автоматической галочки "все корма")
+    const resetCategoryFilters = {};
     availableFilters.typeOfFoods.forEach((type) => {
       resetCategoryFilters[type.slug] = false;
     });
@@ -1471,7 +1443,9 @@ export default function Catalog() {
                   if (categorySlug === "dog") return dogFilters[breedSlug] || false;
                   if (categorySlug === "minicat") return minicatFilters[breedSlug] || false;
                   if (categorySlug === "minidog") return minidogFilters[breedSlug] || false;
-                  return false;
+                  // Для новых категорий используем catFilters с префиксом
+                  const breedKey = `${categorySlug}_${breedSlug}`;
+                  return catFilters[breedKey] || false;
                 };
                 
                 const handleFilterChange = (breedSlug, checked) => {
@@ -1483,6 +1457,10 @@ export default function Catalog() {
                     setMiniCatFilters((prev) => ({ ...prev, [breedSlug]: checked }));
                   } else if (categorySlug === "minidog") {
                     setMiniDogFilters((prev) => ({ ...prev, [breedSlug]: checked }));
+                  } else {
+                    // Для новых категорий используем catFilters с префиксом
+                    const breedKey = `${categorySlug}_${breedSlug}`;
+                    setCatFilters((prev) => ({ ...prev, [breedKey]: checked }));
                   }
                 };
                 
@@ -1529,15 +1507,15 @@ export default function Catalog() {
                   // Используем canonicalName вместо slug, так как в API flavors нет slug
                   const flavorKey = flavor.canonicalName || String(flavor.id);
                   return (
-                    <label key={flavor.id} className="flex items-center space-x-2">
-                      <Checkbox
+                  <label key={flavor.id} className="flex items-center space-x-2">
+                    <Checkbox
                         checked={flavorFilters[flavorKey] || false}
-                        onCheckedChange={(c) =>
+                      onCheckedChange={(c) =>
                           setFlavorFilters((prev) => ({ ...prev, [flavorKey]: c }))
-                        }
-                      />
-                      <span className="text-sm">{flavor.name}</span>
-                    </label>
+                      }
+                    />
+                    <span className="text-sm">{flavor.name}</span>
+                  </label>
                   );
                 })}
               </div>
@@ -1707,7 +1685,9 @@ export default function Catalog() {
                     if (categorySlug === "dog") return dogFilters[breedSlug] || false;
                     if (categorySlug === "minicat") return minicatFilters[breedSlug] || false;
                     if (categorySlug === "minidog") return minidogFilters[breedSlug] || false;
-                    return false;
+                    // Для новых категорий используем catFilters с префиксом
+                    const breedKey = `${categorySlug}_${breedSlug}`;
+                    return catFilters[breedKey] || false;
                   };
                   
                   const handleFilterChange = (breedSlug, checked) => {
@@ -1719,6 +1699,10 @@ export default function Catalog() {
                       setMiniCatFilters((prev) => ({ ...prev, [breedSlug]: checked }));
                     } else if (categorySlug === "minidog") {
                       setMiniDogFilters((prev) => ({ ...prev, [breedSlug]: checked }));
+                    } else {
+                      // Для новых категорий используем catFilters с префиксом
+                      const breedKey = `${categorySlug}_${breedSlug}`;
+                      setCatFilters((prev) => ({ ...prev, [breedKey]: checked }));
                     }
                   };
                   
@@ -1765,18 +1749,18 @@ export default function Catalog() {
                     // Используем canonicalName вместо slug, так как в API flavors нет slug
                     const flavorKey = flavor.canonicalName || String(flavor.id);
                     return (
-                      <label key={flavor.id} className="flex items-center space-x-2">
-                        <Checkbox
+                    <label key={flavor.id} className="flex items-center space-x-2">
+                      <Checkbox
                           checked={flavorFilters[flavorKey] || false}
-                          onCheckedChange={(c) =>
-                            setFlavorFilters((prev) => ({
-                              ...prev,
+                        onCheckedChange={(c) =>
+                          setFlavorFilters((prev) => ({
+                            ...prev,
                               [flavorKey]: c,
-                            }))
-                          }
-                        />
-                        <span className="text-sm">{flavor.name}</span>
-                      </label>
+                          }))
+                        }
+                      />
+                      <span className="text-sm">{flavor.name}</span>
+                    </label>
                     );
                   })}
                 </div>

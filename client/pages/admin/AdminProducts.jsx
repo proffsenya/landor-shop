@@ -437,8 +437,16 @@ function ProductForm({
   };
 
   const [formData, setFormData] = useState(getInitialFormData());
+  const [imageFiles, setImageFiles] = useState([]); // Для хранения выбранных изображений при создании
 
   const [saving, setSaving] = useState(false);
+
+  // Сброс imageFiles при открытии формы создания
+  useEffect(() => {
+    if (!product) {
+      setImageFiles([]);
+    }
+  }, [product]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -510,104 +518,182 @@ function ProductForm({
         return null;
       };
 
-      const payload = {
-        name: formData.name || "",
-        description: formData.description || "",
-        guaranteedIndicators: formData.guaranteedIndicators || "",
-        feedingNote: formData.feedingNote || "",
-        slug: formData.slug || "",
-        quantityInStock: Number(formData.quantityInStock) || 0,
-        isActive: formData.isActive !== undefined ? formData.isActive : true,
-        isFeatured: formData.isFeatured !== undefined ? formData.isFeatured : false,
-        rating: Number(formData.rating) || 0,
-        breedIds: Array.isArray(formData.breedIds)
-          ? formData.breedIds.map(id => Number(id)).filter(id => id > 0)
-          : [],
-        categoryIds: Array.isArray(formData.categoryIds)
-          ? formData.categoryIds.map(id => Number(id)).filter(id => id > 0)
-          : [],
-        countryIds: Array.isArray(formData.countryIds)
-          ? formData.countryIds.map(id => Number(id)).filter(id => id > 0)
-          : [],
-        typeoffoodIds: Array.isArray(formData.typeoffoodIds)
-          ? formData.typeoffoodIds.map(id => Number(id)).filter(id => id > 0)
-          : [],
-        flavorIds: Array.isArray(formData.flavorIds)
-          ? formData.flavorIds.map(id => {
-              // Если это объект, берем id, иначе просто число
-              return typeof id === "object" && id.id !== undefined ? Number(id.id) : Number(id);
-            }).filter(id => id > 0)
-          : [],
-        variants: formData.variants.map((v) => {
-          // Преобразуем colorIds в массив объектов
-          const colorObjects = Array.isArray(v.colorIds) 
-            ? v.colorIds
-                .map((c) => {
-                  if (typeof c === "object" && c.id !== undefined) {
-                    // Уже объект
-                    return {
-                      id: c.id || 0,
-                      name: c.name || "",
-                      slug: c.slug || "",
-                    };
-                  } else {
-                    // ID, нужно найти объект
-                    return getColorObject(c);
-                  }
-                })
-                .filter(Boolean) // Убираем null значения
-            : [];
-
-          // Преобразуем scentIds в массив объектов
-          const scentObjects = Array.isArray(v.scentIds)
-            ? v.scentIds
-                .map((s) => {
-                  if (typeof s === "object" && s.id !== undefined) {
-                    // Уже объект
-                    return {
-                      id: s.id || 0,
-                      name: s.name || "",
-                      slug: s.slug || "",
-                    };
-                  } else {
-                    // ID, нужно найти объект
-                    return getScentObject(s);
-                  }
-                })
-                .filter(Boolean) // Убираем null значения
-            : [];
-
-          return {
-          id: v.id || 0,
-            productId: v.productId || (product ? product.id : 0),
-            sku: v.sku || "",
-          price: Number(v.price) || 0,
-          oldPrice: Number(v.oldPrice) || 0,
-          stock: Number(v.stock) || 0,
-          weight: Number(v.weight) || 0,
-            colorIds: colorObjects,
-            scentIds: scentObjects,
-            displayName: v.displayName || "",
-          };
-        }),
-        brandId: formData.brandId ? Number(formData.brandId) : 0,
-        productTypeId: formData.productTypeId ? Number(formData.productTypeId) : 0,
-      };
-
       const url = product ? `/api/products/${product.id}` : "/api/products";
       const method = product ? "PUT" : "POST";
 
-      // Логируем payload для отладки
-      console.log("[AdminProducts] Sending payload:", JSON.stringify(payload, null, 2));
+      let res;
 
-      const res = await fetch(url, {
-        method,
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${adminToken}`,
-        },
-        body: JSON.stringify(payload),
-      });
+      if (method === "POST") {
+        // Для POST используем multipart/form-data
+        const formDataToSend = new FormData();
+
+        // Создаем productDTO без полей, которых нет в POST запросе
+        const productDTO = {
+          name: formData.name || "",
+          description: formData.description || "",
+          guaranteedIndicators: formData.guaranteedIndicators || "",
+          feedingNote: formData.feedingNote || "",
+          slug: formData.slug || "",
+          breedIds: Array.isArray(formData.breedIds)
+            ? formData.breedIds.map(id => Number(id)).filter(id => id > 0)
+            : [],
+          categoryIds: Array.isArray(formData.categoryIds)
+            ? formData.categoryIds.map(id => Number(id)).filter(id => id > 0)
+            : [],
+          countryIds: Array.isArray(formData.countryIds)
+            ? formData.countryIds.map(id => Number(id)).filter(id => id > 0)
+            : [],
+          typeoffoodIds: Array.isArray(formData.typeoffoodIds)
+            ? formData.typeoffoodIds.map(id => Number(id)).filter(id => id > 0)
+            : [],
+          flavorIds: Array.isArray(formData.flavorIds)
+            ? formData.flavorIds.map(id => {
+                return typeof id === "object" && id.id !== undefined ? Number(id.id) : Number(id);
+              }).filter(id => id > 0)
+            : [],
+          variants: formData.variants.map((v) => {
+            // Для POST в variants не нужны colorIds и scentIds как объекты, только ID
+            return {
+              sku: v.sku || "",
+              price: Number(v.price) || 0,
+              stock: Number(v.stock) || 0,
+              weight: Number(v.weight) || 0,
+              colorIds: Array.isArray(v.colorIds)
+                ? v.colorIds.map((c) => {
+                    if (typeof c === "object" && c.id !== undefined) {
+                      return Number(c.id);
+                    } else {
+                      const colorObj = getColorObject(c);
+                      return colorObj ? Number(colorObj.id) : 0;
+                    }
+                  }).filter(id => id > 0)
+                : [],
+              scentIds: Array.isArray(v.scentIds)
+                ? v.scentIds.map((s) => {
+                    if (typeof s === "object" && s.id !== undefined) {
+                      return Number(s.id);
+                    } else {
+                      const scentObj = getScentObject(s);
+                      return scentObj ? Number(scentObj.id) : 0;
+                    }
+                  }).filter(id => id > 0)
+                : [],
+            };
+          }),
+          brandId: formData.brandId ? Number(formData.brandId) : 0,
+          productTypeId: formData.productTypeId ? Number(formData.productTypeId) : 0,
+        };
+
+        // Добавляем productDTO как JSON строку с Content-Type: application/json
+        const productDTOBlob = new Blob([JSON.stringify(productDTO)], { type: "application/json" });
+        formDataToSend.append("productDTO", productDTOBlob, "productDTO.json");
+
+        // Добавляем изображения
+        imageFiles.forEach((file) => {
+          formDataToSend.append("images", file);
+        });
+
+        console.log("[AdminProducts] Sending multipart/form-data with productDTO:", JSON.stringify(productDTO, null, 2));
+        console.log("[AdminProducts] Images count:", imageFiles.length);
+
+        res = await fetch(url, {
+          method,
+          headers: {
+            Authorization: `Bearer ${adminToken}`,
+            // Не устанавливаем Content-Type вручную, браузер установит его автоматически с boundary
+          },
+          body: formDataToSend,
+        });
+      } else {
+        // Для PUT используем JSON (как было)
+        const payload = {
+          name: formData.name || "",
+          description: formData.description || "",
+          guaranteedIndicators: formData.guaranteedIndicators || "",
+          feedingNote: formData.feedingNote || "",
+          slug: formData.slug || "",
+          quantityInStock: Number(formData.quantityInStock) || 0,
+          isActive: formData.isActive !== undefined ? formData.isActive : true,
+          isFeatured: formData.isFeatured !== undefined ? formData.isFeatured : false,
+          rating: Number(formData.rating) || 0,
+          breedIds: Array.isArray(formData.breedIds)
+            ? formData.breedIds.map(id => Number(id)).filter(id => id > 0)
+            : [],
+          categoryIds: Array.isArray(formData.categoryIds)
+            ? formData.categoryIds.map(id => Number(id)).filter(id => id > 0)
+            : [],
+          countryIds: Array.isArray(formData.countryIds)
+            ? formData.countryIds.map(id => Number(id)).filter(id => id > 0)
+            : [],
+          typeoffoodIds: Array.isArray(formData.typeoffoodIds)
+            ? formData.typeoffoodIds.map(id => Number(id)).filter(id => id > 0)
+            : [],
+          flavorIds: Array.isArray(formData.flavorIds)
+            ? formData.flavorIds.map(id => {
+                return typeof id === "object" && id.id !== undefined ? Number(id.id) : Number(id);
+              }).filter(id => id > 0)
+            : [],
+          variants: formData.variants.map((v) => {
+            const colorObjects = Array.isArray(v.colorIds) 
+              ? v.colorIds
+                  .map((c) => {
+                    if (typeof c === "object" && c.id !== undefined) {
+                      return {
+                        id: c.id || 0,
+                        name: c.name || "",
+                        slug: c.slug || "",
+                      };
+                    } else {
+                      return getColorObject(c);
+                    }
+                  })
+                  .filter(Boolean)
+              : [];
+
+            const scentObjects = Array.isArray(v.scentIds)
+              ? v.scentIds
+                  .map((s) => {
+                    if (typeof s === "object" && s.id !== undefined) {
+                      return {
+                        id: s.id || 0,
+                        name: s.name || "",
+                        slug: s.slug || "",
+                      };
+                    } else {
+                      return getScentObject(s);
+                    }
+                  })
+                  .filter(Boolean)
+              : [];
+
+            return {
+              id: v.id || 0,
+              productId: v.productId || (product ? product.id : 0),
+              sku: v.sku || "",
+              price: Number(v.price) || 0,
+              oldPrice: Number(v.oldPrice) || 0,
+              stock: Number(v.stock) || 0,
+              weight: Number(v.weight) || 0,
+              colorIds: colorObjects,
+              scentIds: scentObjects,
+              displayName: v.displayName || "",
+            };
+          }),
+          brandId: formData.brandId ? Number(formData.brandId) : 0,
+          productTypeId: formData.productTypeId ? Number(formData.productTypeId) : 0,
+        };
+
+        console.log("[AdminProducts] Sending PUT payload:", JSON.stringify(payload, null, 2));
+
+        res = await fetch(url, {
+          method,
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${adminToken}`,
+          },
+          body: JSON.stringify(payload),
+        });
+      }
 
       if (res.ok) {
         const savedProduct = await res.json();
@@ -916,6 +1002,30 @@ function ProductForm({
                 Рекомендуемый
               </label>
             </div>
+          </div>
+        )}
+
+        {/* Поле для выбора изображений (только при создании) */}
+        {!product && (
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Изображения товара
+            </label>
+            <input
+              type="file"
+              multiple
+              accept="image/*"
+              onChange={(e) => {
+                const selectedFiles = Array.from(e.target.files);
+                setImageFiles(selectedFiles);
+              }}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#6F2A2B]"
+            />
+            {imageFiles.length > 0 && (
+              <p className="mt-1 text-sm text-gray-500">
+                Выбрано файлов: {imageFiles.length}
+              </p>
+            )}
           </div>
         )}
 
