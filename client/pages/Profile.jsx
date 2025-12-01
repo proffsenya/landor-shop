@@ -176,38 +176,76 @@ export default function Profile() {
   }, []);
 
   // Загрузка заказов
-  useEffect(() => {
-    const fetchOrders = async () => {
-      const authToken = getAuthToken();
-      if (!authToken || authToken === "guest") {
-        return;
+  const fetchOrders = async () => {
+    const authToken = getAuthToken();
+    if (!authToken || authToken === "guest") {
+      return;
+    }
+
+    try {
+      setOrdersLoading(true);
+      const res = await fetch("/api/orders/profile", {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${authToken}`,
+        },
+      });
+
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status}`);
       }
 
-      try {
-        setOrdersLoading(true);
-        const res = await fetch("/api/orders/profile", {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${authToken}`,
-          },
-        });
+      const data = await res.json();
+      // Нормализуем статусы заказов при загрузке
+      const normalizedOrders = Array.isArray(data) 
+        ? data.map(order => ({
+            ...order,
+            orderStatus: order.orderStatus ? String(order.orderStatus).trim().replace(/^["']|["']$/g, '') : order.orderStatus
+          }))
+        : [];
+      setOrders(normalizedOrders);
+    } catch (e) {
+      console.error("Error fetching orders:", e);
+      setOrders([]);
+    } finally {
+      setOrdersLoading(false);
+    }
+  };
 
-        if (!res.ok) {
-          throw new Error(`HTTP ${res.status}`);
-        }
+  useEffect(() => {
+    fetchOrders();
+  }, []);
 
-        const data = await res.json();
-        setOrders(Array.isArray(data) ? data : []);
-      } catch (e) {
-        console.error("Error fetching orders:", e);
-        setOrders([]);
-      } finally {
-        setOrdersLoading(false);
+  // Слушатель событий для обновления заказов при изменении статуса в админке
+  useEffect(() => {
+    const handleOrderStatusUpdated = async (event) => {
+      const { orderId, newStatus } = event.detail;
+      console.log("[Profile] Order status updated:", { orderId, newStatus });
+      
+      // Обновляем локальное состояние заказов
+      setOrders((prevOrders) =>
+        prevOrders.map((order) =>
+          order.id === orderId
+            ? { ...order, orderStatus: newStatus }
+            : order
+        )
+      );
+      
+      // Если открыт этот заказ, обновляем его детали
+      if (selectedOrder === orderId && orderDetails) {
+        setOrderDetails((prev) => ({
+          ...prev,
+          orderStatus: newStatus,
+        }));
       }
     };
 
-    fetchOrders();
-  }, []);
+    window.addEventListener("order:status-updated", handleOrderStatusUpdated);
+
+    return () => {
+      window.removeEventListener("order:status-updated", handleOrderStatusUpdated);
+    };
+  }, [selectedOrder, orderDetails]);
 
   // Загрузка деталей заказа
   const fetchOrderDetails = async (orderId) => {
@@ -231,7 +269,12 @@ export default function Profile() {
       }
 
       const data = await res.json();
-      setOrderDetails(data);
+      // Нормализуем статус заказа при загрузке деталей
+      const normalizedOrderDetails = {
+        ...data,
+        orderStatus: data.orderStatus ? String(data.orderStatus).trim().replace(/^["']|["']$/g, '') : data.orderStatus
+      };
+      setOrderDetails(normalizedOrderDetails);
     } catch (e) {
       console.error("Error fetching order details:", e);
       showToast("Не удалось загрузить детали заказа", 3000);
@@ -265,14 +308,34 @@ export default function Profile() {
 
   // Форматирование статуса заказа
   const formatOrderStatus = (status) => {
+    if (!status) return "-";
+    
+    // Убираем кавычки, если они есть
+    let cleanStatus = String(status).trim();
+    if (cleanStatus.startsWith('"') && cleanStatus.endsWith('"')) {
+      cleanStatus = cleanStatus.slice(1, -1);
+    }
+    if (cleanStatus.startsWith("'") && cleanStatus.endsWith("'")) {
+      cleanStatus = cleanStatus.slice(1, -1);
+    }
+    
+    const normalizedStatus = cleanStatus.toLowerCase().trim();
     const statusMap = {
       pending: "Ожидает обработки",
       processing: "В обработке",
       shipped: "Отправлен",
       delivered: "Доставлен",
       cancelled: "Отменен",
+      canceled: "Отменен", // альтернативное написание
     };
-    return statusMap[status] || status;
+    
+    const translated = statusMap[normalizedStatus];
+    if (!translated) {
+      console.warn("[Profile] Unknown order status:", status, "normalized:", normalizedStatus);
+      return status; // Возвращаем оригинальный статус, если не найден перевод
+    }
+    
+    return translated;
   };
 
   // Форматирование статуса оплаты
@@ -1004,24 +1067,6 @@ export default function Profile() {
                     )}
                     {orderDetails.shippingAddress.street && (
                       <div><strong>Адрес:</strong> {orderDetails.shippingAddress.street}</div>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {/* Адрес оплаты */}
-              {orderDetails.billingAddress && (
-                <div className="border-b border-[#E8E8E8] pb-4">
-                  <h3 className="text-lg font-semibold text-[#1E1E1E] mb-3">Адрес оплаты</h3>
-                  <div className="text-sm text-[#1E1E1E] space-y-1">
-                    {orderDetails.billingAddress.name && (
-                      <div><strong>Получатель:</strong> {orderDetails.billingAddress.name}</div>
-                    )}
-                    {orderDetails.billingAddress.phone && (
-                      <div><strong>Телефон:</strong> {orderDetails.billingAddress.phone}</div>
-                    )}
-                    {orderDetails.billingAddress.street && (
-                      <div><strong>Адрес:</strong> {orderDetails.billingAddress.street}</div>
                     )}
                   </div>
                 </div>

@@ -5,8 +5,6 @@ import {
   Package, 
   ShoppingCart, 
   Users, 
-  Settings,
-  FolderTree,
   LogOut,
   FileText,
   X,
@@ -99,20 +97,6 @@ export default function AdminSidebar({ isSuperUser, isOpen, onClose }) {
           <span>Заказы</span>
         </NavLink>
         <NavLink
-          to="/admin/categories"
-          onClick={handleNavClick}
-          className={({ isActive }) =>
-            `flex items-center gap-3 px-3 lg:px-4 py-2 lg:py-3 rounded-lg transition-colors text-sm lg:text-base ${
-              isActive
-                ? "bg-[#6F2A2B] text-white"
-                : "text-gray-300 hover:bg-gray-800"
-            }`
-          }
-        >
-          <FolderTree className="w-4 h-4 lg:w-5 lg:h-5" />
-          <span>Категории</span>
-        </NavLink>
-        <NavLink
           to="/admin/filters"
           onClick={handleNavClick}
           className={({ isActive }) =>
@@ -124,7 +108,7 @@ export default function AdminSidebar({ isSuperUser, isOpen, onClose }) {
           }
         >
           <Sliders className="w-4 h-4 lg:w-5 lg:h-5" />
-          <span>Фильтры</span>
+          <span>Фильтры и категории</span>
         </NavLink>
         <NavLink
           to="/admin/forms"
@@ -156,20 +140,6 @@ export default function AdminSidebar({ isSuperUser, isOpen, onClose }) {
             <span>Пользователи</span>
           </NavLink>
         )}
-        <NavLink
-          to="/admin/settings"
-          onClick={handleNavClick}
-          className={({ isActive }) =>
-            `flex items-center gap-3 px-3 lg:px-4 py-2 lg:py-3 rounded-lg transition-colors text-sm lg:text-base ${
-              isActive
-                ? "bg-[#6F2A2B] text-white"
-                : "text-gray-300 hover:bg-gray-800"
-            }`
-          }
-        >
-          <Settings className="w-4 h-4 lg:w-5 lg:h-5" />
-          <span>Настройки</span>
-        </NavLink>
         <button
           onClick={handleLogout}
           className="w-full flex items-center gap-3 px-3 lg:px-4 py-2 lg:py-3 rounded-lg text-gray-300 hover:bg-gray-800 transition-colors text-sm lg:text-base"

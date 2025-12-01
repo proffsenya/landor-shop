@@ -459,17 +459,125 @@ function FilterForm({ filterType, config, item, items, onClose, onSave }) {
       
       // Преобразование типов данных
       config.fields.forEach((field) => {
-        if (field.type === "select" && payload[field.key]) {
-          payload[field.key] = payload[field.key] ? Number(payload[field.key]) : null;
+        if (field.type === "select") {
+          if (payload[field.key] && payload[field.key].toString().trim() !== "") {
+            payload[field.key] = Number(payload[field.key]);
+          } else {
+            // Если поле необязательное и пустое, удаляем его из payload
+            // Для обязательных полей валидация уже должна была сработать
+            if (!field.required) {
+              delete payload[field.key];
+            } else {
+              // Это не должно произойти для обязательных полей, но на всякий случай
+              payload[field.key] = null;
+            }
+          }
         } else if (field.type === "checkbox") {
           payload[field.key] = Boolean(payload[field.key]);
         }
       });
       
-      // Удаляем поля, которые не нужны в API запросе (например, для flavors убираем slug если он был)
-      if (filterType === "flavors" && payload.slug) {
-        delete payload.slug;
+      // Для flavors оставляем только name и canonicalName
+      if (filterType === "flavors") {
+        const cleanPayload = {
+          name: (payload.name || "").toString().trim(),
+          canonicalName: (payload.canonicalName || "").toString().trim(),
+        };
+        // Удаляем все остальные поля (включая slug, если он был)
+        Object.keys(payload).forEach((key) => {
+          if (key !== "name" && key !== "canonicalName") {
+            delete payload[key];
+          }
+        });
+        // Обновляем значения
+        payload.name = cleanPayload.name;
+        payload.canonicalName = cleanPayload.canonicalName;
+        
+        console.log("[AdminFilters] Flavors payload:", payload);
       }
+      
+      // Для scents оставляем только name и slug
+      if (filterType === "scents") {
+        const cleanPayload = {
+          name: (payload.name || "").toString().trim(),
+          slug: (payload.slug || "").toString().trim(),
+        };
+        // Удаляем все остальные поля
+        Object.keys(payload).forEach((key) => {
+          if (key !== "name" && key !== "slug") {
+            delete payload[key];
+          }
+        });
+        // Обновляем значения
+        payload.name = cleanPayload.name;
+        payload.slug = cleanPayload.slug;
+        
+        console.log("[AdminFilters] Scents payload:", payload);
+      }
+      
+      // Для scents оставляем только name и slug
+      if (filterType === "scents") {
+        const cleanPayload = {
+          name: (payload.name || "").toString().trim(),
+          slug: (payload.slug || "").toString().trim(),
+        };
+        // Удаляем все остальные поля
+        Object.keys(payload).forEach((key) => {
+          if (key !== "name" && key !== "slug") {
+            delete payload[key];
+          }
+        });
+        // Обновляем значения
+        payload.name = cleanPayload.name;
+        payload.slug = cleanPayload.slug;
+        
+        console.log("[AdminFilters] Scents payload:", payload);
+      }
+      
+      // Для countries оставляем только name и slug
+      if (filterType === "countries") {
+        const cleanPayload = {
+          name: (payload.name || "").toString().trim(),
+          slug: (payload.slug || "").toString().trim(),
+        };
+        // Удаляем все остальные поля
+        Object.keys(payload).forEach((key) => {
+          if (key !== "name" && key !== "slug") {
+            delete payload[key];
+          }
+        });
+        // Обновляем значения
+        payload.name = cleanPayload.name;
+        payload.slug = cleanPayload.slug;
+        
+        console.log("[AdminFilters] Countries payload:", payload);
+      }
+      
+      // Для productTypes оставляем только name и slug
+      if (filterType === "productTypes") {
+        const cleanPayload = {
+          name: (payload.name || "").toString().trim(),
+          slug: (payload.slug || "").toString().trim(),
+        };
+        // Удаляем все остальные поля
+        Object.keys(payload).forEach((key) => {
+          if (key !== "name" && key !== "slug") {
+            delete payload[key];
+          }
+        });
+        // Обновляем значения
+        payload.name = cleanPayload.name;
+        payload.slug = cleanPayload.slug;
+        
+        console.log("[AdminFilters] ProductTypes payload:", payload);
+      }
+
+      console.log("[AdminFilters] Sending request:", {
+        url,
+        method,
+        filterType,
+        payload,
+      });
 
       const res = await fetch(url, {
         method,
@@ -551,23 +659,28 @@ function FilterForm({ filterType, config, item, items, onClose, onSave }) {
           if (field.type === "select") {
             const options = getSelectOptions(field.key, field.selectType);
             const showEmptyOption = !field.required && field.key !== "categoryId";
+            const EMPTY_VALUE = "__none__";
+            const currentValue = formData[field.key] && formData[field.key] !== "" ? formData[field.key] : undefined;
             return (
               <div key={field.key}>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   {field.label} {field.required && "*"}
                 </label>
                 <Select
-                  value={formData[field.key] || ""}
-                  onValueChange={(value) => setFormData({ ...formData, [field.key]: value })}
+                  value={currentValue}
+                  onValueChange={(value) => {
+                    const newValue = value === EMPTY_VALUE ? "" : value;
+                    setFormData({ ...formData, [field.key]: newValue });
+                  }}
                   required={field.required}
                 >
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder={`Выберите ${field.label.toLowerCase()}`} />
                   </SelectTrigger>
                   <SelectContent>
-                    {showEmptyOption && <SelectItem value="">Нет</SelectItem>}
+                    {showEmptyOption && <SelectItem value={EMPTY_VALUE}>Нет</SelectItem>}
                     {categoriesLoading ? (
-                      <SelectItem value="" disabled>Загрузка...</SelectItem>
+                      <SelectItem value="__loading__" disabled>Загрузка...</SelectItem>
                     ) : (
                       options.map((option) => (
                         <SelectItem key={option.id} value={String(option.id)}>

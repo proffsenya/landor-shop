@@ -451,34 +451,154 @@ function ProductForm({
       setSaving(true);
       const adminToken = getAdminToken();
 
+      // Функция для преобразования ID в объект с полными данными
+      const getColorObject = (colorId) => {
+        if (!colorId) return null;
+        
+        // Если уже объект с нужной структурой
+        if (typeof colorId === "object" && colorId.id !== undefined) {
+          return {
+            id: colorId.id || 0,
+            name: colorId.name || "",
+            slug: colorId.slug || "",
+          };
+        }
+        
+        // Ищем в списке colors
+        const colorIdNum = typeof colorId === "number" ? colorId : Number(colorId);
+        const color = colors.find(c => {
+          const cId = typeof c === "object" ? c.id : c;
+          return cId === colorIdNum || cId === colorId;
+        });
+        
+        if (color && typeof color === "object") {
+          return {
+            id: color.id || 0,
+            name: color.name || "",
+            slug: color.slug || "",
+          };
+        }
+        return null;
+      };
+
+      const getScentObject = (scentId) => {
+        if (!scentId) return null;
+        
+        // Если уже объект с нужной структурой
+        if (typeof scentId === "object" && scentId.id !== undefined) {
+          return {
+            id: scentId.id || 0,
+            name: scentId.name || "",
+            slug: scentId.slug || "",
+          };
+        }
+        
+        // Ищем в списке scents
+        const scentIdNum = typeof scentId === "number" ? scentId : Number(scentId);
+        const scent = scents.find(s => {
+          const sId = typeof s === "object" ? s.id : s;
+          return sId === scentIdNum || sId === scentId;
+        });
+        
+        if (scent && typeof scent === "object") {
+          return {
+            id: scent.id || 0,
+            name: scent.name || "",
+            slug: scent.slug || "",
+          };
+        }
+        return null;
+      };
+
       const payload = {
-        ...formData,
+        name: formData.name || "",
+        description: formData.description || "",
+        guaranteedIndicators: formData.guaranteedIndicators || "",
+        feedingNote: formData.feedingNote || "",
+        slug: formData.slug || "",
+        quantityInStock: Number(formData.quantityInStock) || 0,
+        isActive: formData.isActive !== undefined ? formData.isActive : true,
+        isFeatured: formData.isFeatured !== undefined ? formData.isFeatured : false,
+        rating: Number(formData.rating) || 0,
+        breedIds: Array.isArray(formData.breedIds)
+          ? formData.breedIds.map(id => Number(id)).filter(id => id > 0)
+          : [],
+        categoryIds: Array.isArray(formData.categoryIds)
+          ? formData.categoryIds.map(id => Number(id)).filter(id => id > 0)
+          : [],
+        countryIds: Array.isArray(formData.countryIds)
+          ? formData.countryIds.map(id => Number(id)).filter(id => id > 0)
+          : [],
+        typeoffoodIds: Array.isArray(formData.typeoffoodIds)
+          ? formData.typeoffoodIds.map(id => Number(id)).filter(id => id > 0)
+          : [],
+        flavorIds: Array.isArray(formData.flavorIds)
+          ? formData.flavorIds.map(id => {
+              // Если это объект, берем id, иначе просто число
+              return typeof id === "object" && id.id !== undefined ? Number(id.id) : Number(id);
+            }).filter(id => id > 0)
+          : [],
+        variants: formData.variants.map((v) => {
+          // Преобразуем colorIds в массив объектов
+          const colorObjects = Array.isArray(v.colorIds) 
+            ? v.colorIds
+                .map((c) => {
+                  if (typeof c === "object" && c.id !== undefined) {
+                    // Уже объект
+                    return {
+                      id: c.id || 0,
+                      name: c.name || "",
+                      slug: c.slug || "",
+                    };
+                  } else {
+                    // ID, нужно найти объект
+                    return getColorObject(c);
+                  }
+                })
+                .filter(Boolean) // Убираем null значения
+            : [];
+
+          // Преобразуем scentIds в массив объектов
+          const scentObjects = Array.isArray(v.scentIds)
+            ? v.scentIds
+                .map((s) => {
+                  if (typeof s === "object" && s.id !== undefined) {
+                    // Уже объект
+                    return {
+                      id: s.id || 0,
+                      name: s.name || "",
+                      slug: s.slug || "",
+                    };
+                  } else {
+                    // ID, нужно найти объект
+                    return getScentObject(s);
+                  }
+                })
+                .filter(Boolean) // Убираем null значения
+            : [];
+
+          return {
+            id: v.id || 0,
+            productId: v.productId || (product ? product.id : 0),
+            sku: v.sku || "",
+            price: Number(v.price) || 0,
+            oldPrice: Number(v.oldPrice) || 0,
+            stock: Number(v.stock) || 0,
+            weight: Number(v.weight) || 0,
+            colorIds: colorObjects,
+            scentIds: scentObjects,
+            displayName: v.displayName || "",
+          };
+        }),
         brandId: formData.brandId ? Number(formData.brandId) : 0,
         productTypeId: formData.productTypeId ? Number(formData.productTypeId) : 0,
-        breedIds: formData.breedIds.map(Number),
-        categoryIds: formData.categoryIds.map(Number),
-        countryIds: formData.countryIds.map(Number),
-        typeoffoodIds: formData.typeoffoodIds.map(Number),
-        flavorIds: formData.flavorIds.map(Number),
-        variants: formData.variants.map((v) => ({
-          ...v,
-          id: v.id || 0,
-          productId: v.productId || 0,
-          price: Number(v.price) || 0,
-          oldPrice: Number(v.oldPrice) || 0,
-          stock: Number(v.stock) || 0,
-          weight: Number(v.weight) || 0,
-          colorIds: Array.isArray(v.colorIds) 
-            ? v.colorIds.map((c) => (typeof c === "object" ? c.id : Number(c)))
-            : [],
-          scentIds: Array.isArray(v.scentIds)
-            ? v.scentIds.map((s) => (typeof s === "object" ? s.id : Number(s)))
-            : [],
-        })),
       };
 
       const url = product ? `/api/products/${product.id}` : "/api/products";
       const method = product ? "PUT" : "POST";
+
+      // Логируем payload для отладки
+      console.log("[AdminProducts] Sending payload:", JSON.stringify(payload, null, 2));
 
       const res = await fetch(url, {
         method,
@@ -499,7 +619,13 @@ function ProductForm({
       } else {
         const errorText = await res.text();
         console.error("Error saving product:", res.status, errorText);
-        alert("Ошибка при сохранении");
+        console.error("Payload that was sent:", payload);
+        try {
+          const errorJson = JSON.parse(errorText);
+          alert(`Ошибка при сохранении: ${errorJson.message || errorText}`);
+        } catch {
+          alert(`Ошибка при сохранении: ${errorText || res.statusText}`);
+        }
       }
     } catch (e) {
       console.error("Error saving product:", e);

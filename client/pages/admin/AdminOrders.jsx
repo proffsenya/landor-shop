@@ -36,7 +36,14 @@ export default function AdminOrders() {
 
       if (res.ok) {
         const data = await res.json();
-        setOrders(Array.isArray(data) ? data : []);
+        const ordersList = Array.isArray(data) ? data : [];
+        // Нормализуем статусы заказов при загрузке
+        const normalizedOrders = ordersList.map(order => ({
+          ...order,
+          orderStatus: order.orderStatus ? String(order.orderStatus).trim().replace(/^["']|["']$/g, '') : order.orderStatus
+        }));
+        console.log("[AdminOrders] Loaded orders:", normalizedOrders.map(o => ({ id: o.id, status: o.orderStatus })));
+        setOrders(normalizedOrders);
       } else {
         console.error("Failed to load orders:", res.status);
       }
@@ -47,23 +54,75 @@ export default function AdminOrders() {
     }
   };
 
+  // Функция перевода статуса заказа на русский
+  const formatOrderStatus = (status) => {
+    if (!status) return "-";
+    
+    // Убираем кавычки, если они есть
+    let cleanStatus = String(status).trim();
+    if (cleanStatus.startsWith('"') && cleanStatus.endsWith('"')) {
+      cleanStatus = cleanStatus.slice(1, -1);
+    }
+    if (cleanStatus.startsWith("'") && cleanStatus.endsWith("'")) {
+      cleanStatus = cleanStatus.slice(1, -1);
+    }
+    
+    const normalizedStatus = cleanStatus.toLowerCase().trim();
+    const statusMap = {
+      pending: "Ожидает обработки",
+      processing: "В обработке",
+      shipped: "Отправлен",
+      delivered: "Доставлен",
+      cancelled: "Отменен",
+      canceled: "Отменен", // альтернативное написание
+    };
+    
+    const translated = statusMap[normalizedStatus];
+    if (!translated) {
+      console.warn("[AdminOrders] Unknown order status:", status, "normalized:", normalizedStatus);
+      return status; // Возвращаем оригинальный статус, если не найден перевод
+    }
+    
+    return translated;
+  };
+
   const updateOrderStatus = async (orderId, newStatus) => {
     try {
       const adminToken = getAdminToken();
-      const res = await fetch(`/api/admin/orders/${orderId}/status`, {
+      const res = await fetch(`/api/orders/${orderId}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${adminToken}`,
         },
-        body: JSON.stringify({ status: newStatus }),
+        body: JSON.stringify(newStatus),
       });
 
       if (res.ok) {
+        // Обновляем локальное состояние сразу для мгновенного отображения
+        setOrders((prevOrders) =>
+          prevOrders.map((order) =>
+            order.id === orderId
+              ? { ...order, orderStatus: newStatus }
+              : order
+          )
+        );
+        
+        // Обновляем selectedOrder, если он открыт
+        if (selectedOrder && selectedOrder.id === orderId) {
+          setSelectedOrder({ ...selectedOrder, orderStatus: newStatus });
+        }
+        
+        // Отправляем событие для обновления профиля пользователя
+        window.dispatchEvent(new CustomEvent("order:status-updated", {
+          detail: { orderId, newStatus }
+        }));
+        
+        // Перезагружаем заказы для синхронизации с сервером
         loadOrders();
-        setSelectedOrder(null);
       } else {
-        alert("Ошибка при обновлении статуса");
+        const errorText = await res.text();
+        alert(`Ошибка при обновлении статуса: ${errorText || res.statusText}`);
       }
     } catch (e) {
       console.error("Error updating order status:", e);
@@ -144,17 +203,22 @@ export default function AdminOrders() {
                           }).format(order.totalAmount || 0)}
                         </td>
                           <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
-                          <select
-                            value={order.orderStatus?.toLowerCase() || "pending"}
-                            onChange={(e) => updateOrderStatus(order.id, e.target.value)}
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs sm:text-sm text-gray-700 min-w-[100px] font-medium">
+                              {formatOrderStatus(order.orderStatus)}
+                            </span>
+                            <select
+                              value={order.orderStatus?.toLowerCase() || "pending"}
+                              onChange={(e) => updateOrderStatus(order.id, e.target.value)}
                               className="text-xs sm:text-sm px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-[#6F2A2B] w-full sm:w-auto"
-                          >
-                            <option value="pending">Ожидает</option>
-                            <option value="processing">В обработке</option>
-                            <option value="shipped">Отправлен</option>
-                            <option value="delivered">Доставлен</option>
-                            <option value="cancelled">Отменен</option>
-                          </select>
+                            >
+                              <option value="pending">Ожидает</option>
+                              <option value="processing">В обработке</option>
+                              <option value="shipped">Отправлен</option>
+                              <option value="delivered">Доставлен</option>
+                              <option value="cancelled">Отменен</option>
+                            </select>
+                          </div>
                         </td>
                           <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm">
                           <button
@@ -190,14 +254,34 @@ export default function AdminOrders() {
 function OrderModal({ order, onClose, onUpdateStatus }) {
   // Форматирование статуса заказа
   const formatOrderStatus = (status) => {
+    if (!status) return "-";
+    
+    // Убираем кавычки, если они есть
+    let cleanStatus = String(status).trim();
+    if (cleanStatus.startsWith('"') && cleanStatus.endsWith('"')) {
+      cleanStatus = cleanStatus.slice(1, -1);
+    }
+    if (cleanStatus.startsWith("'") && cleanStatus.endsWith("'")) {
+      cleanStatus = cleanStatus.slice(1, -1);
+    }
+    
+    const normalizedStatus = cleanStatus.toLowerCase().trim();
     const statusMap = {
       pending: "Ожидает обработки",
       processing: "В обработке",
       shipped: "Отправлен",
       delivered: "Доставлен",
       cancelled: "Отменен",
+      canceled: "Отменен", // альтернативное написание
     };
-    return statusMap[status?.toLowerCase()] || status || "-";
+    
+    const translated = statusMap[normalizedStatus];
+    if (!translated) {
+      console.warn("[OrderModal] Unknown order status:", status, "normalized:", normalizedStatus);
+      return status; // Возвращаем оригинальный статус, если не найден перевод
+    }
+    
+    return translated;
   };
 
   // Форматирование статуса оплаты
@@ -326,30 +410,6 @@ function OrderModal({ order, onClose, onUpdateStatus }) {
                   {order.shippingAddress.street && (
                     <p className="text-sm sm:text-base">
                       <span className="font-medium">Адрес:</span> {order.shippingAddress.street}
-                    </p>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* Адрес оплаты */}
-            {order.billingAddress && (
-              <div>
-                <h3 className="text-sm sm:text-base font-semibold text-gray-900 mb-2">Адрес оплаты</h3>
-                <div className="bg-gray-50 rounded-lg p-3 sm:p-4 space-y-2">
-                  {order.billingAddress.name && (
-                    <p className="text-sm sm:text-base">
-                      <span className="font-medium">Получатель:</span> {order.billingAddress.name}
-                    </p>
-                  )}
-                  {order.billingAddress.phone && (
-                    <p className="text-sm sm:text-base">
-                      <span className="font-medium">Телефон:</span> {formatPhone(order.billingAddress.phone)}
-                    </p>
-                  )}
-                  {order.billingAddress.street && (
-                    <p className="text-sm sm:text-base">
-                      <span className="font-medium">Адрес:</span> {order.billingAddress.street}
                     </p>
                   )}
                 </div>
