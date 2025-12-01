@@ -34,9 +34,13 @@ export default function AdminUsers() {
 
       if (res.ok) {
         const data = await res.json();
-        setUsers(Array.isArray(data) ? data : []);
+        const usersList = Array.isArray(data) ? data : [];
+        console.log("[AdminUsers] Loaded users:", usersList.length);
+        setUsers(usersList);
       } else {
-        console.error("Failed to load users:", res.status);
+        const errorText = await res.text();
+        console.error("Failed to load users:", res.status, errorText);
+        setUsers([]);
       }
     } catch (e) {
       console.error("Error loading users:", e);
@@ -45,10 +49,11 @@ export default function AdminUsers() {
     }
   };
 
-  const toggleStaff = async (userId, currentStatus) => {
+  const toggleStaff = async (userEmail, currentStatus) => {
     try {
       const adminToken = getAdminToken();
-      const res = await fetch(`/api/admin/users/${userId}/staff`, {
+      // Используем email для идентификации пользователя
+      const res = await fetch(`/api/admin/users/${encodeURIComponent(userEmail)}/staff`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -60,7 +65,8 @@ export default function AdminUsers() {
       if (res.ok) {
         loadUsers();
       } else {
-        alert("Ошибка при обновлении статуса");
+        const errorText = await res.text();
+        alert(`Ошибка при обновлении статуса: ${errorText || res.statusText}`);
       }
     } catch (e) {
       console.error("Error updating user status:", e);
@@ -68,19 +74,20 @@ export default function AdminUsers() {
     }
   };
 
-  const handleDeleteUser = async (userId) => {
-    if (!userId) {
-      alert("Не удалось определить ID пользователя");
+  const handleDeleteUser = async (userEmail) => {
+    if (!userEmail) {
+      alert("Не удалось определить email пользователя");
       return;
     }
 
-    if (!confirm(`Вы уверены, что хотите удалить пользователя? Это действие нельзя отменить.`)) {
+    if (!confirm(`Вы уверены, что хотите удалить пользователя ${userEmail}? Это действие нельзя отменить.`)) {
       return;
     }
 
     try {
       const adminToken = getAdminToken();
-      const res = await fetch(`/api/users/${userId}`, {
+      // Используем email для идентификации пользователя
+      const res = await fetch(`/api/users/${encodeURIComponent(userEmail)}`, {
         method: "DELETE",
         headers: {
           Authorization: `Bearer ${adminToken}`,
@@ -218,7 +225,7 @@ export default function AdminUsers() {
                           )}
                               {!user.isSuperUser && (
                                 <button
-                                  onClick={() => handleDeleteUser(user.id || user.userId)}
+                                  onClick={() => handleDeleteUser(user.email)}
                                   className="px-2 sm:px-3 py-1 rounded text-xs font-medium transition-colors bg-red-100 text-red-700 hover:bg-red-200 flex items-center justify-center gap-1"
                                   title="Удалить пользователя"
                                 >

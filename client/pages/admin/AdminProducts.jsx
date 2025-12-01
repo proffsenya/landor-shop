@@ -578,13 +578,13 @@ function ProductForm({
             : [];
 
           return {
-            id: v.id || 0,
+          id: v.id || 0,
             productId: v.productId || (product ? product.id : 0),
             sku: v.sku || "",
-            price: Number(v.price) || 0,
-            oldPrice: Number(v.oldPrice) || 0,
-            stock: Number(v.stock) || 0,
-            weight: Number(v.weight) || 0,
+          price: Number(v.price) || 0,
+          oldPrice: Number(v.oldPrice) || 0,
+          stock: Number(v.stock) || 0,
+          weight: Number(v.weight) || 0,
             colorIds: colorObjects,
             scentIds: scentObjects,
             displayName: v.displayName || "",

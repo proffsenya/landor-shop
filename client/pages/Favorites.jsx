@@ -1,11 +1,10 @@
 // client/pages/Favorites.jsx
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { Link } from "react-router-dom";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import BreadcrumbNav from "@/components/BreadcrumbNav";
 import { ShoppingCart, ArrowLeft } from "lucide-react";
-import ProductsSection from "../components/ProductsSection";
 import { PageFade, ListMotion, ToastMotion } from "@/utils/PageAnimations";
 import { motion, AnimatePresence } from "framer-motion";
 import { AuthToast } from "@/components/AuthToast";
@@ -23,9 +22,10 @@ export default function Favorites() {
   const [authToastMessage, setAuthToastMessage] = useState("");
   const authToken = getAuthToken();
 
-  // ===== загрузка избранного =====
-  useEffect(() => {
+  // ===== функция загрузки избранного =====
+  const loadFavorites = useCallback(async () => {
     let mounted = true;
+    setLoading(true);
     (async () => {
       // Проверка авторизации
       if (!authToken || authToken === "guest") {
@@ -63,27 +63,19 @@ export default function Favorites() {
         if (!mounted) return;
 
         // ВАЖНО: храним и favoriteId (id записи), и variantId (что нужно для DELETE /favorites/{variantId})
-        const mapped = Array.isArray(data)
-          ? data.map((item) => {
-              // Сначала пробуем извлечь из imageUrl, так как там точно есть productId и variantId (imageId может совпадать с variantId)
+        const dataArray = Array.isArray(data) ? data : [];
+        const mapped = dataArray.map((item) => {
+              console.log("[Favorites] Processing item:", item);
+              
               let productId = NaN;
               let variantId = NaN;
               
-              if (item.imageUrl && item.imageUrl.startsWith("/api/products/")) {
-                const match = item.imageUrl.match(/\/api\/products\/(\d+)\/images\/(\d+)/);
-                if (match) {
-                  // Первое число в пути - это productId
-                  productId = Number(match[1]);
-                  // Второе число в пути - это imageId, который может быть variantId
-                  const imageId = Number(match[2]);
-                  // Проверяем, может ли это быть variantId (обычно imageId совпадает с variantId)
-                  variantId = imageId;
-                }
+              // ВАЖНО: variantId - это id записи избранного (item.id)
+              if (item.id !== undefined && item.id !== null) {
+                variantId = Number(item.id);
               }
               
-              // Затем перезаписываем, если есть явные поля в ответе API
-              
-              // СНАЧАЛА извлекаем variantId (чтобы не перепутать с productId)
+              // Извлекаем variantId из явных полей (если есть, перезаписываем)
               if (item.variantId !== undefined && item.variantId !== null) {
                 variantId = Number(item.variantId);
               } else if (item.variantID !== undefined && item.variantID !== null) {
@@ -94,7 +86,7 @@ export default function Favorites() {
                 variantId = Number(item.variant);
               }
               
-              // ПОТОМ извлекаем productId (отдельно, чтобы не перепутать)
+              // Извлекаем productId из явных полей (приоритет 1)
               if (item.productId !== undefined && item.productId !== null) {
                 productId = Number(item.productId);
               } else if (item.productID !== undefined && item.productID !== null) {
@@ -105,19 +97,11 @@ export default function Favorites() {
                 productId = Number(item.parentId);
               }
               
-              // КРИТИЧЕСКАЯ ПРОВЕРКА: если variantId равен productId - это ошибка!
-              // В таком случае, вероятно, variantId был неправильно извлечен
-              if (Number.isFinite(variantId) && Number.isFinite(productId) && variantId === productId) {
-                console.warn("[Favorites] ОШИБКА: variantId равен productId! Перепутаны поля.", { item, variantId, productId });
-                // Если variantId равен productId, значит мы неправильно извлекли variantId
-                // Сбрасываем variantId и пробуем извлечь из imageUrl
-                variantId = NaN;
-                if (item.imageUrl && item.imageUrl.startsWith("/api/products/")) {
-                  const match = item.imageUrl.match(/\/api\/products\/(\d+)\/images\/(\d+)/);
-                  if (match && productId === Number(match[1])) {
-                    // productId совпадает, значит imageId в пути - это variantId
-                    variantId = Number(match[2]);
-                  }
+              // Извлекаем productId из imageUrl (если не был найден ранее)
+              if (!Number.isFinite(productId) && item.imageUrl && item.imageUrl.startsWith("/api/products/")) {
+                const match = item.imageUrl.match(/\/api\/products\/(\d+)\/images\/(\d+)/);
+                if (match) {
+                  productId = Number(match[1]);
                 }
               }
               
@@ -126,8 +110,8 @@ export default function Favorites() {
                 id: Number(item.id),
 
                 // ВАЖНО: variantId — то, что требуется для move-to-cart и для добавления в корзину
-                // variantId НЕ должен быть равен productId!
-                variantId: Number.isFinite(variantId) && variantId > 0 && variantId !== productId ? variantId : NaN,
+                // variantId = item.id (id записи избранного)
+                variantId: Number.isFinite(variantId) && variantId > 0 ? variantId : NaN,
 
                 // productId для навигации на страницу товара
                 productId: Number.isFinite(productId) && productId > 0 ? productId : NaN,
@@ -139,14 +123,21 @@ export default function Favorites() {
                 weight: item.weight || "—",
                 dateAdded: new Date().toLocaleDateString("ru-RU"),
               };
-            })
-          : [];
+            });
 
 
 
 
 
         setFavorites(mapped);
+        
+        // Сохраняем в sessionStorage для синхронизации
+        const key = favsKeyByToken(authToken);
+        const variantIds = mapped
+          .map((item) => item.variantId)
+          .filter((id) => Number.isFinite(id) && id > 0)
+          .map(String);
+        sessionStorage.setItem(key, JSON.stringify(variantIds));
       } catch (e) {
         // Проверяем, не 401 ли это (может быть в сообщении об ошибке)
         if (e?.message && (e.message.includes("401") || e.message.includes("Unauthorized"))) {
@@ -169,6 +160,55 @@ export default function Favorites() {
     })();
     return () => { mounted = false; };
   }, [authToken]);
+
+  // Вызываем loadFavorites при монтировании и изменении authToken
+  useEffect(() => {
+    loadFavorites();
+  }, [loadFavorites]);
+
+  // Слушаем события обновления избранного - делаем легкий fetch только при изменениях
+  useEffect(() => {
+    const handleFavoritesUpdate = () => {
+      console.log("[Favorites] Favorites update event received, checking for changes...");
+      // Проверяем, изменился ли список в sessionStorage
+      const key = favsKeyByToken(authToken);
+      const storedIds = (() => {
+        try {
+          const raw = sessionStorage.getItem(key);
+          if (!raw) return [];
+          return JSON.parse(raw);
+        } catch {
+          return [];
+        }
+      })();
+      
+      // Сравниваем текущий список с хранимым
+      const currentVariantIds = favorites
+        .map((item) => item.variantId)
+        .filter((id) => Number.isFinite(id) && id > 0)
+        .map(String)
+        .sort();
+      const storedVariantIds = storedIds.sort();
+      
+      const idsChanged = 
+        currentVariantIds.length !== storedVariantIds.length ||
+        currentVariantIds.some((id, idx) => id !== storedVariantIds[idx]);
+      
+      if (idsChanged) {
+        // Только если список действительно изменился, делаем легкий fetch
+        console.log("[Favorites] List changed, fetching updated data...");
+        loadFavorites();
+      } else {
+        console.log("[Favorites] No changes detected, skipping fetch");
+      }
+    };
+
+    window.addEventListener("favorites:update", handleFavoritesUpdate);
+
+    return () => {
+      window.removeEventListener("favorites:update", handleFavoritesUpdate);
+    };
+  }, [authToken, favorites, loadFavorites]);
 
   const favoriteIds = useMemo(() => new Set(favorites.map((i) => i.id)), [favorites]);
   const allSelected =
@@ -463,7 +503,7 @@ async function moveFavoritesToCart(variantIdsRaw) {
           </h1>
 
           {loading && (
-            <div className="flex justify-center py-20 text-gray-500 text-lg">
+            <div className="flex justify-center py-20 text-lg text-gray-500">
               Загрузка избранного...
             </div>
           )}
@@ -656,7 +696,7 @@ async function moveFavoritesToCart(variantIdsRaw) {
                 </div>
               </div>
 
-              <div className="hidden md:flex flex-col items-stretch justify-between gap-4 mt-6 sm:flex-row sm:items-center">
+              <div className="flex-col items-stretch justify-between hidden gap-4 mt-6 md:flex sm:flex-row sm:items-center">
                 <Link to="/catalog" className="inline-flex items-center justify-center text-[#5A5A5A] hover:text-[#1E1E1E]">
                   <ArrowLeft className="w-4 h-4 mr-2" />
                   В каталог
@@ -686,7 +726,6 @@ async function moveFavoritesToCart(variantIdsRaw) {
         </div>
 
         <div className="mt-8 sm:mt-10 lg:mt-12">
-          <ProductsSection title="Рекомендовано для Вас" />
         </div>
 
         <ToastMotion show={!!toast}>{toast}</ToastMotion>

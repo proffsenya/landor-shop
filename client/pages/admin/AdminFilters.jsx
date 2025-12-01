@@ -329,11 +329,16 @@ export default function AdminFilters() {
                         <tr>
                           <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">ID</th>
                           <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Название</th>
-                          <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase hidden md:table-cell">Slug</th>
+                          {config.fields.some(f => f.key === "slug") && (
+                            <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase hidden md:table-cell">Slug</th>
+                          )}
+                          {config.fields.some(f => f.key === "canonicalName") && (
+                            <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase hidden md:table-cell">Каноническое название</th>
+                          )}
                           {config.fields.some(f => f.key === "isActive") && (
                             <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Активна</th>
                           )}
-                          <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Действия</th>
+                          <th className="px-3 sm:px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Действия</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-200">
@@ -341,7 +346,12 @@ export default function AdminFilters() {
                           <tr key={item.id}>
                             <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-900">{item.id}</td>
                             <td className="px-3 sm:px-6 py-4 text-sm text-gray-900">{item.name || "-"}</td>
-                            <td className="px-3 sm:px-6 py-4 text-sm text-gray-500 hidden md:table-cell">{item.slug || "-"}</td>
+                            {config.fields.some(f => f.key === "slug") && (
+                              <td className="px-3 sm:px-6 py-4 text-sm text-gray-500 hidden md:table-cell">{item.slug || "-"}</td>
+                            )}
+                            {config.fields.some(f => f.key === "canonicalName") && (
+                              <td className="px-3 sm:px-6 py-4 text-sm text-gray-500 hidden md:table-cell">{item.canonicalName || "-"}</td>
+                            )}
                             {config.fields.some(f => f.key === "isActive") && (
                               <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
                                 <span className={`px-2 py-1 text-xs rounded-full ${
@@ -352,14 +362,7 @@ export default function AdminFilters() {
                               </td>
                             )}
                             <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm">
-                              <div className="flex items-center gap-2 sm:gap-4">
-                                <button
-                                  onClick={() => handleEdit(item)}
-                                  className="text-[#6F2A2B] hover:text-[#5a2223]"
-                                  title="Редактировать"
-                                >
-                                  <Edit className="w-4 h-4" />
-                                </button>
+                              <div className="flex items-center justify-center gap-2 sm:gap-4">
                                 <button
                                   onClick={() => handleDelete(item.id)}
                                   className="text-red-600 hover:text-red-800"

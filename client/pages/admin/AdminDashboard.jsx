@@ -3,7 +3,8 @@ import { useNavigate } from "react-router-dom";
 import AdminSidebar from "@/components/admin/AdminSidebar";
 import AdminHeader from "@/components/admin/AdminHeader";
 import { checkAdminAccess, getAdminToken } from "@/utils/adminAuth";
-import { Package, ShoppingCart, Users, FolderTree, Plus, Edit, Eye, FileText } from "lucide-react";
+import { initNotifications } from "@/utils/notifications";
+import { Package, ShoppingCart, Users, FolderTree, Plus, Edit, Eye, FileText, Sliders } from "lucide-react";
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
@@ -31,6 +32,17 @@ export default function AdminDashboard() {
     setIsStaff(staff);
     setIsSuperUser(superUser);
     loadStats(superUser);
+
+    // Инициализируем систему уведомлений
+    const adminToken = getAdminToken();
+    if (adminToken && (staff || superUser)) {
+      initNotifications(adminToken, staff, superUser).then((cleanup) => {
+        // Сохраняем функцию очистки для cleanup при размонтировании
+        return cleanup;
+      }).catch((e) => {
+        console.error("Error initializing notifications:", e);
+      });
+    }
   }, [navigate]);
 
   const loadStats = async (isSuperUserFlag = false) => {
@@ -48,7 +60,7 @@ export default function AdminDashboard() {
         fetch("/api/categories", {
           headers: { Authorization: `Bearer ${adminToken}` },
         }),
-        isSuperUserFlag ? fetch("/api/admin/users", {
+        isSuperUserFlag ? fetch("/api/users", {
           headers: { Authorization: `Bearer ${adminToken}` },
         }) : Promise.resolve({ ok: false }),
       ]);
@@ -136,7 +148,7 @@ export default function AdminDashboard() {
               <div className="bg-white rounded-lg shadow p-4 sm:p-6 hover:shadow-lg transition-shadow">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h3 className="text-xs sm:text-sm font-medium text-gray-500 mb-2">Заказы</h3>
+                <h3 className="text-xs sm:text-sm font-medium text-gray-500 mb-2">Заказы</h3>
                     <p className="text-xl sm:text-2xl font-bold text-gray-900">{stats.orders}</p>
                   </div>
                   <ShoppingCart className="w-8 h-8 sm:w-10 sm:h-10 text-[#6F2A2B] opacity-50" />
@@ -145,7 +157,7 @@ export default function AdminDashboard() {
               <div className="bg-white rounded-lg shadow p-4 sm:p-6 hover:shadow-lg transition-shadow">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h3 className="text-xs sm:text-sm font-medium text-gray-500 mb-2">Пользователи</h3>
+                <h3 className="text-xs sm:text-sm font-medium text-gray-500 mb-2">Пользователи</h3>
                     <p className="text-xl sm:text-2xl font-bold text-gray-900">{isSuperUser ? stats.users : "-"}</p>
                   </div>
                   <Users className="w-8 h-8 sm:w-10 sm:h-10 text-[#6F2A2B] opacity-50" />
@@ -154,7 +166,7 @@ export default function AdminDashboard() {
               <div className="bg-white rounded-lg shadow p-4 sm:p-6 hover:shadow-lg transition-shadow">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h3 className="text-xs sm:text-sm font-medium text-gray-500 mb-2">Категории</h3>
+                <h3 className="text-xs sm:text-sm font-medium text-gray-500 mb-2">Категории</h3>
                     <p className="text-xl sm:text-2xl font-bold text-gray-900">{stats.categories}</p>
                   </div>
                   <FolderTree className="w-8 h-8 sm:w-10 sm:h-10 text-[#6F2A2B] opacity-50" />
@@ -190,7 +202,7 @@ export default function AdminDashboard() {
                   className="p-3 sm:p-4 border-2 border-gray-200 rounded-lg hover:border-[#6F2A2B] hover:bg-[#6F2A2B] hover:text-white transition-colors text-left group"
                 >
                   <div className="flex items-center gap-2 mb-2">
-                    <Edit className="w-5 h-5 group-hover:text-white text-[#6F2A2B]" />
+                    <Sliders className="w-5 h-5 group-hover:text-white text-[#6F2A2B]" />
                     <h3 className="text-sm sm:text-base font-semibold">Фильтры и категории</h3>
                   </div>
                   <p className="text-xs sm:text-sm opacity-75 group-hover:text-white/90">Управление фильтрами и категориями</p>

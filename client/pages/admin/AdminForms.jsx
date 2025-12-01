@@ -13,6 +13,7 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination";
 import { checkAdminAccess, getAdminToken } from "@/utils/adminAuth";
+import { initNotifications } from "@/utils/notifications";
 import { Download, Mail, Phone, MapPin, FileText, Building2 } from "lucide-react";
 
 export default function AdminForms() {
@@ -28,7 +29,7 @@ export default function AdminForms() {
   const itemsPerPage = 10;
 
   useEffect(() => {
-    const { isSuperUser: superUser, hasAccess } = checkAdminAccess();
+    const { isStaff: staff, isSuperUser: superUser, hasAccess } = checkAdminAccess();
 
     if (!hasAccess) {
       navigate("/admin/login");
@@ -37,6 +38,14 @@ export default function AdminForms() {
 
     setIsSuperUser(superUser);
     loadForms();
+
+    // Инициализируем систему уведомлений
+    const adminToken = getAdminToken();
+    if (adminToken && (staff || superUser)) {
+      initNotifications(adminToken, staff, superUser).catch((e) => {
+        console.error("Error initializing notifications:", e);
+      });
+    }
   }, [navigate]);
 
   const loadForms = async () => {

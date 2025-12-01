@@ -239,9 +239,6 @@ export default function Catalog() {
     china: false,
   });
   const [flavorFilters, setFlavorFilters] = useState({
-    rabbit: false,
-    chicken: false,
-    partridge: false,
     salmon: false,
     quail: false,
     fish: false,
@@ -367,7 +364,7 @@ export default function Catalog() {
     
     // taste/flavor: вкусы (таблица flavors) - используем taste_ как указано
     Object.keys(flavorFilters).forEach((key) => {
-      if (flavorFilters[key]) queryParams.append("taste_" + key, "true");
+      if (flavorFilters[key]) queryParams.append("flavor_" + key, "true");
     });
     
     // brand (таблица brands)
@@ -849,13 +846,13 @@ export default function Catalog() {
           const categoryId = category.id;
           
           categoryIds[categoryKey] = categoryId;
-          
+        
           // Группируем породы для этой категории
           breedsByCategory[categoryKey] = Array.isArray(breeds)
           ? breeds.filter((b) => {
                 const breedCategoryId = b.categoryId != null ? Number(b.categoryId) : null;
                 return breedCategoryId === categoryId;
-              })
+            }) 
             : [];
         });
       }
@@ -883,8 +880,10 @@ export default function Catalog() {
         const newFilters = { ...prev };
         if (Array.isArray(flavors)) {
           flavors.forEach((flavor) => {
-            if (!(flavor.slug in newFilters)) {
-              newFilters[flavor.slug] = false;
+            // Используем canonicalName вместо slug, так как в API flavors нет slug
+            const flavorKey = flavor.canonicalName || String(flavor.id);
+            if (!(flavorKey in newFilters)) {
+              newFilters[flavorKey] = false;
             }
           });
         }
@@ -1314,7 +1313,9 @@ export default function Catalog() {
     
     const resetFlavorFilters = {};
     availableFilters.flavors.forEach((flavor) => {
-      resetFlavorFilters[flavor.slug] = false;
+      // Используем canonicalName вместо slug, так как в API flavors нет slug
+      const flavorKey = flavor.canonicalName || String(flavor.id);
+      resetFlavorFilters[flavorKey] = false;
     });
     setFlavorFilters(resetFlavorFilters);
     
@@ -1524,17 +1525,21 @@ export default function Catalog() {
             {/* Вкус */}
             <FilterSection title="Вкус">
               <div className="grid grid-cols-2 gap-2">
-                {availableFilters.flavors.map((flavor) => (
-                  <label key={flavor.id} className="flex items-center space-x-2">
-                    <Checkbox
-                      checked={flavorFilters[flavor.slug] || false}
-                      onCheckedChange={(c) =>
-                        setFlavorFilters((prev) => ({ ...prev, [flavor.slug]: c }))
-                      }
-                    />
-                    <span className="text-sm">{flavor.name}</span>
-                  </label>
-                ))}
+                {availableFilters.flavors.map((flavor) => {
+                  // Используем canonicalName вместо slug, так как в API flavors нет slug
+                  const flavorKey = flavor.canonicalName || String(flavor.id);
+                  return (
+                    <label key={flavor.id} className="flex items-center space-x-2">
+                      <Checkbox
+                        checked={flavorFilters[flavorKey] || false}
+                        onCheckedChange={(c) =>
+                          setFlavorFilters((prev) => ({ ...prev, [flavorKey]: c }))
+                        }
+                      />
+                      <span className="text-sm">{flavor.name}</span>
+                    </label>
+                  );
+                })}
               </div>
             </FilterSection>
 
@@ -1729,8 +1734,8 @@ export default function Catalog() {
                           <span className="text-sm">{breed.name}</span>
                   </label>
                         ))}
-                    </div>
-                  </FilterSection>
+                </div>
+              </FilterSection>
                 );
               })
               .filter(Boolean); // Убираем null значения
@@ -1756,20 +1761,24 @@ export default function Catalog() {
               {/* Вкус */}
               <FilterSection title="Вкус">
                 <div className="grid grid-cols-2 gap-2">
-                  {availableFilters.flavors.map((flavor) => (
-                    <label key={flavor.id} className="flex items-center space-x-2">
-                      <Checkbox
-                        checked={flavorFilters[flavor.slug] || false}
-                        onCheckedChange={(c) =>
-                          setFlavorFilters((prev) => ({
-                            ...prev,
-                            [flavor.slug]: c,
-                          }))
-                        }
-                      />
-                      <span className="text-sm">{flavor.name}</span>
-                    </label>
-                  ))}
+                  {availableFilters.flavors.map((flavor) => {
+                    // Используем canonicalName вместо slug, так как в API flavors нет slug
+                    const flavorKey = flavor.canonicalName || String(flavor.id);
+                    return (
+                      <label key={flavor.id} className="flex items-center space-x-2">
+                        <Checkbox
+                          checked={flavorFilters[flavorKey] || false}
+                          onCheckedChange={(c) =>
+                            setFlavorFilters((prev) => ({
+                              ...prev,
+                              [flavorKey]: c,
+                            }))
+                          }
+                        />
+                        <span className="text-sm">{flavor.name}</span>
+                      </label>
+                    );
+                  })}
                 </div>
               </FilterSection>
 
@@ -1857,7 +1866,7 @@ export default function Catalog() {
                   stagger={0.05}
                   key={page}
                 >
-                  <div className="grid grid-cols-1 gap-4 mb-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 items-stretch">
+                  <div className="grid items-stretch grid-cols-1 gap-4 mb-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                     {paged.map((product) => {
                       // Вариант определяется по наличию parentId и его отличию от id
                       const isVariantCard =

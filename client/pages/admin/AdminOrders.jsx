@@ -5,6 +5,7 @@ import AdminHeader from "@/components/admin/AdminHeader";
 import { Button } from "@/components/ui/button";
 import { Eye } from "lucide-react";
 import { checkAdminAccess, getAdminToken } from "@/utils/adminAuth";
+import { initNotifications } from "@/utils/notifications";
 import { formatPhone } from "@/utils/formatting";
 
 export default function AdminOrders() {
@@ -16,7 +17,7 @@ export default function AdminOrders() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
-    const { isSuperUser: superUser, hasAccess } = checkAdminAccess();
+    const { isStaff: staff, isSuperUser: superUser, hasAccess } = checkAdminAccess();
 
     if (!hasAccess) {
       navigate("/admin/login");
@@ -25,6 +26,14 @@ export default function AdminOrders() {
 
     setIsSuperUser(superUser);
     loadOrders();
+
+    // Инициализируем систему уведомлений
+    const adminToken = getAdminToken();
+    if (adminToken && (staff || superUser)) {
+      initNotifications(adminToken, staff, superUser).catch((e) => {
+        console.error("Error initializing notifications:", e);
+      });
+    }
   }, [navigate]);
 
   const loadOrders = async () => {
@@ -207,17 +216,17 @@ export default function AdminOrders() {
                             <span className="text-xs sm:text-sm text-gray-700 min-w-[100px] font-medium">
                               {formatOrderStatus(order.orderStatus)}
                             </span>
-                            <select
-                              value={order.orderStatus?.toLowerCase() || "pending"}
-                              onChange={(e) => updateOrderStatus(order.id, e.target.value)}
+                          <select
+                            value={order.orderStatus?.toLowerCase() || "pending"}
+                            onChange={(e) => updateOrderStatus(order.id, e.target.value)}
                               className="text-xs sm:text-sm px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-[#6F2A2B] w-full sm:w-auto"
-                            >
-                              <option value="pending">Ожидает</option>
-                              <option value="processing">В обработке</option>
-                              <option value="shipped">Отправлен</option>
-                              <option value="delivered">Доставлен</option>
-                              <option value="cancelled">Отменен</option>
-                            </select>
+                          >
+                            <option value="pending">Ожидает</option>
+                            <option value="processing">В обработке</option>
+                            <option value="shipped">Отправлен</option>
+                            <option value="delivered">Доставлен</option>
+                            <option value="cancelled">Отменен</option>
+                          </select>
                           </div>
                         </td>
                           <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm">

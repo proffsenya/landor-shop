@@ -176,26 +176,26 @@ export default function Profile() {
   }, []);
 
   // Загрузка заказов
-  const fetchOrders = async () => {
-    const authToken = getAuthToken();
-    if (!authToken || authToken === "guest") {
-      return;
-    }
-
-    try {
-      setOrdersLoading(true);
-      const res = await fetch("/api/orders/profile", {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${authToken}`,
-        },
-      });
-
-      if (!res.ok) {
-        throw new Error(`HTTP ${res.status}`);
+    const fetchOrders = async () => {
+      const authToken = getAuthToken();
+      if (!authToken || authToken === "guest") {
+        return;
       }
 
-      const data = await res.json();
+      try {
+        setOrdersLoading(true);
+        const res = await fetch("/api/orders/profile", {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${authToken}`,
+          },
+        });
+
+        if (!res.ok) {
+          throw new Error(`HTTP ${res.status}`);
+        }
+
+        const data = await res.json();
       // Нормализуем статусы заказов при загрузке
       const normalizedOrders = Array.isArray(data) 
         ? data.map(order => ({
@@ -204,13 +204,13 @@ export default function Profile() {
           }))
         : [];
       setOrders(normalizedOrders);
-    } catch (e) {
-      console.error("Error fetching orders:", e);
-      setOrders([]);
-    } finally {
-      setOrdersLoading(false);
-    }
-  };
+      } catch (e) {
+        console.error("Error fetching orders:", e);
+        setOrders([]);
+      } finally {
+        setOrdersLoading(false);
+      }
+    };
 
   useEffect(() => {
     fetchOrders();

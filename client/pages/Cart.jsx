@@ -1,11 +1,10 @@
 // client/pages/Cart.jsx
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import BreadcrumbNav from "@/components/BreadcrumbNav";
 import { Trash2 } from "lucide-react";
 import { Link } from "react-router-dom";
-import ProductSection from "../components/ProductsSection";
 import { PageFade, ListMotion, ToastMotion } from "@/utils/PageAnimations";
 import { motion, AnimatePresence } from "framer-motion";
 import { AuthToast } from "@/components/AuthToast";
@@ -136,7 +135,7 @@ export default function Cart() {
   };
 
   // ---- загрузка корзины с бэкенда ----
-  const fetchCart = async () => {
+  const fetchCart = useCallback(async () => {
     setLoading(true);
     setError("");
     try {
@@ -221,12 +220,57 @@ export default function Cart() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [authToken, cartKey]);
 
+  // Вызываем fetchCart при монтировании
   useEffect(() => {
     fetchCart();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [authToken]);
+  }, [fetchCart]);
+
+  // Слушаем события обновления корзины - делаем легкий fetch только при изменениях
+  useEffect(() => {
+    const handleCartUpdate = () => {
+      console.log("[Cart] Cart update event received, checking for changes...");
+      // Проверяем, изменился ли список в sessionStorage
+      const storedIds = (() => {
+        try {
+          const raw = sessionStorage.getItem(cartKey);
+          if (!raw) return [];
+          return JSON.parse(raw);
+        } catch {
+          return [];
+        }
+      })();
+      
+      // Сравниваем текущий список с хранимым
+      const currentVariantIds = items
+        .map((item) => item.variantId)
+        .filter((id) => id !== null && id !== undefined)
+        .map(String)
+        .sort();
+      const storedVariantIds = storedIds.sort();
+      
+      const idsChanged = 
+        currentVariantIds.length !== storedVariantIds.length ||
+        currentVariantIds.some((id, idx) => id !== storedVariantIds[idx]);
+      
+      if (idsChanged) {
+        // Только если список действительно изменился, делаем легкий fetch
+        console.log("[Cart] List changed, fetching updated data...");
+        fetchCart();
+      } else {
+        console.log("[Cart] No changes detected, skipping fetch");
+      }
+    };
+
+    window.addEventListener("cart:update", handleCartUpdate);
+    window.addEventListener("cart:changed", handleCartUpdate);
+
+    return () => {
+      window.removeEventListener("cart:update", handleCartUpdate);
+      window.removeEventListener("cart:changed", handleCartUpdate);
+    };
+  }, [cartKey, items, fetchCart]);
 
   // ---- API: удаление позиции из корзины ----
   async function apiRemoveCartItem(item) {
@@ -911,9 +955,9 @@ export default function Cart() {
                         }`}
                       />
                       {errors.receiver ? (
-                        <p className="text-red-500 text-xs mt-1">{errors.receiver}</p>
+                        <p className="mt-1 text-xs text-red-500">{errors.receiver}</p>
                       ) : !receiver.trim() ? (
-                        <p className="text-gray-500 text-xs mt-1">Пример: Иванов Иван Иванович</p>
+                        <p className="mt-1 text-xs text-gray-500">Пример: Иванов Иван Иванович</p>
                       ) : null}
                     </div>
                     <div className="mb-3">
@@ -936,9 +980,9 @@ export default function Cart() {
                         }`}
                       />
                       {errors.phone ? (
-                        <p className="text-red-500 text-xs mt-1">{errors.phone}</p>
+                        <p className="mt-1 text-xs text-red-500">{errors.phone}</p>
                       ) : !phone.trim() ? (
-                        <p className="text-gray-500 text-xs mt-1">Пример: +7 (999) 123-45-67</p>
+                        <p className="mt-1 text-xs text-gray-500">Пример: +7 (999) 123-45-67</p>
                       ) : null}
                     </div>
                     <div className="mb-4">
@@ -959,9 +1003,9 @@ export default function Cart() {
                         }`}
                       />
                       {errors.address ? (
-                        <p className="text-red-500 text-xs mt-1">{errors.address}</p>
+                        <p className="mt-1 text-xs text-red-500">{errors.address}</p>
                       ) : !address.trim() ? (
-                        <p className="text-gray-500 text-xs mt-1">Пример: г. Москва, ул. Ленина, д. 10, кв. 25</p>
+                        <p className="mt-1 text-xs text-gray-500">Пример: г. Москва, ул. Ленина, д. 10, кв. 25</p>
                       ) : null}
                     </div>
                     
@@ -979,7 +1023,7 @@ export default function Cart() {
                         maxLength={500}
                       />
                       {customerNotes.length > 0 && (
-                        <p className="text-xs text-gray-500 mt-1">
+                        <p className="mt-1 text-xs text-gray-500">
                           {customerNotes.length}/500 символов
                         </p>
                       )}
@@ -998,7 +1042,6 @@ export default function Cart() {
           )}
         </div>
 
-        <ProductSection title="Рекомендовано для Вас" />
 
         {/* Тосты */}
         <ToastMotion show={!!toast}>{toast}</ToastMotion>
