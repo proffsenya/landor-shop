@@ -829,13 +829,107 @@ export default function Catalog() {
       });
 
       // Группируем породы по категориям
-      // category_id: 101=cat, 102=dog, 103=minicat, 104=minidog
-      const breedsByCategory = {
-        cat: Array.isArray(breeds) ? breeds.filter((b) => b.categoryId === 101 || b.category_id === 101) : [],
-        dog: Array.isArray(breeds) ? breeds.filter((b) => b.categoryId === 102 || b.category_id === 102) : [],
-        minicat: Array.isArray(breeds) ? breeds.filter((b) => b.categoryId === 103 || b.category_id === 103) : [],
-        minidog: Array.isArray(breeds) ? breeds.filter((b) => b.categoryId === 104 || b.category_id === 104) : [],
+      // Находим категории по slug и используем их ID для фильтрации
+      const catCategory = Array.isArray(categories) ? categories.find((c) => c.slug === "cat") : null;
+      const dogCategory = Array.isArray(categories) ? categories.find((c) => c.slug === "dog") : null;
+      const minicatCategory = Array.isArray(categories) ? categories.find((c) => c.slug === "minicat") : null;
+      const minidogCategory = Array.isArray(categories) ? categories.find((c) => c.slug === "minidog") : null;
+
+      const catId = catCategory?.id;
+      const dogId = dogCategory?.id;
+      const minicatId = minicatCategory?.id;
+      const minidogId = minidogCategory?.id;
+
+      // Отладочная информация - выводим детальную информацию о каждой породе
+      if (Array.isArray(breeds) && breeds.length > 0) {
+        console.log("[Catalog] All breeds with full data:", breeds);
+        breeds.forEach((breed, index) => {
+          console.log(`[Catalog] Breed #${index + 1}:`, {
+            id: breed.id,
+            name: breed.name,
+            slug: breed.slug,
+            categoryId: breed.categoryId,
+            category_id: breed.category_id,
+            categoryIdType: typeof breed.categoryId,
+            category_idType: typeof breed.category_id,
+            allKeys: Object.keys(breed),
+            fullObject: breed,
+          });
+        });
+      }
+      
+      console.log("[Catalog] Loading breeds and categories:", {
+        breedsCount: Array.isArray(breeds) ? breeds.length : 0,
+        categories: {
+          cat: { id: catId, slug: catCategory?.slug, found: !!catCategory, category: catCategory },
+          dog: { id: dogId, slug: dogCategory?.slug, found: !!dogCategory, category: dogCategory },
+          minicat: { id: minicatId, slug: minicatCategory?.slug, found: !!minicatCategory, category: minicatCategory },
+          minidog: { id: minidogId, slug: minidogCategory?.slug, found: !!minidogCategory, category: minidogCategory },
+        },
+        allCategories: Array.isArray(categories) ? categories.map(c => ({ id: c.id, slug: c.slug, name: c.name })) : [],
+      });
+
+      // Вспомогательная функция для определения категории по ID породы
+      // Если categoryId не приходит с API, используем паттерн ID:
+      // 21xx = cat (101), 22xx = minicat (103), 23xx = dog (102), 24xx = minidog (104)
+      const getBreedCategoryId = (breed) => {
+        // Сначала проверяем, есть ли categoryId в данных
+        if (breed.categoryId != null) return Number(breed.categoryId);
+        if (breed.category_id != null) return Number(breed.category_id);
+        
+        // Если нет, определяем по паттерну ID породы
+        const breedId = Number(breed.id);
+        if (isNaN(breedId)) return null;
+        
+        const firstTwoDigits = Math.floor(breedId / 100);
+        const categoryIdMap = {
+          21: catId || 101,    // cat
+          22: minicatId || 103, // minicat
+          23: dogId || 102,     // dog
+          24: minidogId || 104, // minidog
+        };
+        
+        return categoryIdMap[firstTwoDigits] || null;
       };
+
+      const breedsByCategory = {
+        cat: Array.isArray(breeds) 
+          ? breeds.filter((b) => {
+              const breedCategoryId = getBreedCategoryId(b);
+              const matches = breedCategoryId === catId || breedCategoryId === 101;
+              return matches;
+            }) 
+          : [],
+        dog: Array.isArray(breeds) 
+          ? breeds.filter((b) => {
+              const breedCategoryId = getBreedCategoryId(b);
+              const matches = breedCategoryId === dogId || breedCategoryId === 102;
+              return matches;
+            }) 
+          : [],
+        minicat: Array.isArray(breeds) 
+          ? breeds.filter((b) => {
+              const breedCategoryId = getBreedCategoryId(b);
+              const matches = breedCategoryId === minicatId || breedCategoryId === 103;
+              return matches;
+            }) 
+          : [],
+        minidog: Array.isArray(breeds) 
+          ? breeds.filter((b) => {
+              const breedCategoryId = getBreedCategoryId(b);
+              const matches = breedCategoryId === minidogId || breedCategoryId === 104;
+              return matches;
+            }) 
+          : [],
+      };
+
+      console.log("[Catalog] Breeds grouped by category:", {
+        cat: { count: breedsByCategory.cat.length, breeds: breedsByCategory.cat.map(b => ({ id: b.id, name: b.name, categoryId: b.categoryId || b.category_id })) },
+        dog: { count: breedsByCategory.dog.length, breeds: breedsByCategory.dog.map(b => ({ id: b.id, name: b.name, categoryId: b.categoryId || b.category_id })) },
+        minicat: { count: breedsByCategory.minicat.length, breeds: breedsByCategory.minicat.map(b => ({ id: b.id, name: b.name, categoryId: b.categoryId || b.category_id })) },
+        minidog: { count: breedsByCategory.minidog.length, breeds: breedsByCategory.minidog.map(b => ({ id: b.id, name: b.name, categoryId: b.categoryId || b.category_id })) },
+        categoryIds: { catId, dogId, minicatId, minidogId },
+      });
 
       // Инициализируем фильтры на основе загруженных данных
       // Обновляем только если фильтры пустые или если нужно добавить новые
@@ -943,7 +1037,7 @@ export default function Catalog() {
       });
 
       // Сохраняем все загруженные данные фильтров
-      setAvailableFilters({
+      const updatedFilters = {
         brands: Array.isArray(brands) ? brands.filter((b) => b.isActive !== false) : [],
         flavors: Array.isArray(flavors) ? flavors : [],
         scents: Array.isArray(scents) ? scents : [],
@@ -953,7 +1047,14 @@ export default function Catalog() {
         typeOfFoods: Array.isArray(typeOfFoods) ? typeOfFoods : [],
         breedsByCategory,
         loading: false,
+      };
+      
+      console.log("[Catalog] Setting availableFilters with breedsByCategory:", {
+        breedsByCategory,
+        hasBreedsByCategory: !!updatedFilters.breedsByCategory,
       });
+      
+      setAvailableFilters(updatedFilters);
     } catch (e) {
       console.error("Error loading filters:", e);
       setAvailableFilters((prev) => ({ ...prev, loading: false }));
@@ -1337,22 +1438,22 @@ export default function Catalog() {
                 </label>
                 {availableFilters.typeOfFoods.map((type) => (
                   <label key={type.id} className="flex items-center space-x-2">
-                    <Checkbox
+                  <Checkbox
                       checked={categoryFilters[type.slug] || false}
                       onCheckedChange={() => handleCategoryChange(type.slug)}
-                    />
+                  />
                     <span className="text-sm">{type.name}</span>
-                  </label>
+                </label>
                 ))}
                 {/* Наполнитель (если есть в категориях) */}
                 {availableFilters.categories.find((c) => c.slug === "filler") && (
-                  <label className="flex items-center space-x-2">
-                    <Checkbox
+                <label className="flex items-center space-x-2">
+                  <Checkbox
                       checked={categoryFilters.filler || false}
-                      onCheckedChange={() => handleCategoryChange("filler")}
-                    />
-                    <span className="text-sm">Наполнитель</span>
-                  </label>
+                    onCheckedChange={() => handleCategoryChange("filler")}
+                  />
+                  <span className="text-sm">Наполнитель</span>
+                </label>
                 )}
               </div>
             </FilterSection>
@@ -1375,82 +1476,98 @@ export default function Catalog() {
             </FilterSection>
 
             {/* Котенок */}
-            {availableFilters.breedsByCategory?.minicat && availableFilters.breedsByCategory.minicat.length > 0 && (
-              <FilterSection title="Котенок">
-                <div className="space-y-2">
-                  {availableFilters.breedsByCategory.minicat.map((breed) => (
-                    <label key={breed.id} className="flex items-center space-x-2">
-                      <Checkbox
-                        checked={minicatFilters[breed.slug] || false}
-                        onCheckedChange={(c) =>
-                          setMiniCatFilters((prev) => ({
-                            ...prev,
-                            [breed.slug]: c,
-                          }))
-                        }
-                      />
-                      <span className="text-sm">{breed.name}</span>
-                    </label>
-                  ))}
-                </div>
-              </FilterSection>
+            {availableFilters.breedsByCategory?.minicat && (
+            <FilterSection title="Котенок">
+              <div className="space-y-2">
+                  {availableFilters.breedsByCategory.minicat.length > 0 ? (
+                    availableFilters.breedsByCategory.minicat.map((breed) => (
+                      <label key={breed.id} className="flex items-center space-x-2">
+                  <Checkbox
+                          checked={minicatFilters[breed.slug] || false}
+                    onCheckedChange={(c) =>
+                      setMiniCatFilters((prev) => ({
+                        ...prev,
+                              [breed.slug]: c,
+                      }))
+                    }
+                  />
+                        <span className="text-sm">{breed.name}</span>
+                </label>
+                    ))
+                  ) : (
+                    <span className="text-sm text-gray-400">Нет пород</span>
+                  )}
+              </div>
+            </FilterSection>
             )}
 
             {/* Кошка */}
-            {availableFilters.breedsByCategory?.cat && availableFilters.breedsByCategory.cat.length > 0 && (
-              <FilterSection title="Кошка">
-                <div className="space-y-2">
-                  {availableFilters.breedsByCategory.cat.map((breed) => (
-                    <label key={breed.id} className="flex items-center space-x-2">
-                      <Checkbox
-                        checked={catFilters[breed.slug] || false}
-                        onCheckedChange={(c) =>
-                          setCatFilters((prev) => ({ ...prev, [breed.slug]: c }))
-                        }
-                      />
-                      <span className="text-sm">{breed.name}</span>
-                    </label>
-                  ))}
-                </div>
-              </FilterSection>
+            {availableFilters.breedsByCategory?.cat && (
+            <FilterSection title="Кошка">
+              <div className="space-y-2">
+                  {availableFilters.breedsByCategory.cat.length > 0 ? (
+                    availableFilters.breedsByCategory.cat.map((breed) => (
+                      <label key={breed.id} className="flex items-center space-x-2">
+                  <Checkbox
+                          checked={catFilters[breed.slug] || false}
+                    onCheckedChange={(c) =>
+                            setCatFilters((prev) => ({ ...prev, [breed.slug]: c }))
+                    }
+                  />
+                        <span className="text-sm">{breed.name}</span>
+                </label>
+                    ))
+                  ) : (
+                    <span className="text-sm text-gray-400">Нет пород</span>
+                  )}
+              </div>
+            </FilterSection>
             )}
 
             {/* Щенок */}
-            {availableFilters.breedsByCategory?.minidog && availableFilters.breedsByCategory.minidog.length > 0 && (
-              <FilterSection title="Щенок">
-                <div className="space-y-2">
-                  {availableFilters.breedsByCategory.minidog.map((breed) => (
-                    <label key={breed.id} className="flex items-center space-x-2">
-                      <Checkbox
-                        checked={minidogFilters[breed.slug] || false}
-                        onCheckedChange={(c) =>
-                          setMiniDogFilters((prev) => ({ ...prev, [breed.slug]: c }))
-                        }
-                      />
-                      <span className="text-sm">{breed.name}</span>
-                    </label>
-                  ))}
-                </div>
-              </FilterSection>
+            {availableFilters.breedsByCategory?.minidog && (
+            <FilterSection title="Щенок">
+              <div className="space-y-2">
+                  {availableFilters.breedsByCategory.minidog.length > 0 ? (
+                    availableFilters.breedsByCategory.minidog.map((breed) => (
+                      <label key={breed.id} className="flex items-center space-x-2">
+                  <Checkbox
+                          checked={minidogFilters[breed.slug] || false}
+                    onCheckedChange={(c) =>
+                            setMiniDogFilters((prev) => ({ ...prev, [breed.slug]: c }))
+                    }
+                  />
+                        <span className="text-sm">{breed.name}</span>
+                </label>
+                    ))
+                  ) : (
+                    <span className="text-sm text-gray-400">Нет пород</span>
+                  )}
+              </div>
+            </FilterSection>
             )}
 
             {/* Собака */}
-            {availableFilters.breedsByCategory?.dog && availableFilters.breedsByCategory.dog.length > 0 && (
-              <FilterSection title="Собака">
-                <div className="space-y-2">
-                  {availableFilters.breedsByCategory.dog.map((breed) => (
-                    <label key={breed.id} className="flex items-center space-x-2">
-                      <Checkbox
-                        checked={dogFilters[breed.slug] || false}
-                        onCheckedChange={(c) =>
-                          setDogFilters((prev) => ({ ...prev, [breed.slug]: c }))
-                        }
-                      />
-                      <span className="text-sm">{breed.name}</span>
-                    </label>
-                  ))}
-                </div>
-              </FilterSection>
+            {availableFilters.breedsByCategory?.dog && (
+            <FilterSection title="Собака">
+              <div className="space-y-2">
+                  {availableFilters.breedsByCategory.dog.length > 0 ? (
+                    availableFilters.breedsByCategory.dog.map((breed) => (
+                      <label key={breed.id} className="flex items-center space-x-2">
+                  <Checkbox
+                          checked={dogFilters[breed.slug] || false}
+                    onCheckedChange={(c) =>
+                            setDogFilters((prev) => ({ ...prev, [breed.slug]: c }))
+                    }
+                  />
+                        <span className="text-sm">{breed.name}</span>
+                </label>
+                    ))
+                  ) : (
+                    <span className="text-sm text-gray-400">Нет пород</span>
+                  )}
+              </div>
+            </FilterSection>
             )}
 
             {/* Страна */}
@@ -1458,14 +1575,14 @@ export default function Catalog() {
               <div className="space-y-2">
                 {availableFilters.countries.map((country) => (
                   <label key={country.id} className="flex items-center space-x-2">
-                    <Checkbox
+                  <Checkbox
                       checked={countryFilters[country.slug] || false}
-                      onCheckedChange={(c) =>
+                    onCheckedChange={(c) =>
                         setCountryFilters((prev) => ({ ...prev, [country.slug]: c }))
-                      }
-                    />
+                    }
+                  />
                     <span className="text-sm">{country.name}</span>
-                  </label>
+                </label>
                 ))}
               </div>
             </FilterSection>
@@ -1570,14 +1687,14 @@ export default function Catalog() {
 
               {/* Те же фильтры, что и в MobileFilters */}
               <FilterSection title="По категории">
-              <div className="space-y-2">
-                <label className="flex items-center space-x-2">
-                  <Checkbox
-                    checked={categoryFilters.all}
-                    onCheckedChange={() => handleCategoryChange("all")}
-                  />
-                  <span className="text-sm">Все корма</span>
-                </label>
+                <div className="space-y-2">
+                  <label className="flex items-center space-x-2">
+                    <Checkbox
+                      checked={categoryFilters.all}
+                      onCheckedChange={() => handleCategoryChange("all")}
+                    />
+                    <span className="text-sm">Все корма</span>
+                  </label>
                 {availableFilters.typeOfFoods.map((type) => (
                   <label key={type.id} className="flex items-center space-x-2">
                     <Checkbox
@@ -1597,8 +1714,8 @@ export default function Catalog() {
                     <span className="text-sm">Наполнитель</span>
                   </label>
                 )}
-              </div>
-            </FilterSection>
+                </div>
+              </FilterSection>
 
               <FilterSection title="По стоимости">
                 <div className="flex space-x-2">
@@ -1618,82 +1735,98 @@ export default function Catalog() {
               </FilterSection>
 
               {/* Котенок */}
-              {availableFilters.breedsByCategory?.minicat && availableFilters.breedsByCategory.minicat.length > 0 && (
-                <FilterSection title="Котенок">
-                  <div className="space-y-2">
-                    {availableFilters.breedsByCategory.minicat.map((breed) => (
-                      <label key={breed.id} className="flex items-center space-x-2">
-                        <Checkbox
-                          checked={minicatFilters[breed.slug] || false}
-                          onCheckedChange={(c) =>
-                            setMiniCatFilters((prev) => ({
-                              ...prev,
-                              [breed.slug]: c,
-                            }))
-                          }
-                        />
-                        <span className="text-sm">{breed.name}</span>
-                      </label>
-                    ))}
-                  </div>
-                </FilterSection>
+              {availableFilters.breedsByCategory?.minicat && (
+              <FilterSection title="Котенок">
+                <div className="space-y-2">
+                    {availableFilters.breedsByCategory.minicat.length > 0 ? (
+                      availableFilters.breedsByCategory.minicat.map((breed) => (
+                        <label key={breed.id} className="flex items-center space-x-2">
+                    <Checkbox
+                            checked={minicatFilters[breed.slug] || false}
+                      onCheckedChange={(c) =>
+                        setMiniCatFilters((prev) => ({
+                          ...prev,
+                                [breed.slug]: c,
+                        }))
+                      }
+                    />
+                          <span className="text-sm">{breed.name}</span>
+                  </label>
+                      ))
+                    ) : (
+                      <span className="text-sm text-gray-400">Нет пород</span>
+                    )}
+                </div>
+              </FilterSection>
               )}
 
               {/* Кошка */}
-              {availableFilters.breedsByCategory?.cat && availableFilters.breedsByCategory.cat.length > 0 && (
-                <FilterSection title="Кошка">
-                  <div className="space-y-2">
-                    {availableFilters.breedsByCategory.cat.map((breed) => (
-                      <label key={breed.id} className="flex items-center space-x-2">
-                        <Checkbox
-                          checked={catFilters[breed.slug] || false}
-                          onCheckedChange={(c) =>
-                            setCatFilters((prev) => ({ ...prev, [breed.slug]: c }))
-                          }
-                        />
-                        <span className="text-sm">{breed.name}</span>
-                      </label>
-                    ))}
-                  </div>
-                </FilterSection>
+              {availableFilters.breedsByCategory?.cat && (
+              <FilterSection title="Кошка">
+                <div className="space-y-2">
+                    {availableFilters.breedsByCategory.cat.length > 0 ? (
+                      availableFilters.breedsByCategory.cat.map((breed) => (
+                        <label key={breed.id} className="flex items-center space-x-2">
+                    <Checkbox
+                            checked={catFilters[breed.slug] || false}
+                      onCheckedChange={(c) =>
+                              setCatFilters((prev) => ({ ...prev, [breed.slug]: c }))
+                      }
+                    />
+                          <span className="text-sm">{breed.name}</span>
+                  </label>
+                      ))
+                    ) : (
+                      <span className="text-sm text-gray-400">Нет пород</span>
+                    )}
+                </div>
+              </FilterSection>
               )}
 
               {/* Щенок */}
-              {availableFilters.breedsByCategory?.minidog && availableFilters.breedsByCategory.minidog.length > 0 && (
-                <FilterSection title="Щенок">
-                  <div className="space-y-2">
-                    {availableFilters.breedsByCategory.minidog.map((breed) => (
-                      <label key={breed.id} className="flex items-center space-x-2">
-                        <Checkbox
-                          checked={minidogFilters[breed.slug] || false}
-                          onCheckedChange={(c) =>
-                            setMiniDogFilters((prev) => ({ ...prev, [breed.slug]: c }))
-                          }
-                        />
-                        <span className="text-sm">{breed.name}</span>
-                      </label>
-                    ))}
-                  </div>
-                </FilterSection>
+              {availableFilters.breedsByCategory?.minidog && (
+              <FilterSection title="Щенок">
+                <div className="space-y-2">
+                    {availableFilters.breedsByCategory.minidog.length > 0 ? (
+                      availableFilters.breedsByCategory.minidog.map((breed) => (
+                        <label key={breed.id} className="flex items-center space-x-2">
+                    <Checkbox
+                            checked={minidogFilters[breed.slug] || false}
+                      onCheckedChange={(c) =>
+                              setMiniDogFilters((prev) => ({ ...prev, [breed.slug]: c }))
+                      }
+                    />
+                          <span className="text-sm">{breed.name}</span>
+                  </label>
+                      ))
+                    ) : (
+                      <span className="text-sm text-gray-400">Нет пород</span>
+                    )}
+                </div>
+              </FilterSection>
               )}
 
               {/* Собака */}
-              {availableFilters.breedsByCategory?.dog && availableFilters.breedsByCategory.dog.length > 0 && (
-                <FilterSection title="Собака">
-                  <div className="space-y-2">
-                    {availableFilters.breedsByCategory.dog.map((breed) => (
-                      <label key={breed.id} className="flex items-center space-x-2">
-                        <Checkbox
-                          checked={dogFilters[breed.slug] || false}
-                          onCheckedChange={(c) =>
-                            setDogFilters((prev) => ({ ...prev, [breed.slug]: c }))
-                          }
-                        />
-                        <span className="text-sm">{breed.name}</span>
-                      </label>
-                    ))}
-                  </div>
-                </FilterSection>
+              {availableFilters.breedsByCategory?.dog && (
+              <FilterSection title="Собака">
+                <div className="space-y-2">
+                    {availableFilters.breedsByCategory.dog.length > 0 ? (
+                      availableFilters.breedsByCategory.dog.map((breed) => (
+                        <label key={breed.id} className="flex items-center space-x-2">
+                    <Checkbox
+                            checked={dogFilters[breed.slug] || false}
+                      onCheckedChange={(c) =>
+                              setDogFilters((prev) => ({ ...prev, [breed.slug]: c }))
+                      }
+                    />
+                          <span className="text-sm">{breed.name}</span>
+                  </label>
+                      ))
+                    ) : (
+                      <span className="text-sm text-gray-400">Нет пород</span>
+                    )}
+                </div>
+              </FilterSection>
               )}
 
               {/* Страна */}
@@ -1701,14 +1834,14 @@ export default function Catalog() {
                 <div className="space-y-2">
                   {availableFilters.countries.map((country) => (
                     <label key={country.id} className="flex items-center space-x-2">
-                      <Checkbox
+                    <Checkbox
                         checked={countryFilters[country.slug] || false}
-                        onCheckedChange={(c) =>
+                      onCheckedChange={(c) =>
                           setCountryFilters((prev) => ({ ...prev, [country.slug]: c }))
-                        }
-                      />
+                      }
+                    />
                       <span className="text-sm">{country.name}</span>
-                    </label>
+                  </label>
                   ))}
                 </div>
               </FilterSection>
