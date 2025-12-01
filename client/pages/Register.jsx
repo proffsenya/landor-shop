@@ -150,11 +150,30 @@ export default function Register() {
         return;
       }
 
-      if (data?.token) localStorage.setItem("token", data.token);
-      if (data?.email) localStorage.setItem("email", data.email);
+      // Сохраняем токен и данные пользователя в том же формате, что и при входе
+      if (data?.token) {
+        localStorage.setItem("authToken", data.token);
+      }
+      if (data?.email) {
+        localStorage.setItem("authEmail", data.email);
+      }
+      // Сохраняем права доступа, если они есть
+      if (data?.isStaff !== undefined) {
+        localStorage.setItem("isStaff", String(data.isStaff));
+      }
+      if (data?.isSuperUser !== undefined) {
+        localStorage.setItem("isSuperUser", String(data.isSuperUser));
+      }
 
-      setSuccessMsg("Регистрация прошла успешно!");
-      setTimeout(() => navigate("/login"), 800);
+      // Отправляем событие для обновления Header и других компонентов
+      window.dispatchEvent(new Event("auth:token-updated"));
+      window.dispatchEvent(new Event("storage"));
+
+      setSuccessMsg("Регистрация прошла успешно! Вы автоматически вошли в систему.");
+      // Перенаправляем на главную страницу вместо страницы входа
+      setTimeout(() => {
+        navigate("/");
+      }, 1000);
     } catch {
       setErrorMsg("Сетевая ошибка. Повторите попытку.");
     } finally {
