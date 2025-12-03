@@ -139,6 +139,15 @@ public class ProductService {
             }
         }
 
+        currentproduct.getProductVariants().clear();
+        currentproduct.getProductVariants().addAll(updatedVariants);
+
+        if (!existingById.isEmpty()) {
+            for (ProductVariant toRemove : existingById.values()) {
+                currentproduct.getProductVariants().remove(toRemove);
+            }
+        }
+
         if (!existingById.isEmpty()) {
             for (ProductVariant toRemove : existingById.values()) {
                 currentproduct.getProductVariants().remove(toRemove);
@@ -156,7 +165,6 @@ public class ProductService {
         currentproduct.setBrand(brandRepository.findById(updatedproduct.brandId()).orElse(null));
         currentproduct.setProductType(productTypeRepository.findById(updatedproduct.productTypeId()).orElse(null));
         applyRelationshipsFromUpdateDto(currentproduct, updatedproduct);
-        currentproduct.setProductVariants(updatedVariants);
 
         return productRepository.save(currentproduct);
     }

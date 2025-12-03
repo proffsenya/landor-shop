@@ -13,7 +13,7 @@ import java.util.List;
 public record UpdateProductDTO(@Size(max = 100) String name, @Size(max = 1000) String description,
                                @Size(max = 500) String guaranteedIndicators,
                                @Size(max = 100) String feedingNote,
-                               @Size(max = 100) String slug, @NotNull Integer quantityInStock,
+                               @Size(max = 100) String slug,
                                Boolean isActive, Boolean isFeatured, BigDecimal rating,
                                List<Integer> breedIds,
                                List<Long> categoryIds,
