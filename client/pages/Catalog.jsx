@@ -908,44 +908,44 @@ export default function Catalog() {
         
         // Обновляем соответствующий state фильтров в зависимости от slug категории
         if (categorySlug === "cat") {
-          setCatFilters((prev) => {
-            const newFilters = { ...prev };
+      setCatFilters((prev) => {
+        const newFilters = { ...prev };
             breeds.forEach((breed) => {
-              if (!(breed.slug in newFilters)) {
-                newFilters[breed.slug] = false;
-              }
-            });
-            return newFilters;
-          });
+          if (!(breed.slug in newFilters)) {
+            newFilters[breed.slug] = false;
+          }
+        });
+        return newFilters;
+      });
         } else if (categorySlug === "dog") {
-          setDogFilters((prev) => {
-            const newFilters = { ...prev };
+      setDogFilters((prev) => {
+        const newFilters = { ...prev };
             breeds.forEach((breed) => {
-              if (!(breed.slug in newFilters)) {
-                newFilters[breed.slug] = false;
-              }
-            });
-            return newFilters;
-          });
+          if (!(breed.slug in newFilters)) {
+            newFilters[breed.slug] = false;
+          }
+        });
+        return newFilters;
+      });
         } else if (categorySlug === "minicat") {
-          setMiniCatFilters((prev) => {
-            const newFilters = { ...prev };
+      setMiniCatFilters((prev) => {
+        const newFilters = { ...prev };
             breeds.forEach((breed) => {
-              if (!(breed.slug in newFilters)) {
-                newFilters[breed.slug] = false;
-              }
-            });
-            return newFilters;
-          });
+          if (!(breed.slug in newFilters)) {
+            newFilters[breed.slug] = false;
+          }
+        });
+        return newFilters;
+      });
         } else if (categorySlug === "minidog") {
-          setMiniDogFilters((prev) => {
-            const newFilters = { ...prev };
+      setMiniDogFilters((prev) => {
+        const newFilters = { ...prev };
             breeds.forEach((breed) => {
-              if (!(breed.slug in newFilters)) {
-                newFilters[breed.slug] = false;
-              }
-            });
-            return newFilters;
+          if (!(breed.slug in newFilters)) {
+            newFilters[breed.slug] = false;
+          }
+        });
+        return newFilters;
           });
         } else {
           // Для новых категорий используем общий механизм через catFilters, dogFilters и т.д.

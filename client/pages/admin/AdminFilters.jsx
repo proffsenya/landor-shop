@@ -330,7 +330,7 @@ export default function AdminFilters() {
                           <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">ID</th>
                           <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Название</th>
                           {config.fields.some(f => f.key === "slug") && (
-                            <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase hidden md:table-cell">Slug</th>
+                          <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase hidden md:table-cell">Slug</th>
                           )}
                           {config.fields.some(f => f.key === "canonicalName") && (
                             <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase hidden md:table-cell">Каноническое название</th>
@@ -347,7 +347,7 @@ export default function AdminFilters() {
                             <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-900">{item.id}</td>
                             <td className="px-3 sm:px-6 py-4 text-sm text-gray-900">{item.name || "-"}</td>
                             {config.fields.some(f => f.key === "slug") && (
-                              <td className="px-3 sm:px-6 py-4 text-sm text-gray-500 hidden md:table-cell">{item.slug || "-"}</td>
+                            <td className="px-3 sm:px-6 py-4 text-sm text-gray-500 hidden md:table-cell">{item.slug || "-"}</td>
                             )}
                             {config.fields.some(f => f.key === "canonicalName") && (
                               <td className="px-3 sm:px-6 py-4 text-sm text-gray-500 hidden md:table-cell">{item.canonicalName || "-"}</td>

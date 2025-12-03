@@ -555,10 +555,10 @@ function ProductForm({
             // Для POST в variants не нужны colorIds и scentIds как объекты, только ID
             return {
               sku: v.sku || "",
-              price: Number(v.price) || 0,
-              stock: Number(v.stock) || 0,
-              weight: Number(v.weight) || 0,
-              colorIds: Array.isArray(v.colorIds)
+          price: Number(v.price) || 0,
+          stock: Number(v.stock) || 0,
+          weight: Number(v.weight) || 0,
+          colorIds: Array.isArray(v.colorIds) 
                 ? v.colorIds.map((c) => {
                     if (typeof c === "object" && c.id !== undefined) {
                       return Number(c.id);
@@ -567,8 +567,8 @@ function ProductForm({
                       return colorObj ? Number(colorObj.id) : 0;
                     }
                   }).filter(id => id > 0)
-                : [],
-              scentIds: Array.isArray(v.scentIds)
+            : [],
+          scentIds: Array.isArray(v.scentIds)
                 ? v.scentIds.map((s) => {
                     if (typeof s === "object" && s.id !== undefined) {
                       return Number(s.id);
@@ -577,12 +577,12 @@ function ProductForm({
                       return scentObj ? Number(scentObj.id) : 0;
                     }
                   }).filter(id => id > 0)
-                : [],
+            : [],
             };
           }),
           brandId: formData.brandId ? Number(formData.brandId) : 0,
           productTypeId: formData.productTypeId ? Number(formData.productTypeId) : 0,
-        };
+      };
 
         // Добавляем productDTO как JSON строку с Content-Type: application/json
         const productDTOBlob = new Blob([JSON.stringify(productDTO)], { type: "application/json" });
@@ -686,13 +686,13 @@ function ProductForm({
         console.log("[AdminProducts] Sending PUT payload:", JSON.stringify(payload, null, 2));
 
         res = await fetch(url, {
-          method,
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${adminToken}`,
-          },
-          body: JSON.stringify(payload),
-        });
+        method,
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${adminToken}`,
+        },
+        body: JSON.stringify(payload),
+      });
       }
 
       if (res.ok) {

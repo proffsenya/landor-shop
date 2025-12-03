@@ -99,7 +99,7 @@ export default function Favorites() {
               
               // Извлекаем productId из imageUrl (если не был найден ранее)
               if (!Number.isFinite(productId) && item.imageUrl && item.imageUrl.startsWith("/api/products/")) {
-                const match = item.imageUrl.match(/\/api\/products\/(\d+)\/images\/(\d+)/);
+                  const match = item.imageUrl.match(/\/api\/products\/(\d+)\/images\/(\d+)/);
                 if (match) {
                   productId = Number(match[1]);
                 }
