@@ -49,11 +49,11 @@ export default function HeroBanner() {
 
   return (
     <section className="relative overflow-hidden bg-[#FFF1DA]">
-      <div>
+      <div className="w-full">
         {/* Баннер показывается только на lg и выше */}
-        <div className="relative hidden w-full overflow-hidden lg:block rounded-2xl">
+        <div className="relative hidden w-full overflow-hidden lg:block">
           {/* Карусель */}
-          <div className="relative h-[400px] xl:h-[500px]">
+          <div className="relative h-[500px] xl:h-[650px] 2xl:h-[750px]">
             {banners.map((banner, index) => (
               <div
                 key={index}

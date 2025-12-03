@@ -24,19 +24,19 @@ export default function Footer() {
               </div>
               <div className="flex items-center justify-center gap-1 md:justify-start">
                 <img src="/socialmedia-icons/call.svg" className="w-3 h-3" viewBox="0 0 14 15" fill="white" />
-                <p>+7(999)999-99-99</p>
+                <p>+7(903)167-18-50</p>
               </div>
               <div className="flex items-center justify-center gap-1 md:justify-start">
                 <img src="/socialmedia-icons/mail.svg" className="w-3 h-3" viewBox="0 0 14 15" fill="white" />
-                <p>info@landor-shop.ru</p>
+                <p>landorshop@yandex.ru</p>
               </div>
               <div className="flex items-center justify-center gap-1 md:justify-start">
                 <img src="/socialmedia-icons/tg.svg" className="w-3 h-3" viewBox="0 0 14 15" fill="white" />
-                <p>+7(999)999-99-99</p>
+                <p>+7(903)167-18-50</p>
               </div>
               <div className="flex items-center justify-center gap-1 md:justify-start">
                 <img src="/socialmedia-icons/ws.svg" className="w-3 h-3" viewBox="0 0 14 15" fill="white" />
-                <p>+7(999)999-99-99</p>
+                <p>+7(903)167-18-50</p>
               </div>
             </div>
           </div>

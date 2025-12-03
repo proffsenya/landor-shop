@@ -135,7 +135,7 @@ export default function AdminUsers() {
           onClose={() => setSidebarOpen(false)}
         />
         <main className="flex-1 p-4 sm:p-6 lg:p-8 w-full lg:w-auto">
-          <div className="max-w-7xl mx-auto">
+          <div className="max-w-[1600px] mx-auto">
             <div className="mb-4 sm:mb-6">
               <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Пользователи</h1>
               <p className="text-sm sm:text-base text-gray-600 mt-2">Управление правами доступа пользователей</p>

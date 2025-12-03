@@ -180,6 +180,12 @@ const ProductCard = memo(function ProductCard({
     return;
   }
 
+  // Проверка количества в наличии
+  if (numericStock < 1) {
+    showToast("Товар отсутствует в наличии", 3000);
+    return;
+  }
+
   const vidStr = String(variantId);
   const vidNum = Number(variantId);
 
@@ -199,7 +205,44 @@ const ProductCard = memo(function ProductCard({
         setShowAuthToast(true);
         return;
       }
-      if (!res.ok) throw new Error(`HTTP ${res.status} ${await safeText(res)}`);
+      if (!res.ok) {
+        const errorText = await safeText(res);
+        if (res.status === 401) {
+          setAuthToastMessage("Для добавления товара в корзину необходимо авторизоваться");
+          setShowAuthToast(true);
+          return;
+        }
+        
+        // Проверка на ошибку превышения количества
+        if (res.status === 400 || res.status === 422) {
+          try {
+            const errorJson = JSON.parse(errorText);
+            if (errorJson.message && (errorJson.message.includes("stock") || errorJson.message.includes("наличи") || errorJson.message.includes("количеств"))) {
+              showToast(errorJson.message || "Недостаточно товара в наличии", 3000);
+              return;
+            }
+            // Если есть другое сообщение об ошибке, показываем его
+            if (errorJson.message) {
+              showToast(errorJson.message, 3000);
+              return;
+            }
+          } catch {
+            // Если не JSON, проверяем текст на наличие ключевых слов
+            if (errorText && (errorText.includes("stock") || errorText.includes("наличи") || errorText.includes("количеств"))) {
+              showToast("Недостаточно товара в наличии", 3000);
+              return;
+            }
+          }
+        }
+        
+        // Для ошибок сервера показываем понятное сообщение
+        if (res.status >= 500) {
+          showToast("Ошибка сервера. Попробуйте позже", 3000);
+          return;
+        }
+        
+        throw new Error(`HTTP ${res.status} ${errorText}`);
+      }
 
       setInCart(true);
       const cartSet = loadSet(cartKey);

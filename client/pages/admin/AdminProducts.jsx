@@ -24,7 +24,6 @@ export default function AdminProducts() {
   const [editingProduct, setEditingProduct] = useState(null);
   const [showImageUpload, setShowImageUpload] = useState(false);
   const [selectedProductId, setSelectedProductId] = useState(null);
-  const [loadMethod, setLoadMethod] = useState("cards"); // "cards" или "details"
 
   // Списки для выпадающих списков
   const [categories, setCategories] = useState([]);
@@ -47,24 +46,16 @@ export default function AdminProducts() {
 
     setIsSuperUser(superUser);
     loadAllData();
-  }, [navigate, loadMethod]);
+  }, [navigate]);
 
   const loadAllData = async () => {
     try {
       const adminToken = getAdminToken();
       
-      // Загружаем товары в зависимости от выбранного метода
-      let productsRes;
-      if (loadMethod === "cards") {
-        productsRes = await fetch("/api/products/cards", {
-          headers: { Authorization: `Bearer ${adminToken}` },
-        });
-      } else {
-        // Если нужен метод details, загружаем список через cards, а потом детали для каждого
-        productsRes = await fetch("/api/products/cards", {
-          headers: { Authorization: `Bearer ${adminToken}` },
-        });
-      }
+      // Загружаем товары через cards
+      const productsRes = await fetch("/api/products/cards", {
+        headers: { Authorization: `Bearer ${adminToken}` },
+      });
       
       // Загружаем все списки параллельно
       const [
@@ -110,21 +101,7 @@ export default function AdminProducts() {
       if (productsRes.ok) {
         const data = await productsRes.json();
         const productsList = Array.isArray(data) ? data : [];
-        
-        // Если выбран метод "details", загружаем детали для каждого товара
-        if (loadMethod === "details" && productsList.length > 0) {
-          const detailsPromises = productsList.map((product) =>
-            fetch(`/api/products/${product.id}/details`, {
-              headers: { Authorization: `Bearer ${adminToken}` },
-            })
-              .then((res) => (res.ok ? res.json() : product))
-              .catch(() => product)
-          );
-          const detailsData = await Promise.all(detailsPromises);
-          setProducts(detailsData);
-        } else {
-          setProducts(productsList);
-        }
+        setProducts(productsList);
       }
       if (categoriesRes.ok) {
         const data = await categoriesRes.json();
@@ -211,34 +188,20 @@ export default function AdminProducts() {
           onClose={() => setSidebarOpen(false)}
         />
         <main className="flex-1 p-4 sm:p-6 lg:p-8 w-full lg:w-auto">
-          <div className="max-w-7xl mx-auto">
+          <div className="max-w-[1600px] mx-auto">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4 sm:mb-6">
               <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Товары</h1>
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4">
-                <div className="flex items-center gap-2">
-                  <label className="text-xs sm:text-sm font-medium text-gray-700 whitespace-nowrap">Метод загрузки:</label>
-                  <Select value={loadMethod} onValueChange={setLoadMethod}>
-                    <SelectTrigger className="w-full sm:w-[150px]">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="cards">Cards</SelectItem>
-                      <SelectItem value="details">Details</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <Button
-                  onClick={() => {
-                    setEditingProduct(null);
-                    setShowForm(true);
-                  }}
-                  className="bg-[#6F2A2B] text-white hover:bg-[#5a2223] w-full sm:w-auto"
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  <span className="hidden sm:inline">Добавить товар</span>
-                  <span className="sm:hidden">Добавить</span>
-                </Button>
-              </div>
+              <Button
+                onClick={() => {
+                  setEditingProduct(null);
+                  setShowForm(true);
+                }}
+                className="bg-[#6F2A2B] text-white hover:bg-[#5a2223] w-full sm:w-auto"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                <span className="hidden sm:inline">Добавить товар</span>
+                <span className="sm:hidden">Добавить</span>
+              </Button>
             </div>
 
             {showForm && (
@@ -318,8 +281,8 @@ export default function AdminProducts() {
                             </button>
                             <button
                               onClick={async () => {
-                                // Если товар загружен через cards, загружаем детали для редактирования
-                                if (loadMethod === "cards" && product.id) {
+                                // Всегда загружаем детали для редактирования
+                                if (product.id) {
                                   try {
                                     const adminToken = getAdminToken();
                                     const res = await fetch(`/api/products/${product.id}/details`, {

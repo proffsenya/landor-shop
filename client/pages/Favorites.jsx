@@ -490,10 +490,10 @@ async function moveFavoritesToCart(variantIdsRaw) {
 
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="flex flex-col min-h-screen bg-white">
       <Header />
       <PageFade>
-        <div className="container mx-auto px-4 sm:px-6 lg:px-[80px] py-6 sm:py-8 lg:py-10">
+        <div className="flex-grow container mx-auto px-4 sm:px-6 lg:px-[80px] py-6 sm:py-8 lg:py-10">
           <BreadcrumbNav items={[
             { label: "Главная", to: "/" },
             { label: "Избранное" }
