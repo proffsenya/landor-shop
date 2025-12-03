@@ -1,23 +1,24 @@
 import { useState, useEffect } from "react";
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import { 
   LayoutDashboard, 
   Package, 
   ShoppingCart, 
   Users, 
-  LogOut,
+  Home,
   FileText,
   X,
   Sliders
 } from "lucide-react";
 
 export default function AdminSidebar({ isSuperUser, isOpen, onClose }) {
-  const handleLogout = () => {
-    localStorage.removeItem("adminToken");
-    localStorage.removeItem("adminEmail");
-    localStorage.removeItem("isStaff");
-    localStorage.removeItem("isSuperUser");
-    window.location.href = "/admin/login";
+  const navigate = useNavigate();
+
+  const handleGoToSite = () => {
+    navigate("/");
+    if (window.innerWidth < 1024) {
+      onClose();
+    }
   };
 
   // Закрываем меню при клике на ссылку на мобильных
@@ -141,11 +142,11 @@ export default function AdminSidebar({ isSuperUser, isOpen, onClose }) {
           </NavLink>
         )}
         <button
-          onClick={handleLogout}
+          onClick={handleGoToSite}
           className="w-full flex items-center gap-3 px-3 lg:px-4 py-2 lg:py-3 rounded-lg text-gray-300 hover:bg-gray-800 transition-colors text-sm lg:text-base"
         >
-          <LogOut className="w-4 h-4 lg:w-5 lg:h-5" />
-          <span>Выйти</span>
+          <Home className="w-4 h-4 lg:w-5 lg:h-5" />
+          <span>На сайт</span>
         </button>
       </nav>
     </aside>

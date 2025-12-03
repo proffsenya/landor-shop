@@ -6,10 +6,10 @@ import { PageFade } from "@/utils/PageAnimations";
 
 export default function DeliveryPayment() {
   return (
-    <div className="min-h-screen bg-white">
+    <div className="flex flex-col min-h-screen bg-white">
       <Header />
       <PageFade>
-      <div className="container px-4 py-8 mx-auto">
+      <div className="flex-grow container px-4 py-8 mx-auto">
         <BreadcrumbNav items={[
           { label: "Главная", to: "/" },
           { label: "Доставка и оплата" }

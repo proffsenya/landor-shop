@@ -123,7 +123,7 @@ export default function AdminDashboard() {
           onClose={() => setSidebarOpen(false)}
         />
         <main className="flex-1 p-4 sm:p-6 lg:p-8 w-full lg:w-auto">
-          <div className="max-w-7xl mx-auto">
+          <div className="max-w-[1600px] mx-auto">
             <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-4 sm:mb-6">Панель управления</h1>
             
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 sm:gap-6 mb-6 sm:mb-8">

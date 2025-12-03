@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/pagination";
 import { checkAdminAccess, getAdminToken } from "@/utils/adminAuth";
 import { initNotifications } from "@/utils/notifications";
-import { Download, Mail, Phone, MapPin, FileText, Building2 } from "lucide-react";
+import { Download, Mail, Phone, MapPin, FileText, Building2, Eye, Image as ImageIcon } from "lucide-react";
 
 export default function AdminForms() {
   const navigate = useNavigate();
@@ -98,7 +98,7 @@ export default function AdminForms() {
           onClose={() => setSidebarOpen(false)}
         />
         <main className="flex-1 p-4 sm:p-6 lg:p-8 w-full lg:w-auto">
-          <div className="max-w-7xl mx-auto">
+          <div className="max-w-[1600px] mx-auto">
             <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-4 sm:mb-6">Заявки из форм</h1>
 
             {/* Вкладки */}
@@ -358,36 +358,109 @@ function NurseryFormsTable({ forms, currentPage, itemsPerPage, onPageChange }) {
     }
   }, [totalPages, currentPage, onPageChange]);
 
+  const [imagePreview, setImagePreview] = useState(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
+
+  // Получение информации о форме по ID
+  const getFormById = async (formId) => {
+    try {
+      const adminToken = getAdminToken();
+      const response = await fetch(`/api/forms/nurseryform/${formId}`, {
+        headers: { Authorization: `Bearer ${adminToken}` },
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+
+      return await response.json();
+    } catch (e) {
+      console.error("Error fetching form:", e);
+      throw e;
+    }
+  };
+
+  // Получение и открытие файла через новый эндпоинт
+  const handleOpenFile = async (formId) => {
+    try {
+      setPreviewLoading(true);
+      const adminToken = getAdminToken();
+      
+      const response = await fetch(`/api/forms/nurseryform/${formId}/file`, {
+        headers: { Authorization: `Bearer ${adminToken}` },
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      
+      // Открываем файл в новой вкладке
+      window.open(url, '_blank');
+      
+      // Освобождаем URL после небольшой задержки
+      setTimeout(() => URL.revokeObjectURL(url), 100);
+    } catch (e) {
+      console.error("Error opening file:", e);
+      alert("Не удалось открыть файл");
+    } finally {
+      setPreviewLoading(false);
+    }
+  };
+
+  // Получение картинки для превью
+  const handlePreviewImage = async (formId) => {
+    try {
+      setPreviewLoading(true);
+      const adminToken = getAdminToken();
+      
+      const response = await fetch(`/api/forms/nurseryform/${formId}/file`, {
+        headers: { Authorization: `Bearer ${adminToken}` },
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      setImagePreview(url);
+    } catch (e) {
+      console.error("Error loading image preview:", e);
+      alert("Не удалось загрузить изображение");
+    } finally {
+      setPreviewLoading(false);
+    }
+  };
+
   const handleDownloadFile = async (form) => {
-    if (!form.registrationFile || form.registrationFile.length === 0) {
-      alert("Файл не найден");
+    if (!form.id) {
+      alert("ID формы не найден");
       return;
     }
 
     try {
       const adminToken = getAdminToken();
-      // Если registrationFile это массив строк (URLs), загружаем первый файл
-      const fileUrl = Array.isArray(form.registrationFile) 
-        ? form.registrationFile[0] 
-        : form.registrationFile;
       
-      const res = await fetch(fileUrl, {
+      const response = await fetch(`/api/forms/nurseryform/${form.id}/file`, {
         headers: { Authorization: `Bearer ${adminToken}` },
       });
 
-      if (res.ok) {
-        const blob = await res.blob();
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = form.fileName || "registration_file";
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-      } else {
-        alert("Не удалось загрузить файл");
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
       }
+
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = form.fileName || "registration_file";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
     } catch (e) {
       console.error("Error downloading file:", e);
       alert("Ошибка при загрузке файла");
@@ -431,6 +504,34 @@ function NurseryFormsTable({ forms, currentPage, itemsPerPage, onPageChange }) {
 
   return (
     <div>
+      {/* Модальное окно для просмотра изображения */}
+      {imagePreview && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4"
+          onClick={() => {
+            setImagePreview(null);
+            URL.revokeObjectURL(imagePreview);
+          }}
+        >
+          <div className="relative max-w-4xl max-h-[90vh]">
+            <button
+              onClick={() => {
+                setImagePreview(null);
+                URL.revokeObjectURL(imagePreview);
+              }}
+              className="absolute top-4 right-4 text-white bg-black bg-opacity-50 rounded-full p-2 hover:bg-opacity-75 z-10"
+            >
+              ✕
+            </button>
+            <img 
+              src={imagePreview} 
+              alt="Превью анкеты" 
+              className="max-w-full max-h-[90vh] object-contain rounded"
+              onClick={(e) => e.stopPropagation()}
+            />
+          </div>
+        </div>
+      )}
     <div className="bg-white rounded-lg shadow overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[900px]">
@@ -487,15 +588,34 @@ function NurseryFormsTable({ forms, currentPage, itemsPerPage, onPageChange }) {
                   </div>
                 </td>
                     <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm">
-                  {form.registrationFile && form.registrationFile.length > 0 ? (
-                    <button
-                      onClick={() => handleDownloadFile(form)}
-                      className="text-[#6F2A2B] hover:text-[#5a2223] flex items-center gap-1"
-                      title={form.fileName || "Скачать файл"}
-                    >
-                      <Download className="w-4 h-4" />
-                      <span className="hidden sm:inline">{form.fileName || "Файл"}</span>
-                    </button>
+                  {form.id ? (
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => handleOpenFile(form.id)}
+                        disabled={previewLoading}
+                        className="text-[#6F2A2B] hover:text-[#5a2223] flex items-center gap-1 disabled:opacity-50"
+                        title="Открыть файл"
+                      >
+                        <Eye className="w-4 h-4" />
+                        {previewLoading && <span className="text-xs">...</span>}
+                      </button>
+                      <button
+                        onClick={() => handlePreviewImage(form.id)}
+                        disabled={previewLoading}
+                        className="text-[#6F2A2B] hover:text-[#5a2223] flex items-center gap-1 disabled:opacity-50"
+                        title="Просмотр изображения"
+                      >
+                        <ImageIcon className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => handleDownloadFile(form)}
+                        className="text-[#6F2A2B] hover:text-[#5a2223] flex items-center gap-1"
+                        title={form.fileName || "Скачать файл"}
+                      >
+                        <Download className="w-4 h-4" />
+                        <span className="hidden sm:inline">{form.fileName || "Файл"}</span>
+                      </button>
+                    </div>
                   ) : (
                     <span className="text-gray-400">-</span>
                   )}

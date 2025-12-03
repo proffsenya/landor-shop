@@ -38,42 +38,6 @@ const saveSet = (key, set) => {
   } catch {}
 };
 
-// Кэш для изображений
-const imageCache = new Map();
-
-// Функция для получения изображения через API
-async function fetchImageUrl(productId, variantId, token) {
-  if (!productId || !variantId) return null;
-  const cacheKey = `${productId}:${variantId}`;
-  if (imageCache.has(cacheKey)) return imageCache.get(cacheKey);
-
-  try {
-    const res = await fetch(
-      `/api/products/${encodeURIComponent(productId)}/images/${encodeURIComponent(variantId)}`,
-      {
-        headers: token && token !== "guest" ? { Authorization: `Bearer ${token}` } : {},
-      }
-    );
-    if (!res.ok) {
-      console.warn("[Cart images]", res.status, res.url);
-      return null;
-    }
-    const blob = await res.blob();
-    const ct = res.headers.get("content-type") || blob.type || "";
-    if (!ct.startsWith("image/")) {
-      console.warn(
-        `[Cart images] not image content for variantId=${variantId}, content-type=${ct}`
-      );
-      return null;
-    }
-    const url = URL.createObjectURL(blob);
-    imageCache.set(cacheKey, url);
-    return url;
-  } catch (e) {
-    console.warn("[Cart images] error", e);
-    return null;
-  }
-}
 
 // ---- утилиты отображения ----
 const fmtMoney = (n) =>
@@ -99,6 +63,7 @@ const mapCartResponse = (data) => {
     quantity: Math.max(1, Number(row?.quantity ?? 1)),
     image: row?.imageUrl || "/korm1.svg",
     weight: row?.weightLabel || "",
+    stock: Number(row?.stock ?? row?.availableStock ?? row?.quantityInStock ?? 0), // Количество в наличии
   }));
 };
 
@@ -109,7 +74,6 @@ export default function Cart() {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [imageUrls, setImageUrls] = useState(new Map()); // Map<itemId, imageUrl>
 
   const [selected, setSelected] = useState(new Set());
   const [payMethod, setPayMethod] = useState("cash");
@@ -168,33 +132,6 @@ export default function Cart() {
       const mapped = mapCartResponse(data);
       setItems(mapped);
       setSelected(new Set(mapped.map((i) => i.id))); // выбрать всё по умолчанию
-
-      // Загружаем изображения через API
-      const imageMap = new Map();
-      await Promise.all(
-        mapped.map(async (item) => {
-          // Если imageUrl уже есть в формате /api/products/{productId}/images/{variantId}, парсим и загружаем
-          if (item.image && item.image.startsWith("/api/products/")) {
-            const match = item.image.match(/\/api\/products\/(\d+)\/images\/(\d+)/);
-            if (match) {
-              const productId = match[1];
-              const variantId = match[2];
-              const imageUrl = await fetchImageUrl(productId, variantId, authToken);
-              if (imageUrl) {
-                imageMap.set(item.id, imageUrl);
-              }
-            }
-          } 
-          // Если imageUrl нет, но есть productId и variantId, загружаем через API
-          else if (item.productId && item.variantId && Number.isFinite(item.variantId)) {
-            const imageUrl = await fetchImageUrl(item.productId, item.variantId, authToken);
-            if (imageUrl) {
-              imageMap.set(item.id, imageUrl);
-            }
-          }
-        })
-      );
-      setImageUrls(imageMap);
 
       // синхронизируем локальный набор вариантов «в корзине», чтобы кнопки на карточках были актуальны
       const setCart = new Set(
@@ -313,7 +250,7 @@ export default function Cart() {
     const vId = Number(item.variantId);
     if (!Number.isFinite(vId)) {
       console.warn("[cart] нет variantId у позиции", item);
-      return false;
+      return { ok: false, error: null };
     }
 
     const headers = {
@@ -325,13 +262,38 @@ export default function Cart() {
 
     try {
       const res = await fetch(url, { method: "POST", headers });
-      if (res.ok) return true;
+      if (res.ok) return { ok: true, error: null };
 
-      console.warn(url, res.status, await safeText(res));
-      return false;
+      const errorText = await safeText(res);
+      let errorMessage = null;
+      
+      // Проверка на ошибку превышения количества
+      if (res.status === 400 || res.status === 422) {
+        try {
+          const errorJson = JSON.parse(errorText);
+          if (errorJson.message && (errorJson.message.includes("stock") || errorJson.message.includes("наличи") || errorJson.message.includes("количеств"))) {
+            errorMessage = errorJson.message || "Недостаточно товара в наличии";
+          } else if (errorJson.message) {
+            errorMessage = errorJson.message;
+          }
+        } catch {
+          // Если не JSON, проверяем текст на наличие ключевых слов
+          if (errorText && (errorText.includes("stock") || errorText.includes("наличи") || errorText.includes("количеств"))) {
+            errorMessage = "Недостаточно товара в наличии";
+          }
+        }
+      }
+      
+      // Для ошибок сервера показываем понятное сообщение
+      if (res.status >= 500 && !errorMessage) {
+        errorMessage = "Ошибка сервера. Попробуйте позже";
+      }
+
+      console.warn(url, res.status, errorText);
+      return { ok: false, error: errorMessage };
     } catch (e) {
       console.warn(url, e);
-      return false;
+      return { ok: false, error: "Ошибка соединения. Попробуйте позже" };
     }
   };
 
@@ -339,11 +301,28 @@ export default function Cart() {
     const item = items.find((i) => i.id === id);
     if (!item) return;
 
-    const ok = await changeQuantityOnServer(item, "inc");
-    if (!ok) {
-      showToast("Не удалось увеличить количество");
+    // Проверка количества в наличии перед увеличением
+    const currentStock = Number(item.stock) || 0;
+    if (currentStock > 0 && item.quantity >= currentStock) {
+      showToast(`В наличии только ${currentStock} шт.`, 3000);
       return;
     }
+
+    const result = await changeQuantityOnServer(item, "inc");
+    if (!result.ok) {
+      if (result.error) {
+        showToast(result.error, 3000);
+        // Если ошибка связана с количеством, обновляем корзину для получения актуального stock
+        if (result.error.includes("наличи") || result.error.includes("количеств") || result.error.includes("stock")) {
+          fetchCart();
+        }
+      } else {
+        showToast("Не удалось увеличить количество");
+      }
+      return;
+    }
+    // При успехе обновляем количество локально
+    // Stock будет обновлен при следующей загрузке корзины или при ошибке
     updateQuantity(id, item.quantity + 1);
   };
 
@@ -351,9 +330,13 @@ export default function Cart() {
     const item = items.find((i) => i.id === id);
     if (!item || item.quantity <= 1) return;
 
-    const ok = await changeQuantityOnServer(item, "dec");
-    if (!ok) {
-      showToast("Не удалось уменьшить количество");
+    const result = await changeQuantityOnServer(item, "dec");
+    if (!result.ok) {
+      if (result.error) {
+        showToast(result.error, 3000);
+      } else {
+        showToast("Не удалось уменьшить количество");
+      }
       return;
     }
     updateQuantity(id, item.quantity - 1);
@@ -606,10 +589,10 @@ export default function Cart() {
   };
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="flex flex-col min-h-screen bg-white">
       <Header />
       <PageFade>
-        <div className="container mx-auto px-4 sm:px-6 lg:px-[80px] py-8 lg:py-10">
+        <div className="flex-grow container mx-auto px-4 sm:px-6 lg:px-[80px] py-8 lg:py-10">
           <BreadcrumbNav items={[
             { label: "Главная", to: "/" },
             { label: "Корзина" }
@@ -716,7 +699,7 @@ export default function Cart() {
 
                             <div className="pl-4">
                               <img
-                                src={imageUrls.get(i.id) || i.image || "/korm1.svg"}
+                                src={i.image || "/korm1.svg"}
                                 alt={i.name}
                                 className="w-[80px] h-[110px] object-contain"
                                 onError={(e) => {
@@ -740,7 +723,12 @@ export default function Cart() {
                               <div className="flex items-center justify-between w-[120px] h-[38px] border border-[#1E1E1E] rounded-full text-[16px]">
                                 <button
                                   onClick={() => handleIncrease(i.id)}
-                                  className="w-10 text-lg leading-none"
+                                  disabled={i.stock > 0 && i.quantity >= i.stock}
+                                  className={`w-10 text-lg leading-none ${
+                                    i.stock > 0 && i.quantity >= i.stock
+                                      ? "opacity-50 cursor-not-allowed"
+                                      : "hover:opacity-70"
+                                  }`}
                                   aria-label="Увеличить"
                                 >
                                   +
@@ -748,7 +736,7 @@ export default function Cart() {
                                 <span>{i.quantity}</span>
                                 <button
                                   onClick={() => handleDecrease(i.id)}
-                                  className="w-10 text-lg leading-none"
+                                  className="w-10 text-lg leading-none hover:opacity-70"
                                   aria-label="Уменьшить"
                                 >
                                   –
@@ -796,7 +784,7 @@ export default function Cart() {
                             <div className="flex gap-3">
                               <div className="flex-shrink-0 w-16 h-24">
                                 <img
-                                  src={imageUrls.get(i.id) || i.image || "/korm1.svg"}
+                                  src={i.image || "/korm1.svg"}
                                   alt={i.name}
                                   className="object-contain w-full h-full"
                                   onError={(e) => {
@@ -821,7 +809,12 @@ export default function Cart() {
                                 <div className="flex items-center justify-between w-[110px] h-[36px] border border-[#1E1E1E] rounded-full text-[16px]">
                                   <button
                                     onClick={() => handleIncrease(i.id)}
-                                    className="w-10 text-lg leading-none"
+                                    disabled={i.stock > 0 && i.quantity >= i.stock}
+                                    className={`w-10 text-lg leading-none ${
+                                      i.stock > 0 && i.quantity >= i.stock
+                                        ? "opacity-50 cursor-not-allowed"
+                                        : "hover:opacity-70"
+                                    }`}
                                     aria-label="Увеличить"
                                   >
                                     +

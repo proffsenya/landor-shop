@@ -258,7 +258,7 @@ export default function AdminFilters() {
           onClose={() => setSidebarOpen(false)}
         />
         <main className="flex-1 p-4 sm:p-6 lg:p-8 w-full lg:w-auto">
-          <div className="max-w-7xl mx-auto">
+          <div className="max-w-[1600px] mx-auto">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4 sm:mb-6">
               <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Фильтры</h1>
             </div>

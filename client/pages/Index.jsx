@@ -9,10 +9,10 @@ import { PageFade } from "@/utils/PageAnimations";
 
 export default function Index() {
   return (
-    <div className="min-h-screen bg-white">
+    <div className="flex flex-col min-h-screen bg-white">
       <Header />
         <PageFade>
-          <main>
+          <main className="flex-grow">
             <HeroBanner />
             <Benefits />
             <Categories />

@@ -566,6 +566,13 @@ export default function Product() {
       return;
     }
 
+    // Проверка количества в наличии
+    if (qty > totalStock) {
+      showToast(`В наличии только ${totalStock} шт.`, 3000);
+      setQty(totalStock);
+      return;
+    }
+
     const vidStr = String(vid);
     const vidNum = Number(vid);
 
@@ -589,6 +596,39 @@ export default function Product() {
             setAdding(false);
             return;
           }
+          
+          // Проверка на ошибку превышения количества
+          if (res.status === 400 || res.status === 422) {
+            try {
+              const errorJson = JSON.parse(errorText);
+              if (errorJson.message && (errorJson.message.includes("stock") || errorJson.message.includes("наличи") || errorJson.message.includes("количеств"))) {
+                showToast(errorJson.message || "Недостаточно товара в наличии", 3000);
+                setAdding(false);
+                return;
+              }
+              // Если есть другое сообщение об ошибке, показываем его
+              if (errorJson.message) {
+                showToast(errorJson.message, 3000);
+                setAdding(false);
+                return;
+              }
+            } catch {
+              // Если не JSON, проверяем текст на наличие ключевых слов
+              if (errorText && (errorText.includes("stock") || errorText.includes("наличи") || errorText.includes("количеств"))) {
+                showToast("Недостаточно товара в наличии", 3000);
+                setAdding(false);
+                return;
+              }
+            }
+          }
+          
+          // Для ошибок сервера показываем понятное сообщение
+          if (res.status >= 500) {
+            showToast("Ошибка сервера. Попробуйте позже", 3000);
+            setAdding(false);
+            return;
+          }
+          
           throw new Error(`HTTP ${res.status} ${errorText}`);
         }
 
@@ -631,7 +671,7 @@ export default function Product() {
       }
       setAdding(false);
     }
-  }, [selectedVariant?.id, adding, inCart, qty, available, authToken, cartKey]);
+  }, [selectedVariant?.id, adding, inCart, qty, available, authToken, cartKey, totalStock]);
 
   // ---------- избранное ----------
   const handleToggleFavorite = async () => {
@@ -826,7 +866,14 @@ export default function Product() {
                     {qty}
                   </span>
                   <button
-                    onClick={() => setQty((n) => n + 1)}
+                    onClick={() => setQty((n) => {
+                      const newQty = n + 1;
+                      if (newQty > totalStock) {
+                        showToast(`В наличии только ${totalStock} шт.`, 2000);
+                        return totalStock;
+                      }
+                      return newQty;
+                    })}
                       className="h-9 w-9 text-[18px] font-semibold text-[#1E1E1E] rounded-r-full flex items-center justify-center"
                   >
                     +
