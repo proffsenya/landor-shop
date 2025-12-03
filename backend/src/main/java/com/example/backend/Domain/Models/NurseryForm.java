@@ -49,6 +49,18 @@ public class NurseryForm {
     @Column(name = "created_at")
     private Instant createdAt;
 
+    @Size(max = 255)
+    @Column(name = "file_content_type")
+    private String fileContentType;
+
+    public String getFileContentType() {
+        return fileContentType;
+    }
+
+    public void setFileContentType(String fileContentType) {
+        this.fileContentType = fileContentType;
+    }
+
     public Integer getId() {
         return id;
     }

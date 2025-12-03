@@ -26,7 +26,7 @@ public class ProductTypeService {
         if(productTypeRepository.findByName(dto.name()).isPresent()){
             throw new InvalidRequestException("ProductTypeCreateDTO is already exists");
         };
-        ProductType productType = productTypeRepository.findByName(dto.name()).get();
+        ProductType productType = new ProductType();
         productType.setName(dto.name());
         productType.setSlug(dto.slug());
         ProductType newtype = productTypeRepository.save(productType);

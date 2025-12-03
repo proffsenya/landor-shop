@@ -5,6 +5,7 @@ import com.example.backend.Domain.DTOs.NurseryFormDTO;
 import com.example.backend.Domain.Models.FeedbackForm;
 import com.example.backend.Domain.Models.NurseryForm;
 import com.example.backend.Infrastructure.Exceptions.InvalidRequestException;
+import com.example.backend.Infrastructure.Exceptions.InvalidResourseException;
 import com.example.backend.Infrastructure.Repos.FeedbackFormRepository;
 import com.example.backend.Infrastructure.Repos.NurseryFormRepository;
 import org.springframework.stereotype.Service;
@@ -48,6 +49,7 @@ public class FormService {
             try {
                 nurseryForm.setRegistrationFile(file.getBytes());
                 nurseryForm.setFileName(file.getOriginalFilename());
+                nurseryForm.setFileContentType(file.getContentType());
             } catch (IOException e) {
                 throw new InvalidRequestException("File processing failed");
             }
@@ -77,5 +79,11 @@ public class FormService {
     public List<FeedbackForm> findAllFeedbackForms(){
         List<FeedbackForm> feedbackForms = feedbackFormRepository.findAll();
         return feedbackForms;
+    }
+
+    @Transactional
+    public NurseryForm getNurseryFormById(Integer id){
+        return nurseryFormRepository.findById(id)
+                .orElseThrow(()-> new InvalidResourseException("Form not found with id: " + id));
     }
 }
