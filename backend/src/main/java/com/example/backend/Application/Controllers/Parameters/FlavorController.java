@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/flavors")
+@RequestMapping("/api/catalog/flavors")
 class FlavorController {
     private final FlavorService  flavorService;
     @Autowired

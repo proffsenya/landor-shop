@@ -2,11 +2,13 @@ package com.example.backend.Application.Controllers;
 
 import com.example.backend.Domain.DTOs.CartItemDTO;
 import com.example.backend.Domain.DTOs.CartResponseDTO;
+import com.example.backend.Domain.DTOs.VariantCardDTO;
 import com.example.backend.Domain.Models.Cart;
 import com.example.backend.Domain.Models.CartItem;
 import com.example.backend.Infrastructure.Configurations.CustomUserDetails;
 import com.example.backend.Infrastructure.Exceptions.InvalidRequestException;
 import com.example.backend.Infrastructure.Services.CartService;
+import com.example.backend.Infrastructure.Services.ProductService;
 import jakarta.validation.constraints.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -23,9 +25,12 @@ import java.util.List;
 @RequestMapping("/api/cart")
 public class CartController {
     private final CartService cartService;
+    private final ProductService productService;
     @Autowired
-    public CartController(CartService cartService) {
+    public CartController(CartService cartService,  ProductService productService) {
+
         this.cartService = cartService;
+        this.productService = productService;
     }
 
     public static record AddToCartRequest(Long variantId, Integer quantity) {}
@@ -96,6 +101,7 @@ public class CartController {
     }
 
     private CartItemDTO toCartItemDTO(CartItem cartItem) {
+        VariantCardDTO variantCard = productService.toVariantCardDTO(cartItem.getProductVariant());
         return new CartItemDTO(
                 cartItem.getId(),
                 cartItem.getProductVariant().getId(),
@@ -104,7 +110,8 @@ public class CartController {
                 cartItem.getCreatedAt(),
                 cartItem.getProductVariant().getProduct().getId(),
                 cartItem.getDisplayNameAtAdded(),
-                cartItem.getPriceAtAdded()
+                cartItem.getPriceAtAdded(),
+                variantCard.imageUrl()
         );
     }
 }

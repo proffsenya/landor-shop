@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/typeOfFoods")
+@RequestMapping("/api/catalog/typeOfFoods")
 class TypeOfFoodController {
     private final TypeOfFoodService  typeOfFoodService;
     @Autowired

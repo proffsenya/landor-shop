@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/breeds")
+@RequestMapping("/api/catalog/breeds")
 class BreedController {
     private final BreedsService breedsService;
     public BreedController(BreedsService breedsService) {

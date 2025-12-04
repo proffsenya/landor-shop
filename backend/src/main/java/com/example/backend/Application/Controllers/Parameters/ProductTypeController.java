@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/productTypes")
+@RequestMapping("/api/catalog/productTypes")
 class ProductTypeController {
     private final ProductTypeService productTypeService;
     public ProductTypeController(ProductTypeService productTypeService) {

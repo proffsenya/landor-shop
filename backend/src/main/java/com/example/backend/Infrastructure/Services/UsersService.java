@@ -1,5 +1,6 @@
 package com.example.backend.Infrastructure.Services;
 
+import com.example.backend.Domain.DTOs.AdminCreateUserRequestDTO;
 import com.example.backend.Domain.DTOs.ChangePasswodDTO;
 import com.example.backend.Domain.DTOs.UserProfileDTO;
 import com.example.backend.Domain.DTOs.UserUpdateDTO;
@@ -75,7 +76,9 @@ public class UsersService {
                 user.getCreatedAt(),
                 user.getUpdatedAt(),
                 user.getPhone(),
-                user.getMiddleName()
+                user.getMiddleName(),
+                user.getIsActive(),
+                user.getIsStaff()
         );
     }
 
@@ -121,5 +124,29 @@ public class UsersService {
         System.out.println("Password updated successfully");
         System.out.println("Saved user hash: " + savedUser.getPasswordHash());
         System.out.println("=== END DEBUG ===");
+    }
+
+    @Transactional
+    public UserProfileDTO createUserByAdmin(AdminCreateUserRequestDTO dto){
+        if (userRepository.findByEmail(dto.email()) != null){
+            throw new InvalidRequestException("Email already in use");
+        }
+
+        User user = new User();
+        user.setFirstName(dto.firstName());
+        user.setLastName(dto.lastName());
+        user.setMiddleName(dto.middleName());
+        user.setPhone(dto.phone());
+        user.setEmail(dto.email());
+        user.setPasswordHash(passwordEncoder.encode(dto.passwordHash()));
+        user.setCreatedAt(Instant.now());
+
+        user.setIsSuperuser(false);
+        user.setIsStaff(dto.isStaff() != null ? dto.isStaff() : false);
+        user.setIsActive(dto.isActive() != null ? dto.isActive() : false);
+
+        User savedUser = userRepository.save(user);
+
+        return toUserProfileDTO(savedUser);
     }
 }

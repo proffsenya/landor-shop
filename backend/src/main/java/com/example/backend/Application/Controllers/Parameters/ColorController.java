@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/colors")
+@RequestMapping("/api/catalog/colors")
 class ColorController {
     private final ColorService colorService;
     public ColorController(ColorService colorService) {

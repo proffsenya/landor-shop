@@ -1,5 +1,6 @@
 package com.example.backend.Application.Controllers.UserAuth;
 
+import com.example.backend.Domain.DTOs.AdminCreateUserRequestDTO;
 import com.example.backend.Domain.DTOs.ChangePasswodDTO;
 import com.example.backend.Domain.DTOs.UserProfileDTO;
 import com.example.backend.Domain.DTOs.UserUpdateDTO;
@@ -10,7 +11,9 @@ import com.example.backend.Infrastructure.Services.JWTService;
 import com.example.backend.Infrastructure.Services.UsersService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -59,6 +62,13 @@ class UserController {
     public ResponseEntity<?> deleteUser(@PathVariable Long userId) {
         usersService.deleteUser(userId);
         return ResponseEntity.noContent().build();
+    }
+
+    @PreAuthorize("hasRole('SUPERUSER')")
+    @PostMapping("/admin/create")
+    public ResponseEntity<UserProfileDTO> createUserByAdmin(@Valid @RequestBody AdminCreateUserRequestDTO adminCreateUserRequestDTO) {
+        UserProfileDTO userProfileDTO = usersService.createUserByAdmin(adminCreateUserRequestDTO);
+        return ResponseEntity.status(HttpStatus.CREATED).body(userProfileDTO);
     }
 
 
