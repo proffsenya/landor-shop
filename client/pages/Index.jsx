@@ -11,15 +11,15 @@ export default function Index() {
   return (
     <div className="flex flex-col min-h-screen bg-white">
       <Header />
-        <PageFade>
-          <main className="flex-grow">
-            <HeroBanner />
-            <Benefits />
-            <Categories />
-            <ProductsSection title="Рекомендовано для Вас" />
-            <FAQ />
-          </main>
-        </PageFade>
+      <PageFade className="flex-grow flex flex-col">
+        <main className="flex-grow">
+          <HeroBanner />
+          <Benefits />
+          <Categories />
+          <ProductsSection title="Рекомендовано для Вас" />
+          <FAQ />
+        </main>
+      </PageFade>
       <Footer />
     </div>
   );

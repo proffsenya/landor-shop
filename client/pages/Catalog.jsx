@@ -753,19 +753,16 @@ export default function Catalog() {
   // Загрузка фильтров из API
   const loadFilters = useCallback(async () => {
     try {
-      // Получаем токен для авторизации
-      const token = getAdminToken();
-      const headers = token ? { Authorization: `Bearer ${token}` } : {};
-
+      // Загружаем фильтры без токена (публичный доступ)
       const [brandsRes, flavorsRes, scentsRes, countriesRes, breedsRes, categoriesRes, typeOfFoodsRes, productTypesRes] = await Promise.all([
-        fetch("/api/brands", { headers }),
-        fetch("/api/flavors", { headers }),
-        fetch("/api/scents", { headers }),
-        fetch("/api/countries", { headers }),
-        fetch("/api/breeds", { headers }),
-        fetch("/api/categories", { headers }),
-        fetch("/api/typeOfFoods", { headers }),
-        fetch("/api/productTypes", { headers }),
+        fetch("/api/catalog/brands"),
+        fetch("/api/catalog/flavors"),
+        fetch("/api/catalog/scents"),
+        fetch("/api/catalog/countries"),
+        fetch("/api/catalog/breeds"),
+        fetch("/api/catalog/categories"),
+        fetch("/api/catalog/typeOfFoods"),
+        fetch("/api/catalog/productTypes"),
       ]);
 
       const [brands, flavors, scents, countries, breeds, categories, typeOfFoods, productTypes] = await Promise.all([
@@ -1579,7 +1576,7 @@ export default function Catalog() {
   return (
     <div className="flex flex-col min-h-screen bg-white">
       <Header />
-      <div className="flex-grow container px-4 py-8 mx-auto">
+      <div className="flex-grow flex flex-col container px-4 py-8 mx-auto">
         <BreadcrumbNav items={[
           { label: "Главная", to: "/" },
           { label: "Каталог" }

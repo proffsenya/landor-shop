@@ -1,9 +1,9 @@
 import { Link } from "react-router-dom";
 export default function Footer() {
   return (
-    <footer className="bg-[#6F2A2B] text-white py-6 sm:py-8 lg:py-12">
-      <div className="container px-3 mx-auto text-center sm:px-4">
-        <div className="grid grid-cols-1 gap-6 sm:gap-8 md:grid-cols-2 lg:grid-cols-4 justify-items-center">
+    <footer className="bg-[#6F2A2B] text-white py-6 sm:py-8 lg:py-12 w-full">
+      <div className="w-full max-w-[1600px] mx-auto px-3 sm:px-4 lg:px-6 xl:px-8">
+        <div className="grid grid-cols-1 gap-6 sm:gap-8 md:grid-cols-2 lg:grid-cols-4">
           {/* Logo and contact info */}
           <div className="text-center lg:col-span-1 sm:text-left">
             <div className="mb-4 sm:mb-6">

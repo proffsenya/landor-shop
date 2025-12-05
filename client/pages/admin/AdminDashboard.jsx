@@ -57,7 +57,7 @@ export default function AdminDashboard() {
         fetch("/api/orders", {
           headers: { Authorization: `Bearer ${adminToken}` },
         }),
-        fetch("/api/categories", {
+        fetch("/api/catalog/categories", {
           headers: { Authorization: `Bearer ${adminToken}` },
         }),
         isSuperUserFlag ? fetch("/api/users", {

@@ -69,31 +69,31 @@ export default function AdminProducts() {
         scentsRes,
         productTypesRes,
       ] = await Promise.all([
-        fetch("/api/categories", {
+        fetch("/api/catalog/categories", {
           headers: { Authorization: `Bearer ${adminToken}` },
         }),
-        fetch("/api/brands", {
+        fetch("/api/catalog/brands", {
           headers: { Authorization: `Bearer ${adminToken}` },
         }),
-        fetch("/api/breeds", {
+        fetch("/api/catalog/breeds", {
           headers: { Authorization: `Bearer ${adminToken}` },
         }),
-        fetch("/api/countries", {
+        fetch("/api/catalog/countries", {
           headers: { Authorization: `Bearer ${adminToken}` },
         }),
-        fetch("/api/typeOfFoods", {
+        fetch("/api/catalog/typeOfFoods", {
           headers: { Authorization: `Bearer ${adminToken}` },
         }),
-        fetch("/api/flavors", {
+        fetch("/api/catalog/flavors", {
           headers: { Authorization: `Bearer ${adminToken}` },
         }),
-        fetch("/api/colors", {
+        fetch("/api/catalog/colors", {
           headers: { Authorization: `Bearer ${adminToken}` },
         }),
-        fetch("/api/scents", {
+        fetch("/api/catalog/scents", {
           headers: { Authorization: `Bearer ${adminToken}` },
         }),
-        fetch("/api/productTypes", {
+        fetch("/api/catalog/productTypes", {
           headers: { Authorization: `Bearer ${adminToken}` },
         }),
       ]);
@@ -578,7 +578,7 @@ function ProductForm({
           quantityInStock: Number(formData.quantityInStock) || 0,
           isActive: formData.isActive !== undefined ? formData.isActive : true,
           isFeatured: formData.isFeatured !== undefined ? formData.isFeatured : false,
-          rating: Number(formData.rating) || 0,
+          rating: (formData.rating !== undefined && formData.rating !== null && formData.rating !== "" && !isNaN(Number(formData.rating)) && Number(formData.rating) !== 0) ? Number(formData.rating) : null,
           breedIds: Array.isArray(formData.breedIds)
             ? formData.breedIds.map(id => Number(id)).filter(id => id > 0)
             : [],
@@ -634,7 +634,7 @@ function ProductForm({
               productId: v.productId || (product ? product.id : 0),
               sku: v.sku || "",
               price: Number(v.price) || 0,
-              oldPrice: Number(v.oldPrice) || 0,
+              oldPrice: (v.oldPrice !== undefined && v.oldPrice !== null && v.oldPrice !== "" && !isNaN(Number(v.oldPrice)) && Number(v.oldPrice) !== 0) ? Number(v.oldPrice) : null,
               stock: Number(v.stock) || 0,
               weight: Number(v.weight) || 0,
               colorIds: colorObjects,
@@ -931,10 +931,11 @@ function ProductForm({
               </label>
               <Input
                 type="number"
-                value={formData.rating}
-                onChange={(e) =>
-                  setFormData({ ...formData, rating: Number(e.target.value) })
-                }
+                value={formData.rating || ""}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setFormData({ ...formData, rating: value === "" ? "" : Number(value) });
+                }}
               />
             </div>
             <div className="flex items-center gap-2">
@@ -1079,10 +1080,11 @@ function VariantForm({ variant, index, colors, scents, onChange, onRemove, isEdi
             </label>
             <Input
               type="number"
-              value={variant.oldPrice || 0}
-              onChange={(e) =>
-                onChange(index, "oldPrice", Number(e.target.value))
-              }
+              value={variant.oldPrice || ""}
+              onChange={(e) => {
+                const value = e.target.value;
+                onChange(index, "oldPrice", value === "" ? "" : Number(value));
+              }}
             />
           </div>
         )}

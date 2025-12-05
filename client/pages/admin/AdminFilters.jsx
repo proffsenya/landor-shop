@@ -13,14 +13,15 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { checkAdminAccess, getAdminToken } from "@/utils/adminAuth";
+import { ToastMotion } from "@/utils/PageAnimations";
 
 // Конфигурация типов фильтров
 const FILTER_TYPES = {
   brands: {
     label: "Бренды",
-    endpoint: "/api/brands",
-    adminEndpoint: "/api/admin/brands",
-    createEndpoint: "/api/brands", // Для POST используем обычный эндпоинт
+    endpoint: "/api/catalog/brands",
+    adminEndpoint: "/api/catalog/brands",
+    createEndpoint: "/api/catalog/brands", // Для POST используем обычный эндпоинт
     fields: [
       { key: "name", label: "Название", required: true },
       { key: "slug", label: "Slug", required: true },
@@ -28,9 +29,9 @@ const FILTER_TYPES = {
   },
   breeds: {
     label: "Породы",
-    endpoint: "/api/breeds",
-    adminEndpoint: "/api/admin/breeds",
-    createEndpoint: "/api/breeds", // Для POST используем обычный эндпоинт
+    endpoint: "/api/catalog/breeds",
+    adminEndpoint: "/api/catalog/breeds",
+    createEndpoint: "/api/catalog/breeds", // Для POST используем обычный эндпоинт
     fields: [
       { key: "name", label: "Название", required: true },
       { key: "slug", label: "Slug", required: true },
@@ -39,9 +40,9 @@ const FILTER_TYPES = {
   },
   categories: {
     label: "Категории",
-    endpoint: "/api/categories",
-    adminEndpoint: "/api/admin/categories",
-    createEndpoint: "/api/categories", // Для POST используем обычный эндпоинт
+    endpoint: "/api/catalog/categories",
+    adminEndpoint: "/api/catalog/categories",
+    createEndpoint: "/api/catalog/categories", // Для POST используем обычный эндпоинт
     fields: [
       { key: "name", label: "Название", required: true },
       { key: "slug", label: "Slug", required: true },
@@ -52,9 +53,9 @@ const FILTER_TYPES = {
   },
   colors: {
     label: "Цвета",
-    endpoint: "/api/colors",
-    adminEndpoint: "/api/admin/colors",
-    createEndpoint: "/api/colors", // Для POST используем обычный эндпоинт
+    endpoint: "/api/catalog/colors",
+    adminEndpoint: "/api/catalog/colors",
+    createEndpoint: "/api/catalog/colors", // Для POST используем обычный эндпоинт
     fields: [
       { key: "name", label: "Название", required: true },
       { key: "slug", label: "Slug", required: true },
@@ -62,9 +63,9 @@ const FILTER_TYPES = {
   },
   countries: {
     label: "Страны",
-    endpoint: "/api/countries",
-    adminEndpoint: "/api/admin/countries",
-    createEndpoint: "/api/countries", // Для POST используем обычный эндпоинт
+    endpoint: "/api/catalog/countries",
+    adminEndpoint: "/api/catalog/countries",
+    createEndpoint: "/api/catalog/countries", // Для POST используем обычный эндпоинт
     fields: [
       { key: "name", label: "Название", required: true },
       { key: "slug", label: "Slug", required: true },
@@ -72,9 +73,9 @@ const FILTER_TYPES = {
   },
   flavors: {
     label: "Вкусы",
-    endpoint: "/api/flavors",
-    adminEndpoint: "/api/admin/flavors",
-    createEndpoint: "/api/flavors", // Для POST используем обычный эндпоинт
+    endpoint: "/api/catalog/flavors",
+    adminEndpoint: "/api/catalog/flavors",
+    createEndpoint: "/api/catalog/flavors", // Для POST используем обычный эндпоинт
     fields: [
       { key: "name", label: "Название", required: true },
       { key: "canonicalName", label: "Каноническое название", required: true },
@@ -82,19 +83,19 @@ const FILTER_TYPES = {
   },
   productTypes: {
     label: "Типы продуктов",
-    endpoint: "/api/productTypes",
-    adminEndpoint: "/api/admin/producttypes",
+    endpoint: "/api/catalog/productTypes",
+    adminEndpoint: "/api/catalog/productTypes",
     fields: [
       { key: "name", label: "Название", required: true },
       { key: "slug", label: "Slug", required: true },
     ],
-    createEndpoint: "/api/productTypes", // Для создания используем обычный эндпоинт
+    createEndpoint: "/api/catalog/productTypes", // Для создания используем обычный эндпоинт
   },
   scents: {
     label: "Запахи",
-    endpoint: "/api/scents",
-    adminEndpoint: "/api/admin/scents",
-    createEndpoint: "/api/scents", // Для POST используем обычный эндпоинт
+    endpoint: "/api/catalog/scents",
+    adminEndpoint: "/api/catalog/scents",
+    createEndpoint: "/api/catalog/scents", // Для POST используем обычный эндпоинт
     fields: [
       { key: "name", label: "Название", required: true },
       { key: "slug", label: "Slug", required: true },
@@ -102,9 +103,9 @@ const FILTER_TYPES = {
   },
   typeOfFoods: {
     label: "Типы корма",
-    endpoint: "/api/typeOfFoods",
-    adminEndpoint: "/api/admin/typeoffood",
-    createEndpoint: "/api/typeOfFoods", // Для POST используем обычный эндпоинт
+    endpoint: "/api/catalog/typeOfFoods",
+    adminEndpoint: "/api/catalog/typeOfFoods",
+    createEndpoint: "/api/catalog/typeOfFoods", // Для POST используем обычный эндпоинт
     fields: [
       { key: "name", label: "Название", required: true },
       { key: "slug", label: "Slug", required: true },
@@ -122,6 +123,7 @@ export default function AdminFilters() {
   const [showForm, setShowForm] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [toast, setToast] = useState("");
 
   useEffect(() => {
     const { isSuperUser: superUser, hasAccess } = checkAdminAccess();
@@ -195,6 +197,12 @@ export default function AdminFilters() {
     }
   };
 
+  // Функция для показа toast уведомлений
+  const showToast = (message, duration = 3000) => {
+    setToast(message);
+    setTimeout(() => setToast(""), duration);
+  };
+
   // Удаление элемента
   const handleDelete = async (itemId) => {
     if (!confirm("Удалить элемент?")) return;
@@ -211,13 +219,40 @@ export default function AdminFilters() {
         loadItems(selectedFilterType);
         // Отправляем событие для обновления каталога
         window.dispatchEvent(new Event("catalog:filters-updated"));
+        showToast("Элемент успешно удален");
       } else {
         const errorText = await res.text();
-        alert(`Ошибка при удалении: ${errorText || res.statusText}`);
+        let errorMessage = errorText || res.statusText;
+        
+        // Пытаемся распарсить JSON ошибку
+        try {
+          const errorJson = JSON.parse(errorText);
+          errorMessage = errorJson.message || errorJson.error || errorMessage;
+        } catch {
+          // Если не JSON, используем текст как есть
+        }
+
+        // Проверяем, содержит ли ошибка информацию о товарах
+        const hasProductsError = 
+          errorMessage.toLowerCase().includes("товар") ||
+          errorMessage.toLowerCase().includes("product") ||
+          errorMessage.toLowerCase().includes("используется") ||
+          errorMessage.toLowerCase().includes("used") ||
+          errorMessage.toLowerCase().includes("связан") ||
+          errorMessage.toLowerCase().includes("связаны") ||
+          res.status === 400 || res.status === 409 || res.status === 422;
+
+        if (hasProductsError) {
+          // Формируем понятное сообщение об ошибке
+          const filterLabel = config.label.toLowerCase();
+          showToast(`Нельзя удалить ${filterLabel}: ${errorMessage || "элемент используется в товарах"}`, 5000);
+        } else {
+          showToast(`Ошибка при удалении: ${errorMessage}`, 4000);
+        }
       }
     } catch (e) {
       console.error("Error deleting item:", e);
-      alert("Ошибка при удалении");
+      showToast("Ошибка при удалении. Попробуйте позже.", 3000);
     }
   };
 
@@ -383,6 +418,9 @@ export default function AdminFilters() {
           </div>
         </main>
       </div>
+      
+      {/* Toast уведомления */}
+      <ToastMotion show={!!toast}>{toast}</ToastMotion>
     </div>
   );
 }
@@ -406,7 +444,7 @@ function FilterForm({ filterType, config, item, items, onClose, onSave }) {
     try {
       setCategoriesLoading(true);
       const adminToken = getAdminToken();
-      const res = await fetch("/api/categories", {
+      const res = await fetch("/api/catalog/categories", {
         headers: { Authorization: `Bearer ${adminToken}` },
       });
       if (res.ok) {

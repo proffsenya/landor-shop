@@ -43,7 +43,7 @@ export default function Categories() {
       const token = getAdminToken();
       const headers = token ? { Authorization: `Bearer ${token}` } : {};
       
-      const res = await fetch("/api/categories", { headers });
+      const res = await fetch("/api/catalog/categories", { headers });
       
       if (res.ok) {
         const data = await res.json();

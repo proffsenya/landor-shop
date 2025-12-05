@@ -3,7 +3,8 @@ import { useNavigate } from "react-router-dom";
 import AdminSidebar from "@/components/admin/AdminSidebar";
 import AdminHeader from "@/components/admin/AdminHeader";
 import { Button } from "@/components/ui/button";
-import { Shield, UserCheck, Trash2 } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Shield, UserCheck, Trash2, Plus, X } from "lucide-react";
 import { checkAdminAccess, getAdminToken } from "@/utils/adminAuth";
 
 export default function AdminUsers() {
@@ -12,6 +13,7 @@ export default function AdminUsers() {
   const [loading, setLoading] = useState(true);
   const [users, setUsers] = useState([]);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [showCreateForm, setShowCreateForm] = useState(false);
 
   useEffect(() => {
     const { isSuperUser: superUser, hasAccess } = checkAdminAccess();
@@ -114,6 +116,96 @@ export default function AdminUsers() {
     }
   };
 
+  const handleCreateUser = async (formData) => {
+    try {
+      // Получаем оба токена для проверки
+      const authToken = typeof window !== "undefined" ? localStorage.getItem("authToken") : null;
+      const adminToken = typeof window !== "undefined" ? localStorage.getItem("adminToken") : null;
+      const isSuperUserLocal = typeof window !== "undefined" ? localStorage.getItem("isSuperUser") === "true" : false;
+      
+      console.log("[AdminUsers] Token check:", {
+        hasAuthToken: !!authToken,
+        hasAdminToken: !!adminToken,
+        isSuperUser: isSuperUserLocal,
+        authTokenValue: authToken ? `${authToken.substring(0, 20)}...` : null,
+        adminTokenValue: adminToken ? `${adminToken.substring(0, 20)}...` : null,
+      });
+
+      // Используем adminToken если есть, иначе authToken
+      const tokenToUse = adminToken || (authToken && authToken !== "guest" ? authToken : null);
+      
+      if (!tokenToUse) {
+        alert("Ошибка: токен авторизации не найден. Пожалуйста, войдите заново.");
+        navigate("/admin/login");
+        return;
+      }
+
+      // Проверяем, что пользователь действительно superuser
+      const { isSuperUser: superUser } = checkAdminAccess();
+      if (!superUser) {
+        alert("Ошибка: недостаточно прав для создания пользователя. Требуется роль Super User.");
+        return;
+      }
+
+      const payload = {
+        email: formData.email.trim(),
+        firstName: formData.firstName.trim(),
+        lastName: formData.lastName.trim(),
+        middleName: formData.middleName?.trim() || "",
+        phone: formData.phone?.trim() || "",
+        passwordHash: formData.password, // Отправляем пароль как passwordHash (бэкенд должен его хешировать)
+        isStaff: true,
+        isActive: true,
+      };
+
+      console.log("[AdminUsers] Creating user with payload:", { ...payload, passwordHash: "***" });
+
+      console.log("[AdminUsers] Sending request to /api/users/admin/create with token:", tokenToUse ? `${tokenToUse.substring(0, 20)}...` : "null");
+
+      const res = await fetch("/api/users/admin/create", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${tokenToUse}`,
+        },
+        body: JSON.stringify(payload),
+      });
+
+      console.log("[AdminUsers] Response status:", res.status, res.statusText);
+
+      if (res.ok) {
+        loadUsers();
+        setShowCreateForm(false);
+        alert("Пользователь успешно создан");
+      } else {
+        const errorText = await res.text();
+        let errorMessage = `Ошибка ${res.status}`;
+        
+        if (res.status === 403) {
+          errorMessage = "Доступ запрещен. Убедитесь, что вы вошли как Super User и имеете необходимые права.";
+        } else if (res.status === 401) {
+          errorMessage = "Ошибка авторизации. Пожалуйста, войдите заново.";
+          navigate("/admin/login");
+        } else {
+          try {
+            const errorJson = JSON.parse(errorText);
+            errorMessage = errorJson.message || errorJson.error || errorMessage;
+          } catch {
+            if (errorText) {
+              errorMessage = errorText;
+            }
+          }
+        }
+        
+        console.error("[AdminUsers] Error creating user:", res.status, errorText);
+        alert(`Ошибка при создании пользователя: ${errorMessage}`);
+      }
+    } catch (e) {
+      console.error("Error creating user:", e);
+      alert(`Ошибка при создании пользователя: ${e.message || "Неизвестная ошибка"}`);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-100 flex items-center justify-center">
@@ -136,10 +228,29 @@ export default function AdminUsers() {
         />
         <main className="flex-1 p-4 sm:p-6 lg:p-8 w-full lg:w-auto">
           <div className="max-w-[1600px] mx-auto">
-            <div className="mb-4 sm:mb-6">
-              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Пользователи</h1>
-              <p className="text-sm sm:text-base text-gray-600 mt-2">Управление правами доступа пользователей</p>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4 sm:mb-6">
+              <div>
+                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Пользователи</h1>
+                <p className="text-sm sm:text-base text-gray-600 mt-2">Управление правами доступа пользователей</p>
+              </div>
+              {isSuperUser && (
+                <Button
+                  onClick={() => setShowCreateForm(true)}
+                  className="bg-[#6F2A2B] text-white hover:bg-[#5a2223] w-full sm:w-auto"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Создать пользователя
+                </Button>
+              )}
             </div>
+
+            {/* Форма создания пользователя */}
+            {showCreateForm && isSuperUser && (
+              <CreateUserForm
+                onClose={() => setShowCreateForm(false)}
+                onSubmit={handleCreateUser}
+              />
+            )}
 
             <div className="bg-white rounded-lg shadow overflow-hidden">
               <div className="overflow-x-auto">
@@ -245,6 +356,152 @@ export default function AdminUsers() {
           </div>
         </main>
       </div>
+    </div>
+  );
+}
+
+// Компонент формы создания пользователя
+function CreateUserForm({ onClose, onSubmit }) {
+  const [formData, setFormData] = useState({
+    email: "",
+    firstName: "",
+    lastName: "",
+    middleName: "",
+    phone: "",
+    password: "",
+  });
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    
+    // Валидация обязательных полей
+    if (!formData.email || !formData.firstName || !formData.lastName || !formData.password) {
+      alert("Заполните все обязательные поля: Email, Имя, Фамилия, Пароль");
+      return;
+    }
+
+    // Валидация email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email)) {
+      alert("Введите корректный email адрес");
+      return;
+    }
+
+    // Валидация пароля (минимум 6 символов)
+    if (formData.password.length < 6) {
+      alert("Пароль должен содержать минимум 6 символов");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      await onSubmit(formData);
+    } catch (e) {
+      console.error("Error in form submit:", e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="bg-white rounded-lg shadow p-6 mb-6">
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-xl font-semibold text-gray-900">Создать пользователя (Staff)</h2>
+        <button
+          onClick={onClose}
+          className="text-gray-400 hover:text-gray-600"
+        >
+          <X className="w-5 h-5" />
+        </button>
+      </div>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Email <span className="text-red-500">*</span>
+            </label>
+            <Input
+              type="email"
+              value={formData.email}
+              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+              placeholder="user@example.com"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Пароль <span className="text-red-500">*</span>
+            </label>
+            <Input
+              type="password"
+              value={formData.password}
+              onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+              placeholder="Минимум 6 символов"
+              required
+              minLength={6}
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Имя <span className="text-red-500">*</span>
+            </label>
+            <Input
+              type="text"
+              value={formData.firstName}
+              onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+              placeholder="Иван"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Фамилия <span className="text-red-500">*</span>
+            </label>
+            <Input
+              type="text"
+              value={formData.lastName}
+              onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+              placeholder="Иванов"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Отчество
+            </label>
+            <Input
+              type="text"
+              value={formData.middleName}
+              onChange={(e) => setFormData({ ...formData, middleName: e.target.value })}
+              placeholder="Иванович"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Телефон
+            </label>
+            <Input
+              type="tel"
+              value={formData.phone}
+              onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+              placeholder="+7 (999) 123-45-67"
+            />
+          </div>
+        </div>
+        <div className="flex gap-3 pt-4">
+          <Button
+            type="submit"
+            className="bg-[#6F2A2B] text-white hover:bg-[#5a2223]"
+            disabled={loading}
+          >
+            {loading ? "Создание..." : "Создать пользователя"}
+          </Button>
+          <Button type="button" onClick={onClose} variant="outline" disabled={loading}>
+            Отмена
+          </Button>
+        </div>
+      </form>
     </div>
   );
 }

@@ -5,13 +5,14 @@ import { motion, AnimatePresence } from "framer-motion";
  * Анимация появления всей страницы — плавное выцветание и лёгкий сдвиг вверх
  * Используй для контейнера всей страницы корзины или избранного
  */
-export function PageFade({ children }) {
+export function PageFade({ children, className = "" }) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: 20 }}
       transition={{ duration: 0.4, ease: "easeOut" }}
+      className={className}
     >
       {children}
     </motion.div>

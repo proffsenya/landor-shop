@@ -17,8 +17,8 @@ const NotFound = () => {
   return (
     <div className="min-h-screen flex flex-col bg-white">
       <Header />
-      <PageFade>
-        <div className="flex-1 flex items-center justify-center py-8">
+      <PageFade className="flex-grow flex flex-col">
+        <div className="flex-grow flex items-center justify-center py-8">
           <PageFade>
       <div className="text-center">
               <h1 className="text-6xl font-bold mb-4 text-[#6F2A2B]">404</h1>
