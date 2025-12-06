@@ -43,11 +43,21 @@ export default function AdminForms() {
 
     // Инициализируем систему уведомлений
     const adminToken = getAdminToken();
+    let cleanupNotifications = null;
     if (adminToken && (staff || superUser)) {
-      initNotifications(adminToken, staff, superUser).catch((e) => {
+      initNotifications(adminToken, staff, superUser).then((cleanup) => {
+        cleanupNotifications = cleanup;
+      }).catch((e) => {
         safeError("Error initializing notifications:", e);
       });
     }
+
+    // Cleanup при размонтировании
+    return () => {
+      if (cleanupNotifications) {
+        cleanupNotifications();
+      }
+    };
   }, [navigate]);
 
   const showToast = (message, type = "success") => {
@@ -216,17 +226,18 @@ function FeedbackFormsTable({ forms, currentPage, itemsPerPage, onPageChange }) 
 
   return (
     <div>
-    <div className="bg-white rounded-lg shadow overflow-hidden">
+      {/* Десктопная таблица */}
+      <div className="hidden lg:block bg-white rounded-lg shadow overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[800px]">
+          <table className="w-full">
         <thead className="bg-gray-50">
           <tr>
                 <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">ID</th>
                 <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Имя</th>
-                <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase hidden md:table-cell">Email</th>
-                <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase hidden lg:table-cell">Телефон</th>
-                <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase hidden lg:table-cell">Город</th>
-                <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase hidden xl:table-cell">Комментарий</th>
+                <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
+                <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Телефон</th>
+                <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Город</th>
+                <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Комментарий</th>
                 <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Дата</th>
           </tr>
         </thead>
@@ -242,7 +253,7 @@ function FeedbackFormsTable({ forms, currentPage, itemsPerPage, onPageChange }) 
               <tr key={form.id} className="hover:bg-gray-50 transition-colors">
                     <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-900">{form.id}</td>
                     <td className="px-3 sm:px-6 py-4 text-sm text-gray-900">{form.name || "-"}</td>
-                    <td className="px-3 sm:px-6 py-4 text-sm text-gray-500 hidden md:table-cell">
+                    <td className="px-3 sm:px-6 py-4 text-sm text-gray-500">
                   <div className="flex items-center gap-1">
                     <Mail className="w-3 h-3" />
                         <span className="truncate max-w-[150px]" title={form.email || "-"}>
@@ -250,19 +261,19 @@ function FeedbackFormsTable({ forms, currentPage, itemsPerPage, onPageChange }) 
                         </span>
                   </div>
                 </td>
-                    <td className="px-3 sm:px-6 py-4 text-sm text-gray-500 hidden lg:table-cell">
+                    <td className="px-3 sm:px-6 py-4 text-sm text-gray-500">
                   <div className="flex items-center gap-1">
                     <Phone className="w-3 h-3" />
                     {form.phone || "-"}
                   </div>
                 </td>
-                    <td className="px-3 sm:px-6 py-4 text-sm text-gray-500 hidden lg:table-cell">
+                    <td className="px-3 sm:px-6 py-4 text-sm text-gray-500">
                   <div className="flex items-center gap-1">
                     <MapPin className="w-3 h-3" />
                     {form.city || "-"}
                   </div>
                 </td>
-                    <td className="px-3 sm:px-6 py-4 text-sm text-gray-500 max-w-xs truncate hidden xl:table-cell" title={form.comment}>
+                    <td className="px-3 sm:px-6 py-4 text-sm text-gray-500 max-w-xs truncate" title={form.comment}>
                   {form.comment || "-"}
                 </td>
                     <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -292,6 +303,83 @@ function FeedbackFormsTable({ forms, currentPage, itemsPerPage, onPageChange }) 
         </tbody>
       </table>
         </div>
+      </div>
+
+      {/* Мобильные/планшетные карточки */}
+      <div className="lg:hidden space-y-4">
+        {forms.length === 0 ? (
+          <div className="bg-white rounded-lg shadow p-6 text-center text-gray-500">
+            Нет заявок
+          </div>
+        ) : (
+          paginatedForms.map((form) => (
+            <div key={form.id} className="bg-white rounded-lg shadow p-4 space-y-3">
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <h3 className="text-lg font-semibold text-gray-900">{form.name || "-"}</h3>
+                  <p className="text-xs text-gray-500 mt-1">ID: {form.id}</p>
+                </div>
+                <div className="text-xs text-gray-500 text-right">
+                  {form.createdAt
+                    ? new Date(form.createdAt).toLocaleDateString("ru-RU", {
+                        year: "numeric",
+                        month: "2-digit",
+                        day: "2-digit",
+                      })
+                    : form.created_at
+                    ? new Date(form.created_at).toLocaleDateString("ru-RU", {
+                        year: "numeric",
+                        month: "2-digit",
+                        day: "2-digit",
+                      })
+                    : "-"}
+                </div>
+              </div>
+              
+              <div className="space-y-2 pt-2 border-t border-gray-200">
+                {form.email && (
+                  <div className="flex items-start gap-2">
+                    <Mail className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <span className="text-xs text-gray-600 block">Email:</span>
+                      <span className="text-sm text-gray-900 break-all">{form.email}</span>
+                    </div>
+                  </div>
+                )}
+                
+                {form.phone && (
+                  <div className="flex items-start gap-2">
+                    <Phone className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <span className="text-xs text-gray-600 block">Телефон:</span>
+                      <span className="text-sm text-gray-900">{form.phone}</span>
+                    </div>
+                  </div>
+                )}
+                
+                {form.city && (
+                  <div className="flex items-start gap-2">
+                    <MapPin className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <span className="text-xs text-gray-600 block">Город:</span>
+                      <span className="text-sm text-gray-900">{form.city}</span>
+                    </div>
+                  </div>
+                )}
+                
+                {form.comment && (
+                  <div className="flex items-start gap-2">
+                    <FileText className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <span className="text-xs text-gray-600 block">Комментарий:</span>
+                      <span className="text-sm text-gray-900 break-words">{form.comment}</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          ))
+        )}
       </div>
       
       {forms.length > itemsPerPage && (

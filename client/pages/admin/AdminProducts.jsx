@@ -16,6 +16,7 @@ import { checkAdminAccess, getAdminToken } from "@/utils/adminAuth";
 import { handleApiError } from "@/utils/errorMessages";
 import { safeError } from "@/utils/logger";
 import { ToastMotion } from "@/utils/PageAnimations";
+import { formatWeight } from "@/utils/formatting";
 
 export default function AdminProducts() {
   const navigate = useNavigate();
@@ -274,13 +275,8 @@ export default function AdminProducts() {
                         ? `${minPrice.toFixed(2)} ₽` 
                         : `${minPrice.toFixed(2)} - ${maxPrice.toFixed(2)} ₽`;
                       
-                      // Веса (уникальные значения) - конвертируем граммы в килограммы
+                      // Веса (уникальные значения)
                       const weights = [...new Set(variants.map(v => v.weight || 0).filter(w => w > 0))];
-                      const formatWeight = (grams) => {
-                        const kg = grams / 1000;
-                        // Убираем лишние нули, но оставляем минимум один знак после запятой для дробных значений
-                        return kg % 1 === 0 ? `${kg} кг` : `${kg.toFixed(3).replace(/\.?0+$/, '')} кг`;
-                      };
                       const weightDisplay = weights.length > 0 
                         ? weights.length === 1 
                           ? formatWeight(weights[0])
@@ -424,10 +420,7 @@ export default function AdminProducts() {
                                             <div className="flex justify-between">
                                               <span>Вес:</span>
                                               <span className="font-medium">
-                                                {variant.weight ? (() => {
-                                                  const kg = variant.weight / 1000;
-                                                  return kg % 1 === 0 ? `${kg} кг` : `${kg.toFixed(3).replace(/\.?0+$/, '')} кг`;
-                                                })() : "-"}
+                                                {formatWeight(variant.weight)}
                                               </span>
                                             </div>
                                             <div className="flex justify-between">
@@ -476,11 +469,6 @@ export default function AdminProducts() {
                         ? `${minPrice.toFixed(2)} ₽` 
                         : `${minPrice.toFixed(2)} - ${maxPrice.toFixed(2)} ₽`;
                       const weights = [...new Set(variants.map(v => v.weight || 0).filter(w => w > 0))];
-                      const formatWeight = (grams) => {
-                        const kg = grams / 1000;
-                        // Убираем лишние нули, но оставляем минимум один знак после запятой для дробных значений
-                        return kg % 1 === 0 ? `${kg} кг` : `${kg.toFixed(3).replace(/\.?0+$/, '')} кг`;
-                      };
                       const weightDisplay = weights.length > 0 
                         ? weights.length === 1 
                           ? formatWeight(weights[0])
@@ -631,10 +619,7 @@ export default function AdminProducts() {
                                             <div className="flex justify-between">
                                               <span>Вес:</span>
                                               <span className="font-medium">
-                                                {variant.weight ? (() => {
-                                                  const kg = variant.weight / 1000;
-                                                  return kg % 1 === 0 ? `${kg} кг` : `${kg.toFixed(3).replace(/\.?0+$/, '')} кг`;
-                                                })() : "-"}
+                                                {formatWeight(variant.weight)}
                                               </span>
                                             </div>
                                             <div className="flex justify-between">

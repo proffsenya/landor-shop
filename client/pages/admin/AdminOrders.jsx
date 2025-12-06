@@ -35,11 +35,21 @@ export default function AdminOrders() {
 
     // Инициализируем систему уведомлений
     const adminToken = getAdminToken();
+    let cleanupNotifications = null;
     if (adminToken && (staff || superUser)) {
-      initNotifications(adminToken, staff, superUser).catch((e) => {
+      initNotifications(adminToken, staff, superUser).then((cleanup) => {
+        cleanupNotifications = cleanup;
+      }).catch((e) => {
         safeError("Error initializing notifications:", e);
       });
     }
+
+    // Cleanup при размонтировании
+    return () => {
+      if (cleanupNotifications) {
+        cleanupNotifications();
+      }
+    };
   }, [navigate]);
 
   const showToast = (message, type = "success") => {
@@ -397,9 +407,10 @@ export default function AdminOrders() {
               </label>
             </div>
 
-            <div className="bg-white rounded-lg shadow overflow-hidden">
+            {/* Десктопная таблица */}
+            <div className="hidden lg:block bg-white rounded-lg shadow overflow-hidden">
               <div className="overflow-x-auto">
-                <table className="w-full min-w-[1000px]">
+                <table className="w-full">
                 <thead className="bg-gray-50">
                   <tr>
                       <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">ID</th>
@@ -495,6 +506,100 @@ export default function AdminOrders() {
               </table>
               </div>
             </div>
+
+            {/* Мобильные/планшетные карточки */}
+            <div className="lg:hidden space-y-4">
+              {orders.length === 0 ? (
+                <div className="bg-white rounded-lg shadow p-6 text-center text-gray-500">
+                  Нет заказов
+                </div>
+              ) : (
+                orders.map((order) => (
+                  <div key={order.id} className="bg-white rounded-lg shadow p-4 space-y-3">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <h3 className="text-lg font-semibold text-gray-900">Заказ #{order.id}</h3>
+                        <p className="text-sm text-gray-500 mt-1">
+                          {new Date(order.createdAt).toLocaleDateString("ru-RU")}
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => handleOrderClick(order)}
+                        className="text-[#6F2A2B] hover:text-[#5a2223] p-1"
+                        title="Просмотр"
+                      >
+                        <Eye className="w-5 h-5" />
+                      </button>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-gray-600">Клиент:</span>
+                        <div className="text-right">
+                          <div className="text-sm font-medium text-gray-900">
+                            {formatCustomerName(order.customerSnapshot)}
+                          </div>
+                          {order.customerSnapshot?.phone && (
+                            <div className="text-xs text-gray-500 mt-1">
+                              {formatPhone(order.customerSnapshot.phone)}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-gray-600">Сумма:</span>
+                        <span className="text-sm font-medium text-gray-900">
+                          {new Intl.NumberFormat("ru-RU", {
+                            style: "currency",
+                            currency: "RUB",
+                          }).format(order.totalAmount || 0)}
+                        </span>
+                      </div>
+                      
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-gray-600">Статус оплаты:</span>
+                        <span className={`px-2 py-1 text-xs rounded-full font-medium ${
+                          order.paymentStatus?.toLowerCase() === "paid" 
+                            ? "bg-green-100 text-green-800" 
+                            : order.paymentStatus?.toLowerCase() === "refunded"
+                            ? "bg-yellow-100 text-yellow-800"
+                            : "bg-red-100 text-red-800"
+                        }`}>
+                          {formatPaymentStatus(order.paymentStatus)}
+                        </span>
+                      </div>
+                      
+                      <div className="flex flex-col gap-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm text-gray-600">Статус заказа:</span>
+                          <span className="text-sm font-medium text-gray-900">
+                            {formatOrderStatus(order.orderStatus)}
+                          </span>
+                        </div>
+                        <select
+                          value={(() => {
+                            let status = order.orderStatus;
+                            if (status && typeof status === 'object') {
+                              status = status.orderStatus || status.status;
+                            }
+                            return status ? String(status).toLowerCase().trim() : "created";
+                          })()}
+                          onChange={(e) => updateOrderStatus(order.id, e.target.value)}
+                          className="w-full text-sm px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-[#6F2A2B]"
+                        >
+                          <option value="created">Создан</option>
+                          <option value="processing">В обработке</option>
+                          <option value="shipped">Отправлен</option>
+                          <option value="delivered">Доставлен</option>
+                          <option value="cancelled">Отменен</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
             
             <ToastMotion show={toast.show} type={toast.type}>
               {toast.message}
@@ -578,13 +683,13 @@ function OrderModal({ order, loading, onClose, onUpdateStatus, onConfirmPayment 
   return (
     <div 
       onClick={onClose}
-      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4"
     >
       <div 
         onClick={(e) => e.stopPropagation()}
-        className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto"
+        className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[95vh] sm:max-h-[90vh] overflow-y-auto m-2 sm:m-4"
       >
-        <div className="p-4 sm:p-6">
+        <div className="p-3 sm:p-4 md:p-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Заказ #{order?.id || "-"}</h2>
             <button
@@ -603,8 +708,8 @@ function OrderModal({ order, loading, onClose, onUpdateStatus, onConfirmPayment 
           <div className="space-y-6">
             {/* Общая информация */}
             <div className="border-b border-[#E8E8E8] pb-4">
-              <h3 className="text-lg font-semibold text-[#1E1E1E] mb-3">Общая информация</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+              <h3 className="text-base sm:text-lg font-semibold text-[#1E1E1E] mb-3">Общая информация</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 text-sm">
                 <div>
                   <span className="text-[#6F6F6F]">Статус заказа:</span>
                   <span className="ml-2 font-medium text-[#1E1E1E]">
@@ -647,7 +752,7 @@ function OrderModal({ order, loading, onClose, onUpdateStatus, onConfirmPayment 
             {/* Информация о клиенте */}
             {order.customerSnapshot && Object.keys(order.customerSnapshot).length > 0 && (
               <div className="border-b border-[#E8E8E8] pb-4">
-                <h3 className="text-lg font-semibold text-[#1E1E1E] mb-3">Информация о клиенте</h3>
+                <h3 className="text-base sm:text-lg font-semibold text-[#1E1E1E] mb-3">Информация о клиенте</h3>
                 <div className="text-sm text-[#1E1E1E] space-y-1">
                   {order.customerSnapshot.last_name && (
                     <div><strong>Фамилия:</strong> {order.customerSnapshot.last_name}</div>
@@ -671,7 +776,7 @@ function OrderModal({ order, loading, onClose, onUpdateStatus, onConfirmPayment 
             {/* Товары в заказе */}
             {order.items && order.items.length > 0 && (
               <div className="border-b border-[#E8E8E8] pb-4">
-                <h3 className="text-lg font-semibold text-[#1E1E1E] mb-3">Товары</h3>
+                <h3 className="text-base sm:text-lg font-semibold text-[#1E1E1E] mb-3">Товары</h3>
                 <div className="space-y-3">
                   {order.items.map((item) => (
                     <div key={item.id || item.productId} className="flex justify-between items-start p-3 bg-gray-50 rounded-lg">
@@ -700,7 +805,7 @@ function OrderModal({ order, loading, onClose, onUpdateStatus, onConfirmPayment 
             {/* Адрес доставки */}
             {order.shippingAddress && Object.keys(order.shippingAddress).length > 0 && (
               <div className="border-b border-[#E8E8E8] pb-4">
-                <h3 className="text-lg font-semibold text-[#1E1E1E] mb-3">Адрес доставки</h3>
+                <h3 className="text-base sm:text-lg font-semibold text-[#1E1E1E] mb-3">Адрес доставки</h3>
                 <div className="text-sm text-[#1E1E1E] space-y-1">
                   {order.shippingAddress.name && (
                     <div><strong>Получатель:</strong> {order.shippingAddress.name}</div>
@@ -718,7 +823,7 @@ function OrderModal({ order, loading, onClose, onUpdateStatus, onConfirmPayment 
             {/* Примечания клиента */}
             {order.customerNotes && (
               <div className="border-b border-[#E8E8E8] pb-4">
-                <h3 className="text-lg font-semibold text-[#1E1E1E] mb-3">Примечания клиента</h3>
+                <h3 className="text-base sm:text-lg font-semibold text-[#1E1E1E] mb-3">Примечания клиента</h3>
                 <div className="text-sm text-[#1E1E1E] whitespace-pre-wrap">
                   {order.customerNotes}
                 </div>

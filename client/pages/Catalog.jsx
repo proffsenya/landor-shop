@@ -14,6 +14,7 @@ import { ScrollFade, StaggerParent } from "@/utils/CatalogAnimations";
 import { PageFade, ToastMotion } from "@/utils/PageAnimations";
 import { getAdminToken } from "@/utils/adminAuth";
 import { safeError, safeWarn } from "@/utils/logger";
+import { formatWeight } from "@/utils/formatting";
 
 // -------- Вспомогательные блоки ----------
 const FilterSection = memo(({ title, children, isExpanded = true }) => {
@@ -1964,7 +1965,7 @@ export default function Catalog() {
                       // Форматируем вес
                       const weightDisplay = product.weight 
                         ? (typeof product.weight === "number" 
-                          ? `${product.weight % 1 === 0 ? product.weight : product.weight.toFixed(3)} кг`
+                          ? formatWeight(product.weight)
                           : product.weight)
                         : product.weightLabel || null;
 

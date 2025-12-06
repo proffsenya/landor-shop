@@ -82,3 +82,13 @@ export const formatPhone = (value) => {
  */
 export const formatReceiver = formatName;
 
+/**
+ * Форматирование веса - просто добавляет "кг" к значению из БД
+ * @param {number|string} weightValue - Вес из базы данных
+ * @returns {string} Вес с добавлением "кг"
+ */
+export const formatWeight = (weightValue) => {
+  if (weightValue === null || weightValue === undefined || weightValue === "") return "-";
+  return `${weightValue} кг`;
+};
+

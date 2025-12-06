@@ -325,28 +325,23 @@ export async function initNotifications(adminToken, isStaff, isSuperUser) {
 
   // Функция проверки новых элементов
   const checkNotifications = async () => {
-    // Проверяем только если страница не видна (в фоне)
-    if (document.hidden) {
-      const newLastOrderDate = await checkNewOrders(adminToken, lastOrderDate);
-      if (newLastOrderDate !== lastOrderDate) {
-        lastOrderDate = newLastOrderDate;
-      }
+    const newLastOrderDate = await checkNewOrders(adminToken, lastOrderDate);
+    if (newLastOrderDate !== lastOrderDate) {
+      lastOrderDate = newLastOrderDate;
+    }
 
-      const formsResult = await checkNewForms(adminToken, lastFeedbackDate, lastNurseryDate);
-      if (formsResult.lastFeedbackDate !== lastFeedbackDate) {
-        lastFeedbackDate = formsResult.lastFeedbackDate;
-      }
-      if (formsResult.lastNurseryDate !== lastNurseryDate) {
-        lastNurseryDate = formsResult.lastNurseryDate;
-      }
+    const formsResult = await checkNewForms(adminToken, lastFeedbackDate, lastNurseryDate);
+    if (formsResult.lastFeedbackDate !== lastFeedbackDate) {
+      lastFeedbackDate = formsResult.lastFeedbackDate;
+    }
+    if (formsResult.lastNurseryDate !== lastNurseryDate) {
+      lastNurseryDate = formsResult.lastNurseryDate;
     }
   };
 
-  // Проверяем каждые 30 секунд только когда страница в фоне
+  // Проверяем каждые 30 секунд
   const intervalId = setInterval(() => {
-    if (document.hidden) {
-      checkNotifications();
-    }
+    checkNotifications();
   }, 30000);
 
   // Возвращаем функцию для очистки

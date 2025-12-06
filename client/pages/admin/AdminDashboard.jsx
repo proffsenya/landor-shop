@@ -36,14 +36,21 @@ export default function AdminDashboard() {
 
     // Инициализируем систему уведомлений
     const adminToken = getAdminToken();
+    let cleanupNotifications = null;
     if (adminToken && (staff || superUser)) {
       initNotifications(adminToken, staff, superUser).then((cleanup) => {
-        // Сохраняем функцию очистки для cleanup при размонтировании
-        return cleanup;
+        cleanupNotifications = cleanup;
       }).catch((e) => {
         safeError("Error initializing notifications:", e);
       });
     }
+
+    // Cleanup при размонтировании
+    return () => {
+      if (cleanupNotifications) {
+        cleanupNotifications();
+      }
+    };
   }, [navigate]);
 
   const loadStats = async (isSuperUserFlag = false) => {

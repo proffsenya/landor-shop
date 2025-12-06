@@ -11,6 +11,7 @@ import AccordionMotion from "@/utils/AccordionMotion";
 import { AuthToast } from "@/components/AuthToast";
 import { getAuthToken } from "@/utils/auth";
 import { safeError, safeWarn } from "@/utils/logger";
+import { formatWeight } from "@/utils/formatting";
 
 // ------------------ UI: секция-аккордеон ------------------
 const CardSection = memo(({ title, defaultOpen = false, children }) => {
@@ -187,7 +188,7 @@ const normalizeVariants = (product) => {
       const id = s(v?.id) ?? s(v?.sku) ?? `v${idx}`;
       const weightLabel =
         typeof v?.weight === "number"
-          ? `${v.weight % 1 === 0 ? v.weight : v.weight.toFixed(3)} кг`
+          ? formatWeight(v.weight)
           : s(v?.weight) ?? "—";
       const numericWeight =
         typeof v?.weight === "number"

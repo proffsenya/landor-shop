@@ -1,6 +1,7 @@
 // client/components/ProductsSection.jsx
 import { useEffect, useState } from "react";
 import ProductCard from "./ProductCard";
+import { formatWeight } from "@/utils/formatting";
 
 // ---------- utils ----------
 const todayKey = () => {
@@ -101,7 +102,7 @@ function expandProductToVariantCards(product) {
     // вес/ярлык
     const weight =
       typeof v?.weight === "number"
-        ? `${(v.weight % 1 === 0 ? v.weight : v.weight.toFixed(3))} кг`
+        ? formatWeight(v.weight)
         : v?.weight || "—";
 
     const image = resolveImageUrl(product, v);
@@ -209,7 +210,7 @@ export default function ProductsSection({ title, linkText = "Все товары
                 title: displayName,
                 price: `${price.toLocaleString("ru-RU")} ₽`,
                 stock,
-                weight: card?.weight ? `${card.weight} кг` : "—",
+                weight: card?.weight ? (typeof card.weight === "number" ? formatWeight(card.weight) : card.weight) : "—",
                 to: `/product/${encodeURIComponent(productId)}?variant=${encodeURIComponent(variantId)}`,
               };
             })

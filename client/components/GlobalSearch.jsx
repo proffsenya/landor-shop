@@ -4,6 +4,7 @@ import { Search } from "lucide-react";
 import useDebouncedValue from "@/hooks/useDebouncedValue";
 import { localSearch as originalLocalSearch } from "@/utils/localSearch";
 import { getAuthToken } from "@/utils/auth";
+import { formatWeight } from "@/utils/formatting";
 
 // Форматирование цены
 const formatPrice = (price) => {
@@ -343,10 +344,10 @@ export default function GlobalSearch({
                 // Определяем вес - приоритет weightLabel, потом weight
                 let weightDisplay = "";
                 if (it.weightLabel) {
-                  weightDisplay = typeof it.weightLabel === "string" ? it.weightLabel : `${it.weightLabel} кг`;
+                  weightDisplay = typeof it.weightLabel === "string" ? it.weightLabel : formatWeight(it.weightLabel);
                 } else if (it.weight) {
                   if (typeof it.weight === "number") {
-                    weightDisplay = `${it.weight % 1 === 0 ? it.weight : it.weight.toFixed(3)} кг`;
+                    weightDisplay = formatWeight(it.weight);
                   } else {
                     weightDisplay = it.weight;
                   }

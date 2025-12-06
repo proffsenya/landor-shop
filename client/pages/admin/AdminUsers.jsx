@@ -14,6 +14,7 @@ import { ToastMotion } from "@/utils/PageAnimations";
 export default function AdminUsers() {
   const navigate = useNavigate();
   const [isSuperUser, setIsSuperUser] = useState(false);
+  const [isStaff, setIsStaff] = useState(false);
   const [loading, setLoading] = useState(true);
   const [users, setUsers] = useState([]);
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -21,7 +22,7 @@ export default function AdminUsers() {
   const [toast, setToast] = useState({ message: "", type: "success", show: false });
 
   useEffect(() => {
-    const { isSuperUser: superUser, hasAccess } = checkAdminAccess();
+    const { isSuperUser: superUser, isStaff: staff, hasAccess } = checkAdminAccess();
 
     if (!hasAccess || !superUser) {
       navigate("/admin/login");
@@ -29,6 +30,7 @@ export default function AdminUsers() {
     }
 
     setIsSuperUser(superUser);
+    setIsStaff(staff);
     loadUsers();
   }, [navigate]);
 
@@ -221,7 +223,7 @@ export default function AdminUsers() {
                 <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Пользователи</h1>
                 <p className="text-sm sm:text-base text-gray-600 mt-2">Управление правами доступа пользователей</p>
               </div>
-              {isSuperUser && (
+              {isSuperUser && !isStaff && (
                 <Button
                   onClick={() => setShowCreateForm(true)}
                   className="bg-[#6F2A2B] text-white hover:bg-[#5a2223] w-full sm:w-auto"
@@ -233,23 +235,24 @@ export default function AdminUsers() {
             </div>
 
             {/* Форма создания пользователя */}
-            {showCreateForm && isSuperUser && (
+            {showCreateForm && isSuperUser && !isStaff && (
               <CreateUserForm
                 onClose={() => setShowCreateForm(false)}
                 onSubmit={handleCreateUser}
               />
             )}
 
-            <div className="bg-white rounded-lg shadow overflow-hidden">
+            {/* Десктопная таблица */}
+            <div className="hidden lg:block bg-white rounded-lg shadow overflow-hidden">
               <div className="overflow-x-auto">
-                <table className="w-full min-w-[900px]">
+                <table className="w-full">
                 <thead className="bg-gray-50">
                   <tr>
                       <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">№</th>
                       <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
-                      <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase hidden md:table-cell">ФИО</th>
-                      <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase hidden lg:table-cell">Телефон</th>
-                      <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase hidden lg:table-cell">Дата регистрации</th>
+                      <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">ФИО</th>
+                      <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Телефон</th>
+                      <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Дата регистрации</th>
                       <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Staff</th>
                       <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Super User</th>
                       <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Действия</th>
@@ -271,13 +274,13 @@ export default function AdminUsers() {
                               {user.email || "-"}
                             </span>
                           </td>
-                          <td className="px-3 sm:px-6 py-4 text-sm text-gray-500 hidden md:table-cell">
+                          <td className="px-3 sm:px-6 py-4 text-sm text-gray-500">
                           {user.firstName && user.lastName
                             ? `${user.firstName} ${user.lastName}${user.middleName ? ` ${user.middleName}` : ""}`
                             : user.firstName || user.lastName || "-"}
                         </td>
-                          <td className="px-3 sm:px-6 py-4 text-sm text-gray-500 hidden lg:table-cell">{user.phone || "-"}</td>
-                          <td className="px-3 sm:px-6 py-4 text-sm text-gray-500 hidden lg:table-cell">
+                          <td className="px-3 sm:px-6 py-4 text-sm text-gray-500">{user.phone || "-"}</td>
+                          <td className="px-3 sm:px-6 py-4 text-sm text-gray-500">
                           {user.createdAt
                             ? new Date(user.createdAt).toLocaleDateString("ru-RU")
                             : "-"}
@@ -297,15 +300,15 @@ export default function AdminUsers() {
                           </span>
                         </td>
                           <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm">
-                            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-1 sm:gap-2">
+                            <div className="flex items-center gap-2">
                               {!user.isSuperUser && (
                                 <button
                                   onClick={() => handleDeleteUser(user.userId)}
-                                  className="px-2 sm:px-3 py-1 rounded text-xs font-medium transition-colors bg-red-100 text-red-700 hover:bg-red-200 flex items-center justify-center gap-1"
+                                  className="px-3 py-1 rounded text-xs font-medium transition-colors bg-red-100 text-red-700 hover:bg-red-200 flex items-center justify-center gap-1"
                                   title="Удалить пользователя"
                                 >
                                   <Trash2 className="w-3 h-3" />
-                                  <span className="hidden sm:inline">Удалить</span>
+                                  <span>Удалить</span>
                                 </button>
                               )}
                             </div>
@@ -316,6 +319,75 @@ export default function AdminUsers() {
                 </tbody>
               </table>
               </div>
+            </div>
+
+            {/* Мобильные/планшетные карточки */}
+            <div className="lg:hidden space-y-4">
+              {users.length === 0 ? (
+                <div className="bg-white rounded-lg shadow p-6 text-center text-gray-500">
+                  Нет пользователей
+                </div>
+              ) : (
+                users.map((user, index) => (
+                  <div key={user.userId || user.email || index} className="bg-white rounded-lg shadow p-4 space-y-3">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <h3 className="text-lg font-semibold text-gray-900">
+                          {user.firstName && user.lastName
+                            ? `${user.firstName} ${user.lastName}${user.middleName ? ` ${user.middleName}` : ""}`
+                            : user.email || `Пользователь #${index + 1}`}
+                        </h3>
+                        <p className="text-sm text-gray-600 mt-1 break-all">{user.email || "-"}</p>
+                      </div>
+                      {!user.isSuperUser && (
+                        <button
+                          onClick={() => handleDeleteUser(user.userId)}
+                          className="p-2 rounded text-red-700 hover:bg-red-50 transition-colors"
+                          title="Удалить пользователя"
+                        >
+                          <Trash2 className="w-5 h-5" />
+                        </button>
+                      )}
+                    </div>
+                    
+                    <div className="space-y-2 pt-2 border-t border-gray-200">
+                      {user.phone && (
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm text-gray-600">Телефон:</span>
+                          <span className="text-sm text-gray-900">{user.phone}</span>
+                        </div>
+                      )}
+                      
+                      {user.createdAt && (
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm text-gray-600">Дата регистрации:</span>
+                          <span className="text-sm text-gray-900">
+                            {new Date(user.createdAt).toLocaleDateString("ru-RU")}
+                          </span>
+                        </div>
+                      )}
+                      
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-gray-600">Staff:</span>
+                        <span className={`px-2 py-1 text-xs rounded-full ${
+                          user.isStaff ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"
+                        }`}>
+                          {user.isStaff ? "Да" : "Нет"}
+                        </span>
+                      </div>
+                      
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-gray-600">Super User:</span>
+                        <span className={`px-2 py-1 text-xs rounded-full ${
+                          user.isSuperUser ? "bg-purple-100 text-purple-800" : "bg-gray-100 text-gray-800"
+                        }`}>
+                          {user.isSuperUser ? "Да" : "Нет"}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </div>
         </main>

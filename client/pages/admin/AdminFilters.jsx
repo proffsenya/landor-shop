@@ -332,60 +332,125 @@ export default function AdminFilters() {
                 ) : items.length === 0 ? (
                   <div className="p-8 text-center text-gray-500">Нет элементов</div>
                 ) : (
-                  <div className="overflow-x-auto">
-                    <table className="w-full min-w-[600px]">
-                      <thead className="bg-gray-50">
-                        <tr>
-                          <th className="px-3 py-3 text-xs font-medium text-left text-gray-500 uppercase sm:px-6">ID</th>
-                          <th className="px-3 py-3 text-xs font-medium text-left text-gray-500 uppercase sm:px-6">Название</th>
-                          {config.fields.some(f => f.key === "slug") && (
-                          <th className="hidden px-3 py-3 text-xs font-medium text-left text-gray-500 uppercase sm:px-6 md:table-cell">Slug</th>
-                          )}
-                          {config.fields.some(f => f.key === "canonicalName") && (
-                            <th className="hidden px-3 py-3 text-xs font-medium text-left text-gray-500 uppercase sm:px-6 md:table-cell">Каноническое название</th>
-                          )}
-                          {config.fields.some(f => f.key === "isActive") && (
-                            <th className="px-3 py-3 text-xs font-medium text-left text-gray-500 uppercase sm:px-6">Активна</th>
-                          )}
-                          <th className="px-3 py-3 text-xs font-medium text-center text-gray-500 uppercase sm:px-6">Действия</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-200">
-                        {items.map((item) => (
-                          <tr key={item.id} className="transition-colors hover:bg-gray-50">
-                            <td className="px-3 py-4 text-sm text-gray-900 sm:px-6 whitespace-nowrap">{item.id}</td>
-                            <td className="px-3 py-4 text-sm text-gray-900 sm:px-6">{item.name || "-"}</td>
+                  <>
+                    {/* Десктопная таблица */}
+                    <div className="hidden lg:block overflow-x-auto">
+                      <table className="w-full">
+                        <thead className="bg-gray-50">
+                          <tr>
+                            <th className="px-3 py-3 text-xs font-medium text-left text-gray-500 uppercase sm:px-6">ID</th>
+                            <th className="px-3 py-3 text-xs font-medium text-left text-gray-500 uppercase sm:px-6">Название</th>
                             {config.fields.some(f => f.key === "slug") && (
-                            <td className="hidden px-3 py-4 text-sm text-gray-500 sm:px-6 md:table-cell">{item.slug || "-"}</td>
+                            <th className="px-3 py-3 text-xs font-medium text-left text-gray-500 uppercase sm:px-6">Slug</th>
                             )}
                             {config.fields.some(f => f.key === "canonicalName") && (
-                              <td className="hidden px-3 py-4 text-sm text-gray-500 sm:px-6 md:table-cell">{item.canonicalName || "-"}</td>
+                              <th className="px-3 py-3 text-xs font-medium text-left text-gray-500 uppercase sm:px-6">Каноническое название</th>
                             )}
                             {config.fields.some(f => f.key === "isActive") && (
-                              <td className="px-3 py-4 sm:px-6 whitespace-nowrap">
+                              <th className="px-3 py-3 text-xs font-medium text-left text-gray-500 uppercase sm:px-6">Активна</th>
+                            )}
+                            <th className="px-3 py-3 text-xs font-medium text-center text-gray-500 uppercase sm:px-6">Действия</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-200">
+                          {items.map((item) => (
+                            <tr key={item.id} className="transition-colors hover:bg-gray-50">
+                              <td className="px-3 py-4 text-sm text-gray-900 sm:px-6 whitespace-nowrap">{item.id}</td>
+                              <td className="px-3 py-4 text-sm text-gray-900 sm:px-6">{item.name || "-"}</td>
+                              {config.fields.some(f => f.key === "slug") && (
+                              <td className="px-3 py-4 text-sm text-gray-500 sm:px-6">{item.slug || "-"}</td>
+                              )}
+                              {config.fields.some(f => f.key === "canonicalName") && (
+                                <td className="px-3 py-4 text-sm text-gray-500 sm:px-6">{item.canonicalName || "-"}</td>
+                              )}
+                              {config.fields.some(f => f.key === "isActive") && (
+                                <td className="px-3 py-4 sm:px-6 whitespace-nowrap">
+                                  <span className={`px-2 py-1 text-xs rounded-full ${
+                                    item.isActive ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"
+                                  }`}>
+                                    {item.isActive ? "Да" : "Нет"}
+                                  </span>
+                                </td>
+                              )}
+                              <td className="px-3 py-4 text-sm sm:px-6 whitespace-nowrap">
+                                <div className="flex items-center justify-center gap-2 sm:gap-4">
+                                  <button
+                                    onClick={() => handleEdit(item)}
+                                    className="text-blue-600 hover:text-blue-800"
+                                    title="Редактировать"
+                                  >
+                                    <Edit className="w-4 h-4" />
+                                  </button>
+                                  <button
+                                    onClick={() => handleDelete(item.id)}
+                                    className="text-red-600 hover:text-red-800"
+                                    title="Удалить"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    {/* Мобильные/планшетные карточки */}
+                    <div className="lg:hidden space-y-4 p-4">
+                      {items.map((item) => (
+                        <div key={item.id} className="bg-white border border-gray-200 rounded-lg p-4 space-y-3">
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <h3 className="text-lg font-semibold text-gray-900">{item.name || "-"}</h3>
+                              <p className="text-xs text-gray-500 mt-1">ID: {item.id}</p>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <button
+                                onClick={() => handleEdit(item)}
+                                className="p-2 text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                                title="Редактировать"
+                              >
+                                <Edit className="w-5 h-5" />
+                              </button>
+                              <button
+                                onClick={() => handleDelete(item.id)}
+                                className="p-2 text-red-600 hover:bg-red-50 rounded transition-colors"
+                                title="Удалить"
+                              >
+                                <Trash2 className="w-5 h-5" />
+                              </button>
+                            </div>
+                          </div>
+                          
+                          <div className="space-y-2 pt-2 border-t border-gray-200">
+                            {config.fields.some(f => f.key === "slug") && item.slug && (
+                              <div className="flex items-center justify-between">
+                                <span className="text-sm text-gray-600">Slug:</span>
+                                <span className="text-sm text-gray-900 break-all text-right ml-2">{item.slug}</span>
+                              </div>
+                            )}
+                            {config.fields.some(f => f.key === "canonicalName") && item.canonicalName && (
+                              <div className="flex items-center justify-between">
+                                <span className="text-sm text-gray-600">Каноническое название:</span>
+                                <span className="text-sm text-gray-900 break-all text-right ml-2">{item.canonicalName}</span>
+                              </div>
+                            )}
+                            {config.fields.some(f => f.key === "isActive") && (
+                              <div className="flex items-center justify-between">
+                                <span className="text-sm text-gray-600">Активна:</span>
                                 <span className={`px-2 py-1 text-xs rounded-full ${
                                   item.isActive ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"
                                 }`}>
                                   {item.isActive ? "Да" : "Нет"}
                                 </span>
-                              </td>
-                            )}
-                            <td className="px-3 py-4 text-sm sm:px-6 whitespace-nowrap">
-                              <div className="flex items-center justify-center gap-2 sm:gap-4">
-                                <button
-                                  onClick={() => handleDelete(item.id)}
-                                  className="text-red-600 hover:text-red-800"
-                                  title="Удалить"
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                </button>
                               </div>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </>
                 )}
               </div>
             )}
@@ -593,7 +658,7 @@ function FilterForm({ filterType, config, item, items, onClose, onSave, showToas
       });
 
       if (res.ok) {
-        showToast(editingItem ? "Элемент успешно обновлен" : "Элемент успешно создан");
+        showToast(item ? "Элемент успешно обновлен" : "Элемент успешно создан");
         onSave();
         // Отправляем событие для обновления каталога
         window.dispatchEvent(new Event("catalog:filters-updated"));

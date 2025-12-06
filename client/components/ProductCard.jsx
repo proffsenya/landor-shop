@@ -12,6 +12,7 @@ const STORAGE_FAVS = (authToken) => `favs:variants:${authToken || "guest"}`;
 
 import { getAuthToken } from "@/utils/auth";
 import { safeWarn } from "@/utils/logger";
+import { formatWeight } from "@/utils/formatting";
 
 // --- ДОБАВЬ ЭТИ ХЕЛПЕРЫ ВЫШЕ (рядом с loadSet/saveSet) ---
 async function safeText(res) {
@@ -411,7 +412,7 @@ const handleToggleFavorite = useCallback(async (e) => {
               {weight && (
                 <p className="text-[#8B8B8B] text-xs sm:text-sm mb-4"> 
                   {typeof weight === "number" 
-                    ? ` ${weight % 1 === 0 ? weight : weight.toFixed(3)} кг`
+                    ? formatWeight(weight)
                     : weight}
                 </p>
               )}
