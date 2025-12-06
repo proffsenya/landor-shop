@@ -55,13 +55,13 @@ public class User {
     @Column(name = "updated_at")
     private Instant updatedAt;
 
-    @OneToOne(mappedBy = "user", fetch = FetchType.LAZY)
+    @OneToOne(mappedBy = "user", fetch = FetchType.LAZY, orphanRemoval = true)
     private Cart cart;
 
-    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY, orphanRemoval = true)
     private Set<Order> orders = new LinkedHashSet<>();
 
-    @OneToMany
+    @OneToMany(orphanRemoval = true)
     @JoinColumn(name = "user_id")
     private Set<Favorite> favorites = new LinkedHashSet<>();
 
