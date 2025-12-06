@@ -477,12 +477,12 @@ export default function Cart() {
 
       // Маппинг способа оплаты для API (передаем строковые значения как отображаются пользователю)
       const paymentMethodMap = {
-        cash: "наличными",
+        cash: "Наличными",
         sbp: "СБП",
         requisites: "По реквизитам"
       };
       
-      const apiPaymentMethod = paymentMethodMap[payMethod] || "наличными";
+      const apiPaymentMethod = paymentMethodMap[payMethod] || "Наличными";
 
       const requestBody = {
         cartItemIds: cartItemIds,

@@ -56,10 +56,24 @@ export default function AdminOrders() {
         const data = await res.json();
         const ordersList = Array.isArray(data) ? data : [];
         // Нормализуем статусы заказов при загрузке
-        const normalizedOrders = ordersList.map(order => ({
-          ...order,
-          orderStatus: order.orderStatus ? String(order.orderStatus).trim().replace(/^["']|["']$/g, '') : order.orderStatus
-        }));
+        const normalizedOrders = ordersList.map(order => {
+          let status = order.orderStatus;
+          
+          // Если статус - это объект, извлекаем значение
+          if (status && typeof status === 'object') {
+            status = status.orderStatus || status.status || null;
+          }
+          
+          // Если статус - это строка, очищаем от кавычек
+          if (status && typeof status === 'string') {
+            status = status.trim().replace(/^["']|["']$/g, '');
+          }
+          
+          return {
+            ...order,
+            orderStatus: status || order.orderStatus
+          };
+        });
         setOrders(normalizedOrders);
       } else {
         safeError("Failed to load orders:", res.status);
@@ -85,8 +99,14 @@ export default function AdminOrders() {
   const formatOrderStatus = (status) => {
     if (!status) return "-";
     
-    // Убираем кавычки, если они есть
-    let cleanStatus = String(status).trim();
+    // Если статус - это объект, извлекаем значение
+    let cleanStatus = status;
+    if (typeof status === 'object' && status !== null) {
+      cleanStatus = status.orderStatus || status.status || String(status);
+    }
+    
+    // Преобразуем в строку и убираем кавычки, если они есть
+    cleanStatus = String(cleanStatus).trim();
     if (cleanStatus.startsWith('"') && cleanStatus.endsWith('"')) {
       cleanStatus = cleanStatus.slice(1, -1);
     }
@@ -112,6 +132,30 @@ export default function AdminOrders() {
     return translated;
   };
 
+  // Форматирование статуса оплаты
+  const formatPaymentStatus = (status) => {
+    if (!status) return "-";
+    
+    // Убираем кавычки, если они есть
+    let cleanStatus = String(status).trim();
+    if (cleanStatus.startsWith('"') && cleanStatus.endsWith('"')) {
+      cleanStatus = cleanStatus.slice(1, -1);
+    }
+    if (cleanStatus.startsWith("'") && cleanStatus.endsWith("'")) {
+      cleanStatus = cleanStatus.slice(1, -1);
+    }
+    
+    const normalizedStatus = cleanStatus.toLowerCase().trim();
+    const statusMap = {
+      paid: "Оплачен",
+      refunded: "Возвращен",
+      unpaid: "Не оплачен",
+    };
+    
+    const translated = statusMap[normalizedStatus];
+    return translated || cleanStatus || "-";
+  };
+
   const loadUnpaidOrders = async () => {
     try {
       const adminToken = getAdminToken();
@@ -123,10 +167,24 @@ export default function AdminOrders() {
         const data = await res.json();
         const ordersList = Array.isArray(data) ? data : [];
         // Нормализуем статусы заказов при загрузке
-        const normalizedOrders = ordersList.map(order => ({
-          ...order,
-          orderStatus: order.orderStatus ? String(order.orderStatus).trim().replace(/^["']|["']$/g, '') : order.orderStatus
-        }));
+        const normalizedOrders = ordersList.map(order => {
+          let status = order.orderStatus;
+          
+          // Если статус - это объект, извлекаем значение
+          if (status && typeof status === 'object') {
+            status = status.orderStatus || status.status || null;
+          }
+          
+          // Если статус - это строка, очищаем от кавычек
+          if (status && typeof status === 'string') {
+            status = status.trim().replace(/^["']|["']$/g, '');
+          }
+          
+          return {
+            ...order,
+            orderStatus: status || order.orderStatus
+          };
+        });
         setOrders(normalizedOrders);
       } else {
         safeError("Failed to load unpaid orders:", res.status);
@@ -143,13 +201,13 @@ export default function AdminOrders() {
   const updateOrderStatus = async (orderId, newStatus) => {
     try {
       const adminToken = getAdminToken();
-      const res = await fetch(`/api/payments/${orderId}/details`, {
-        method: "POST",
+      const res = await fetch(`/api/orders/${orderId}`, {
+        method: "PUT",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${adminToken}`,
         },
-        body: JSON.stringify({ orderStatus: newStatus }),
+        body: JSON.stringify(newStatus),
       });
 
       if (res.ok) {
@@ -284,13 +342,14 @@ export default function AdminOrders() {
 
             <div className="bg-white rounded-lg shadow overflow-hidden">
               <div className="overflow-x-auto">
-                <table className="w-full min-w-[800px]">
+                <table className="w-full min-w-[1000px]">
                 <thead className="bg-gray-50">
                   <tr>
                       <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">ID</th>
                       <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Дата</th>
                       <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Клиент</th>
                       <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Сумма</th>
+                      <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Статус оплаты</th>
                       <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Статус</th>
                       <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Действия</th>
                   </tr>
@@ -298,7 +357,7 @@ export default function AdminOrders() {
                 <tbody className="divide-y divide-gray-200">
                   {orders.length === 0 ? (
                     <tr>
-                        <td colSpan="6" className="px-3 sm:px-6 py-4 text-center text-gray-500">
+                        <td colSpan="7" className="px-3 sm:px-6 py-4 text-center text-gray-500">
                         Нет заказов
                       </td>
                     </tr>
@@ -328,12 +387,30 @@ export default function AdminOrders() {
                           }).format(order.totalAmount || 0)}
                         </td>
                           <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
+                            <span className={`px-2 py-1 text-xs rounded-full font-medium ${
+                              order.paymentStatus?.toLowerCase() === "paid" 
+                                ? "bg-green-100 text-green-800" 
+                                : order.paymentStatus?.toLowerCase() === "refunded"
+                                ? "bg-yellow-100 text-yellow-800"
+                                : "bg-red-100 text-red-800"
+                            }`}>
+                              {formatPaymentStatus(order.paymentStatus)}
+                            </span>
+                          </td>
+                          <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center gap-2">
                             <span className="text-xs sm:text-sm text-gray-700 min-w-[100px] font-medium">
                               {formatOrderStatus(order.orderStatus)}
                             </span>
                           <select
-                            value={order.orderStatus?.toLowerCase() || "created"}
+                            value={(() => {
+                              let status = order.orderStatus;
+                              // Если статус - это объект, извлекаем значение
+                              if (status && typeof status === 'object') {
+                                status = status.orderStatus || status.status;
+                              }
+                              return status ? String(status).toLowerCase().trim() : "created";
+                            })()}
                             onChange={(e) => updateOrderStatus(order.id, e.target.value)}
                               className="text-xs sm:text-sm px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-[#6F2A2B] w-full sm:w-auto"
                           >
