@@ -54,7 +54,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                         (path.equals("/api/products") && "POST".equalsIgnoreCase(method)) ||
                         path.startsWith("/api/auth/") ||
                         path.startsWith("/swagger") || path.startsWith("/v3/api-docs") ||
-                        path.startsWith("/error") ||
+                        path.startsWith("/error") || path.startsWith("/api/admin")||
                         path.startsWith("/api/products/save-image-alone");
     }
 
