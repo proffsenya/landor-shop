@@ -15,7 +15,7 @@ export default function HeroBanner() {
       showContent: true,
     },
     {
-      image: "/banner.svg",
+      image: "/banner4.svg",
       title: "",
       heading: "",
       buttonText: "",
@@ -53,7 +53,7 @@ export default function HeroBanner() {
         {/* Баннер показывается только на lg и выше */}
         <div className="relative hidden w-full overflow-hidden lg:block">
           {/* Карусель */}
-          <div className="relative h-[500px] xl:h-[650px] 2xl:h-[750px]">
+          <div className="relative h-[500px] xl:h-[500px] 2xl:h-[750px]">
             {banners.map((banner, index) => (
               <div
                 key={index}
