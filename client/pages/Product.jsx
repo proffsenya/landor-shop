@@ -10,6 +10,7 @@ import { PageFade, ToastMotion } from "@/utils/PageAnimations";
 import AccordionMotion from "@/utils/AccordionMotion";
 import { AuthToast } from "@/components/AuthToast";
 import { getAuthToken } from "@/utils/auth";
+import { safeError, safeWarn } from "@/utils/logger";
 
 // ------------------ UI: секция-аккордеон ------------------
 const CardSection = memo(({ title, defaultOpen = false, children }) => {
@@ -69,7 +70,7 @@ async function apiDeleteFromCart(variantId, authToken) {
   const vId = Number(variantId);
   
   if (!Number.isFinite(vId)) {
-    console.warn("[cart] variantId невалиден:", variantId);
+    safeWarn("[cart] variantId невалиден:", variantId);
     return false;
   }
 
@@ -83,14 +84,14 @@ async function apiDeleteFromCart(variantId, authToken) {
       }),
     });
     if (r.ok) return true;
-    console.warn("DELETE /api/cart/:variantId ->", r.status, await safeText(r));
-  } catch (e) { console.warn("cart delete path err", e); }
+    safeWarn("DELETE /api/cart/:variantId ->", r.status, await safeText(r));
+  } catch (e) { safeWarn("cart delete path err", e); }
 
   try {
     const r = await fetch(`/api/cart?variantId=${encodeURIComponent(vId)}`, { method: "DELETE", headers });
     if (r.ok) return true;
-    console.warn("DELETE /api/cart?variantId ->", r.status, await safeText(r));
-  } catch (e) { console.warn("cart delete query err", e); }
+    safeWarn("DELETE /api/cart?variantId ->", r.status, await safeText(r));
+  } catch (e) { safeWarn("cart delete query err", e); }
 
   try {
     const r = await fetch(`/api/cart`, {
@@ -99,8 +100,8 @@ async function apiDeleteFromCart(variantId, authToken) {
       body: JSON.stringify({ variantId: vId, quantity: 1 })
     });
     if (r.ok) return true;
-    console.warn("DELETE /api/cart body ->", r.status, await safeText(r));
-  } catch (e) { console.warn("cart delete body err", e); }
+    safeWarn("DELETE /api/cart body ->", r.status, await safeText(r));
+  } catch (e) { safeWarn("cart delete body err", e); }
 
   return false;
 }
@@ -240,7 +241,7 @@ async function fetchImageUrl(productId, imageId, token) {
       try {
         body = await res.text();
       } catch {}
-      console.warn("[images]", res.status, res.url, body?.slice(0, 300));
+      safeWarn("[images]", res.status, res.url, body?.slice(0, 300));
       const fb = "/korm1.svg";
       imageCache.set(cacheKey, fb);
       return fb;
@@ -248,7 +249,7 @@ async function fetchImageUrl(productId, imageId, token) {
     const blob = await res.blob();
     const ct = res.headers.get("content-type") || blob.type || "";
     if (!ct.startsWith("image/")) {
-      console.warn(
+      safeWarn(
         `[images] not image content for id=${imageId}, content-type=${ct}`
       );
       const fb = "/korm1.svg";
@@ -259,7 +260,7 @@ async function fetchImageUrl(productId, imageId, token) {
     imageCache.set(cacheKey, url);
     return url;
   } catch (e) {
-    console.warn("[images] error", e);
+    safeWarn("[images] error", e);
     const fb = "/korm1.svg";
     imageCache.set(cacheKey, fb);
     return fb;
@@ -383,7 +384,7 @@ export default function Product() {
         );
         setSelectedImageIdx(0);
       } catch (e) {
-        console.warn("gallery load error:", e);
+        safeWarn("gallery load error:", e);
         if (!mounted) return;
         setGallery([
           { id: "ph", url: "/korm1.svg", isMain: true, altText: "image" },
@@ -544,13 +545,13 @@ export default function Product() {
 
       if (!res.ok) {
         const text = await res.text().catch(() => "");
-        console.warn("Ошибка при установке количества:", res.status, text);
+        safeWarn("Ошибка при установке количества:", res.status, text);
         return false;
       }
 
       return true;
     } catch (e) {
-      console.warn("Ошибка запроса:", e);
+      safeWarn("Ошибка запроса:", e);
       return false;
     }
   };
@@ -643,7 +644,7 @@ export default function Product() {
         setQty(1);
         showToast("Товар добавлен в корзину");
       } catch (err) {
-        console.warn("Ошибка при добавлении в корзину:", err);
+        safeWarn("Ошибка при добавлении в корзину:", err);
         if (!handleApiError(err, "Не удалось добавить в корзину")) {
         showToast("Не удалось добавить в корзину", 2000);
         }
@@ -666,7 +667,7 @@ export default function Product() {
       } catch {}
         showToast("Товар удалён из корзины");
       } else {
-        console.warn("Не удалось удалить из корзины");
+        safeWarn("Не удалось удалить из корзины");
         showToast("Не получилось удалить. Повторите позже", 2000);
       }
       setAdding(false);
@@ -734,7 +735,7 @@ export default function Product() {
         setIsFav(true);
       }
       saveSet(favKey, rollback);
-      console.warn("[favorites] api error:", e);
+      safeWarn("[favorites] api error:", e);
       showToast("Не удалось изменить избранное", 2000);
     }
   };

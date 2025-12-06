@@ -14,6 +14,7 @@ import { Building2, Truck, Users, CheckCircle2 } from "lucide-react";
 import { getAuthToken } from "@/utils/auth";
 import { validateName, validateEmail, validatePhone } from "@/utils/validation";
 import { formatName, formatPhone } from "@/utils/formatting";
+import { safeError } from "@/utils/logger";
 
 export default function Cooperation() {
   const [formData, setFormData] = useState({
@@ -163,7 +164,7 @@ export default function Cooperation() {
       
       showToast("Спасибо! Наш специалист свяжется с вами в ближайшее время.");
     } catch (error) {
-      console.error("Error submitting form:", error);
+      safeError("Error submitting form:", error);
       // Проверяем, не 401 ли это
       if (error?.message && (error.message.includes("401") || error.message.includes("Unauthorized"))) {
         setAuthToastMessage("Для отправки формы необходимо авторизоваться");

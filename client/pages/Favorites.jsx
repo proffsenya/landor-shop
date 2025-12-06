@@ -10,6 +10,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { AuthToast } from "@/components/AuthToast";
 
 import { getAuthToken } from "@/utils/auth";
+import { safeError, safeWarn } from "@/utils/logger";
 
 const favsKeyByToken = (token) => `favs:variants:${token || "guest"}`;
 
@@ -65,7 +66,6 @@ export default function Favorites() {
         // ВАЖНО: храним и favoriteId (id записи), и variantId (что нужно для DELETE /favorites/{variantId})
         const dataArray = Array.isArray(data) ? data : [];
         const mapped = dataArray.map((item) => {
-              console.log("[Favorites] Processing item:", item);
               
               let productId = NaN;
               let variantId = NaN;
@@ -148,7 +148,7 @@ export default function Favorites() {
             setShowAuthToast(true);
           }
         } else {
-        console.warn("Ошибка загрузки избранного:", e);
+        safeWarn("Ошибка загрузки избранного:", e);
           if (mounted) {
             setFavorites([]);
             setLoading(false);
@@ -169,7 +169,6 @@ export default function Favorites() {
   // Слушаем события обновления избранного - делаем легкий fetch только при изменениях
   useEffect(() => {
     const handleFavoritesUpdate = () => {
-      console.log("[Favorites] Favorites update event received, checking for changes...");
       // Проверяем, изменился ли список в sessionStorage
       const key = favsKeyByToken(authToken);
       const storedIds = (() => {
@@ -196,10 +195,8 @@ export default function Favorites() {
       
       if (idsChanged) {
         // Только если список действительно изменился, делаем легкий fetch
-        console.log("[Favorites] List changed, fetching updated data...");
         loadFavorites();
       } else {
-        console.log("[Favorites] No changes detected, skipping fetch");
       }
     };
 
@@ -256,11 +253,11 @@ async function apiDeleteFavorite(id) {
     }
     if (res.ok) return true;
     const body = await safeText(res);
-    console.warn(`[favorites] DELETE /favorites/${id} -> ${res.status}`, body);
+    safeWarn(`[favorites] DELETE /favorites/${id} -> ${res.status}`, body);
     if (![400,404,405,415].includes(res.status)) return false;
   } catch (e) {
     if (e.message === "401 Unauthorized") throw e;
-    console.warn("[favorites] path delete error", e);
+    safeWarn("[favorites] path delete error", e);
   }
 
   // фолбэк через query
@@ -271,9 +268,9 @@ async function apiDeleteFavorite(id) {
     });
     if (res.ok) return true;
     const body = await safeText(res);
-    console.warn(`[favorites] DELETE /favorites?variantId=${id} -> ${res.status}`, body);
+    safeWarn(`[favorites] DELETE /favorites?variantId=${id} -> ${res.status}`, body);
   } catch (e) {
-    console.warn("[favorites] query delete error", e);
+    safeWarn("[favorites] query delete error", e);
   }
 
   // фолбэк через тело
@@ -285,9 +282,9 @@ async function apiDeleteFavorite(id) {
     });
     if (res.ok) return true;
     const body = await safeText(res);
-    console.warn(`[favorites] DELETE /favorites (body) -> ${res.status}`, body);
+    safeWarn(`[favorites] DELETE /favorites (body) -> ${res.status}`, body);
   } catch (e) {
-    console.warn("[favorites] body delete error", e);
+    safeWarn("[favorites] body delete error", e);
   }
 
   return false;
@@ -307,10 +304,10 @@ async function apiDeleteFavorite(id) {
       });
       if (res.ok) return true;
       const body = await safeText(res);
-      console.warn(`[favorites] DELETE ALL (no body) -> ${res.status}`, body);
+      safeWarn(`[favorites] DELETE ALL (no body) -> ${res.status}`, body);
       if (![400, 404, 405, 415, 500].includes(res.status)) return false;
     } catch (e) {
-      console.warn(`[favorites] delete-all no body error`, e);
+      safeWarn(`[favorites] delete-all no body error`, e);
     }
 
     // 2) с телом { all: true }
@@ -322,10 +319,10 @@ async function apiDeleteFavorite(id) {
       });
       if (res.ok) return true;
       const body = await safeText(res);
-      console.warn(`[favorites] DELETE ALL (body) -> ${res.status}`, body);
+      safeWarn(`[favorites] DELETE ALL (body) -> ${res.status}`, body);
       return false;
     } catch (e) {
-      console.warn(`[favorites] delete-all body error`, e);
+      safeWarn(`[favorites] delete-all body error`, e);
       return false;
     }
   }
@@ -366,11 +363,11 @@ async function apiDeleteFavorite(id) {
         }
         if (!res.ok) {
           const body = await safeText(res);
-          console.warn(`[favorites] DELETE /favorites/${id} -> ${res.status}`, body);
+          safeWarn(`[favorites] DELETE /favorites/${id} -> ${res.status}`, body);
           failed.add(id);
         }
       } catch (e) {
-        console.warn(`[favorites] delete error id=${id}`, e);
+        safeWarn(`[favorites] delete error id=${id}`, e);
         failed.add(id);
       }
     })
@@ -435,10 +432,10 @@ async function moveFavoritesToCart(variantIdsRaw) {
       return { ok: true, moved: new Set(all) };
     }
     const body = await safeText(res);
-    console.warn("[move-to-cart] raw array ->", res.status, body);
+    safeWarn("[move-to-cart] raw array ->", res.status, body);
     return { ok: false, moved: new Set() };
   } catch (e) {
-    console.warn("[move-to-cart] error", e);
+    safeWarn("[move-to-cart] error", e);
     return { ok: false, moved: new Set() };
   }
 }

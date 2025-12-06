@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import AdminSidebar from "@/components/admin/AdminSidebar";
 import AdminHeader from "@/components/admin/AdminHeader";
@@ -11,8 +11,10 @@ import {
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, Edit, Trash2, X, Upload } from "lucide-react";
+import { Plus, Edit, Trash2, X } from "lucide-react";
 import { checkAdminAccess, getAdminToken } from "@/utils/adminAuth";
+import { handleApiError } from "@/utils/errorMessages";
+import { safeError } from "@/utils/logger";
 
 export default function AdminProducts() {
   const navigate = useNavigate();
@@ -22,8 +24,7 @@ export default function AdminProducts() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
-  const [showImageUpload, setShowImageUpload] = useState(false);
-  const [selectedProductId, setSelectedProductId] = useState(null);
+  const [expandedProductId, setExpandedProductId] = useState(null);
 
   // Списки для выпадающих списков
   const [categories, setCategories] = useState([]);
@@ -140,15 +141,13 @@ export default function AdminProducts() {
         setProductTypes(Array.isArray(data) ? data : []);
       }
     } catch (e) {
-      console.error("Error loading data:", e);
+      safeError("Error loading data:", e);
     } finally {
       setLoading(false);
     }
   };
 
   const handleDelete = async (productId) => {
-    if (!confirm("Удалить товар?")) return;
-
     try {
       const adminToken = getAdminToken();
       const res = await fetch(`/api/products/${productId}`, {
@@ -159,11 +158,13 @@ export default function AdminProducts() {
       if (res.ok) {
         loadAllData();
       } else {
-        alert("Ошибка при удалении");
+        const errorMessage = await handleApiError(res, "удаление", "товар");
+        alert(errorMessage);
       }
     } catch (e) {
-      console.error("Error deleting product:", e);
-      alert("Ошибка при удалении");
+      safeError("Error deleting product:", e);
+      const errorMessage = await handleApiError(e, "удаление", "товар");
+      alert(errorMessage);
     }
   };
 
@@ -228,59 +229,107 @@ export default function AdminProducts() {
               />
             )}
 
-            {showImageUpload && (
-              <ImageUploadForm
-                productId={selectedProductId}
-                onClose={() => {
-                  setShowImageUpload(false);
-                  setSelectedProductId(null);
-                }}
-                onSave={() => {
-                  setShowImageUpload(false);
-                  setSelectedProductId(null);
-                  loadAllData();
-                }}
-              />
-            )}
 
             <div className="bg-white rounded-lg shadow overflow-hidden">
               <div className="overflow-x-auto">
-                <table className="w-full min-w-[640px]">
+                <table className="w-full min-w-[1000px]">
                 <thead className="bg-gray-50">
                   <tr>
                       <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">ID</th>
                       <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Название</th>
-                      <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase hidden md:table-cell">Slug</th>
+                      <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase hidden lg:table-cell">Варианты</th>
+                      <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Цена</th>
+                      <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase hidden lg:table-cell">Вес</th>
+                      <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Наличие</th>
                       <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Действия</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
                   {products.length === 0 ? (
                     <tr>
-                        <td colSpan="4" className="px-3 sm:px-6 py-4 text-center text-gray-500">
+                        <td colSpan="7" className="px-3 sm:px-6 py-4 text-center text-gray-500">
                         Нет товаров
                       </td>
                     </tr>
                   ) : (
-                    products.map((product) => (
-                      <tr key={product.id}>
+                    products.map((product) => {
+                      // Вычисляем статистику по вариантам
+                      const variants = product.variants || [];
+                      const variantCount = variants.length;
+                      
+                      // Цены
+                      const prices = variants.map(v => v.price || 0).filter(p => p > 0);
+                      const minPrice = prices.length > 0 ? Math.min(...prices) : 0;
+                      const maxPrice = prices.length > 0 ? Math.max(...prices) : 0;
+                      const priceRange = minPrice === maxPrice 
+                        ? `${minPrice.toFixed(2)} ₽` 
+                        : `${minPrice.toFixed(2)} - ${maxPrice.toFixed(2)} ₽`;
+                      
+                      // Веса (уникальные значения)
+                      const weights = [...new Set(variants.map(v => v.weight || 0).filter(w => w > 0))];
+                      const weightDisplay = weights.length > 0 
+                        ? weights.length === 1 
+                          ? `${weights[0]} г`
+                          : `${weights.join(', ')} г`
+                        : "-";
+                      
+                      // Общее наличие
+                      const totalStock = variants.reduce((sum, v) => sum + (v.stock || 0), 0);
+                      
+                      // Первое изображение для идентификации
+                      const firstImage = variants.find(v => v.imageUrl)?.imageUrl;
+                      
+                      const isExpanded = expandedProductId === product.id;
+                      
+                      return (
+                        <React.Fragment key={product.id}>
+                      <tr 
+                        onClick={() => setExpandedProductId(isExpanded ? null : product.id)}
+                        className="cursor-pointer hover:bg-gray-50 transition-colors"
+                      >
                           <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-900">{product.id}</td>
-                          <td className="px-3 sm:px-6 py-4 text-sm text-gray-900">{product.name || product.productName}</td>
-                          <td className="px-3 sm:px-6 py-4 text-sm text-gray-500 hidden md:table-cell">{product.slug || "-"}</td>
-                          <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm">
+                          <td className="px-3 sm:px-6 py-4 text-sm text-gray-900">
+                            <div className="flex items-center gap-2">
+                              {firstImage && (
+                                <img 
+                                  src={firstImage} 
+                                  alt={product.name || product.productName}
+                                  className="w-10 h-10 object-cover rounded"
+                                  onError={(e) => {
+                                    e.currentTarget.style.display = 'none';
+                                  }}
+                                />
+                              )}
+                              <span>{product.name || product.productName}</span>
+                            </div>
+                          </td>
+                          <td className="px-3 sm:px-6 py-4 text-sm text-gray-500 hidden lg:table-cell">
+                            {variantCount > 0 ? (
+                              <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">
+                                {variantCount} {variantCount === 1 ? 'вариант' : variantCount < 5 ? 'варианта' : 'вариантов'}
+                              </span>
+                            ) : "-"}
+                          </td>
+                          <td className="px-3 sm:px-6 py-4 text-sm text-gray-900 whitespace-nowrap">
+                            {priceRange !== "0.00 ₽" ? priceRange : "-"}
+                          </td>
+                          <td className="px-3 sm:px-6 py-4 text-sm text-gray-500 hidden lg:table-cell">
+                            {weightDisplay}
+                          </td>
+                          <td className="px-3 sm:px-6 py-4 text-sm">
+                            <span className={`px-2 py-1 rounded text-xs ${
+                              totalStock > 0 
+                                ? "bg-green-100 text-green-800" 
+                                : "bg-red-100 text-red-800"
+                            }`}>
+                              {totalStock} шт.
+                            </span>
+                          </td>
+                          <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm" onClick={(e) => e.stopPropagation()}>
                             <div className="flex items-center gap-1 sm:gap-2">
                             <button
-                              onClick={() => {
-                                setSelectedProductId(product.id);
-                                setShowImageUpload(true);
-                              }}
-                              className="text-blue-600 hover:text-blue-800"
-                              title="Загрузить изображения"
-                            >
-                              <Upload className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={async () => {
+                              onClick={async (e) => {
+                                e.stopPropagation();
                                 // Всегда загружаем детали для редактирования
                                 if (product.id) {
                                   try {
@@ -295,7 +344,7 @@ export default function AdminProducts() {
                                       setEditingProduct(product);
                                     }
                                   } catch (e) {
-                                    console.error("Error loading product details:", e);
+                                    safeError("Error loading product details:", e);
                                     setEditingProduct(product);
                                   }
                                 } else {
@@ -308,7 +357,10 @@ export default function AdminProducts() {
                               <Edit className="w-4 h-4" />
                             </button>
                             <button
-                              onClick={() => handleDelete(product.id)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDelete(product.id);
+                              }}
                               className="text-red-600 hover:text-red-800"
                             >
                               <Trash2 className="w-4 h-4" />
@@ -316,7 +368,74 @@ export default function AdminProducts() {
                           </div>
                         </td>
                       </tr>
-                    ))
+                      {isExpanded && variantCount > 0 && (
+                        <tr>
+                          <td colSpan="7" className="px-3 sm:px-6 py-4 bg-gray-50">
+                            <div className="space-y-4">
+                              <h3 className="font-semibold text-gray-900 mb-3">
+                                Варианты товара ({variantCount})
+                              </h3>
+                              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                {variants.map((variant) => (
+                                  <div 
+                                    key={variant.id}
+                                    className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
+                                  >
+                                    <div className="flex items-start gap-3">
+                                      {variant.imageUrl && (
+                                        <img 
+                                          src={variant.imageUrl} 
+                                          alt={variant.displayName}
+                                          className="w-16 h-16 object-cover rounded flex-shrink-0"
+                                          onError={(e) => {
+                                            e.currentTarget.src = '/korm1.svg';
+                                          }}
+                                        />
+                                      )}
+                                      <div className="flex-1 min-w-0">
+                                        <p className="text-sm font-medium text-gray-900 mb-2 truncate">
+                                          {variant.displayName}
+                                        </p>
+                                        <div className="space-y-1 text-xs text-gray-600">
+                                          <div className="flex justify-between">
+                                            <span>ID варианта:</span>
+                                            <span className="font-medium">{variant.id}</span>
+                                          </div>
+                                          <div className="flex justify-between">
+                                            <span>Цена:</span>
+                                            <span className="font-medium text-[#6F2A2B]">
+                                              {variant.price ? `${variant.price.toFixed(2)} ₽` : "-"}
+                                            </span>
+                                          </div>
+                                          <div className="flex justify-between">
+                                            <span>Вес:</span>
+                                            <span className="font-medium">
+                                              {variant.weight ? `${variant.weight} г` : "-"}
+                                            </span>
+                                          </div>
+                                          <div className="flex justify-between">
+                                            <span>Наличие:</span>
+                                            <span className={`font-medium ${
+                                              (variant.stock || 0) > 0 
+                                                ? "text-green-600" 
+                                                : "text-red-600"
+                                            }`}>
+                                              {variant.stock || 0} шт.
+                                            </span>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                    </React.Fragment>
+                    );
+                    })
                   )}
                 </tbody>
               </table>
@@ -556,8 +675,6 @@ function ProductForm({
           formDataToSend.append("images", file);
         });
 
-        console.log("[AdminProducts] Sending multipart/form-data with productDTO:", JSON.stringify(productDTO, null, 2));
-        console.log("[AdminProducts] Images count:", imageFiles.length);
 
         res = await fetch(url, {
           method,
@@ -646,7 +763,6 @@ function ProductForm({
           productTypeId: formData.productTypeId ? Number(formData.productTypeId) : 0,
         };
 
-        console.log("[AdminProducts] Sending PUT payload:", JSON.stringify(payload, null, 2));
 
         res = await fetch(url, {
         method,
@@ -666,19 +782,15 @@ function ProductForm({
           // Можно добавить логику для автоматического открытия загрузки изображений
         }
       } else {
-        const errorText = await res.text();
-        console.error("Error saving product:", res.status, errorText);
-        console.error("Payload that was sent:", payload);
-        try {
-          const errorJson = JSON.parse(errorText);
-          alert(`Ошибка при сохранении: ${errorJson.message || errorText}`);
-        } catch {
-          alert(`Ошибка при сохранении: ${errorText || res.statusText}`);
-        }
+        safeError("Error saving product:", res.status);
+        safeError("Payload that was sent:", payload);
+        const errorMessage = await handleApiError(res, "сохранение", "товар");
+        alert(`Ошибка при сохранении: ${errorMessage}`);
       }
     } catch (e) {
-      console.error("Error saving product:", e);
-      alert("Ошибка при сохранении");
+      safeError("Error saving product:", e);
+      const errorMessage = await handleApiError(e, "сохранение", "товар");
+      alert(`Ошибка при сохранении: ${errorMessage}`);
     } finally {
       setSaving(false);
     }
@@ -1150,94 +1262,3 @@ function VariantForm({ variant, index, colors, scents, onChange, onRemove, isEdi
   );
 }
 
-function ImageUploadForm({ productId, onClose, onSave }) {
-  const [files, setFiles] = useState([]);
-  const [uploading, setUploading] = useState(false);
-
-  const handleFileChange = (e) => {
-    const selectedFiles = Array.from(e.target.files);
-    setFiles(selectedFiles);
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (files.length === 0) {
-      alert("Выберите файлы для загрузки");
-      return;
-    }
-
-    try {
-      setUploading(true);
-      const adminToken = getAdminToken();
-      const formData = new FormData();
-
-      // Добавляем все файлы в массив
-      files.forEach((file) => {
-        formData.append("file", file);
-      });
-
-      const res = await fetch(`/api/products/${productId}/images`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${adminToken}`,
-        },
-        body: formData,
-      });
-
-      if (res.ok) {
-        onSave();
-      } else {
-        const errorText = await res.text();
-        console.error("Error uploading images:", res.status, errorText);
-        alert("Ошибка при загрузке изображений");
-      }
-    } catch (e) {
-      console.error("Error uploading images:", e);
-      alert("Ошибка при загрузке изображений");
-    } finally {
-      setUploading(false);
-    }
-  };
-
-  return (
-    <div className="bg-white rounded-lg shadow p-6 mb-6">
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-xl font-semibold">Загрузить изображения</h2>
-        <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
-          <X className="w-5 h-5" />
-        </button>
-      </div>
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Выберите изображения
-          </label>
-          <input
-            type="file"
-            multiple
-            accept="image/*"
-            onChange={handleFileChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#6F2A2B]"
-          />
-          {files.length > 0 && (
-            <p className="mt-2 text-sm text-gray-500">
-              Выбрано файлов: {files.length}
-            </p>
-          )}
-        </div>
-        <div className="flex gap-3">
-          <Button
-            type="submit"
-            className="bg-[#6F2A2B] text-white hover:bg-[#5a2223]"
-            disabled={uploading}
-          >
-            {uploading ? "Загрузка..." : "Загрузить"}
-          </Button>
-          <Button type="button" onClick={onClose} variant="outline">
-            Отмена
-          </Button>
-        </div>
-      </form>
-    </div>
-  );
-}

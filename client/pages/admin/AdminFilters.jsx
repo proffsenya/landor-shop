@@ -14,6 +14,8 @@ import {
 } from "@/components/ui/select";
 import { checkAdminAccess, getAdminToken } from "@/utils/adminAuth";
 import { ToastMotion } from "@/utils/PageAnimations";
+import { handleApiError } from "@/utils/errorMessages";
+import { safeError } from "@/utils/logger";
 
 // Конфигурация типов фильтров
 const FILTER_TYPES = {
@@ -153,11 +155,11 @@ export default function AdminFilters() {
         const data = await res.json();
         setItems(Array.isArray(data) ? data : []);
       } else {
-        console.error("Failed to load items:", res.status);
+        safeError("Failed to load items:", res.status);
         setItems([]);
       }
     } catch (e) {
-      console.error("Error loading items:", e);
+      safeError("Error loading items:", e);
       setItems([]);
     } finally {
       setItemsLoading(false);
@@ -180,7 +182,7 @@ export default function AdminFilters() {
       }
       return null;
     } catch (e) {
-      console.error("Error loading item:", e);
+      safeError("Error loading item:", e);
       return null;
     }
   };
@@ -205,8 +207,6 @@ export default function AdminFilters() {
 
   // Удаление элемента
   const handleDelete = async (itemId) => {
-    if (!confirm("Удалить элемент?")) return;
-
     try {
       const adminToken = getAdminToken();
       const config = FILTER_TYPES[selectedFilterType];
@@ -221,37 +221,12 @@ export default function AdminFilters() {
         window.dispatchEvent(new Event("catalog:filters-updated"));
         showToast("Элемент успешно удален");
       } else {
-        const errorText = await res.text();
-        let errorMessage = errorText || res.statusText;
-        
-        // Пытаемся распарсить JSON ошибку
-        try {
-          const errorJson = JSON.parse(errorText);
-          errorMessage = errorJson.message || errorJson.error || errorMessage;
-        } catch {
-          // Если не JSON, используем текст как есть
-        }
-
-        // Проверяем, содержит ли ошибка информацию о товарах
-        const hasProductsError = 
-          errorMessage.toLowerCase().includes("товар") ||
-          errorMessage.toLowerCase().includes("product") ||
-          errorMessage.toLowerCase().includes("используется") ||
-          errorMessage.toLowerCase().includes("used") ||
-          errorMessage.toLowerCase().includes("связан") ||
-          errorMessage.toLowerCase().includes("связаны") ||
-          res.status === 400 || res.status === 409 || res.status === 422;
-
-        if (hasProductsError) {
-          // Формируем понятное сообщение об ошибке
-          const filterLabel = config.label.toLowerCase();
-          showToast(`Нельзя удалить ${filterLabel}: ${errorMessage || "элемент используется в товарах"}`, 5000);
-        } else {
-          showToast(`Ошибка при удалении: ${errorMessage}`, 4000);
-        }
+        // Используем утилиту для преобразования ошибки в понятное сообщение
+        const errorMessage = await handleApiError(res, "удаление", config.label.toLowerCase());
+        showToast(errorMessage, 5000);
       }
     } catch (e) {
-      console.error("Error deleting item:", e);
+      safeError("Error deleting item:", e);
       showToast("Ошибка при удалении. Попробуйте позже.", 3000);
     }
   };
@@ -452,7 +427,7 @@ function FilterForm({ filterType, config, item, items, onClose, onSave }) {
         setCategories(Array.isArray(data) ? data : []);
       }
     } catch (e) {
-      console.error("Error loading categories:", e);
+      safeError("Error loading categories:", e);
     } finally {
       setCategoriesLoading(false);
     }
@@ -534,7 +509,6 @@ function FilterForm({ filterType, config, item, items, onClose, onSave }) {
         payload.name = cleanPayload.name;
         payload.canonicalName = cleanPayload.canonicalName;
         
-        console.log("[AdminFilters] Flavors payload:", payload);
       }
       
       // Для scents оставляем только name и slug
@@ -553,7 +527,6 @@ function FilterForm({ filterType, config, item, items, onClose, onSave }) {
         payload.name = cleanPayload.name;
         payload.slug = cleanPayload.slug;
         
-        console.log("[AdminFilters] Scents payload:", payload);
       }
       
       // Для scents оставляем только name и slug
@@ -572,7 +545,6 @@ function FilterForm({ filterType, config, item, items, onClose, onSave }) {
         payload.name = cleanPayload.name;
         payload.slug = cleanPayload.slug;
         
-        console.log("[AdminFilters] Scents payload:", payload);
       }
       
       // Для countries оставляем только name и slug
@@ -591,7 +563,6 @@ function FilterForm({ filterType, config, item, items, onClose, onSave }) {
         payload.name = cleanPayload.name;
         payload.slug = cleanPayload.slug;
         
-        console.log("[AdminFilters] Countries payload:", payload);
       }
       
       // Для productTypes оставляем только name и slug
@@ -610,15 +581,8 @@ function FilterForm({ filterType, config, item, items, onClose, onSave }) {
         payload.name = cleanPayload.name;
         payload.slug = cleanPayload.slug;
         
-        console.log("[AdminFilters] ProductTypes payload:", payload);
       }
 
-      console.log("[AdminFilters] Sending request:", {
-        url,
-        method,
-        filterType,
-        payload,
-      });
 
       const res = await fetch(url, {
         method,
@@ -634,11 +598,12 @@ function FilterForm({ filterType, config, item, items, onClose, onSave }) {
         // Отправляем событие для обновления каталога
         window.dispatchEvent(new Event("catalog:filters-updated"));
       } else {
-        const errorText = await res.text();
-        alert(`Ошибка при сохранении: ${errorText || res.statusText}`);
+        // Используем утилиту для преобразования ошибки в понятное сообщение
+        const errorMessage = await handleApiError(res, "сохранение", config.label.toLowerCase());
+        alert(`Ошибка при сохранении: ${errorMessage}`);
       }
     } catch (e) {
-      console.error("Error saving item:", e);
+      safeError("Error saving item:", e);
       alert("Ошибка при сохранении");
     } finally {
       setLoading(false);

@@ -1,9 +1,10 @@
 // Утилита для работы с уведомлениями на телефоне
+import { safeError, safeWarn } from "./logger";
 
 // Запрос разрешения на уведомления
 export async function requestNotificationPermission() {
   if (!("Notification" in window)) {
-    console.warn("This browser does not support notifications");
+    safeWarn("This browser does not support notifications");
     return false;
   }
 
@@ -22,7 +23,7 @@ export async function requestNotificationPermission() {
 // Показать уведомление
 export function showNotification(title, options = {}) {
   if (!("Notification" in window)) {
-    console.warn("This browser does not support notifications");
+    safeWarn("This browser does not support notifications");
     return null;
   }
 
@@ -58,20 +59,19 @@ export function showNotification(title, options = {}) {
 
       // Обработка ошибок уведомления
       notification.onerror = (error) => {
-        console.error("Ошибка уведомления:", error);
+        safeError("Ошибка уведомления:", error);
       };
 
-      console.log("✅ Уведомление создано:", title);
       return notification;
     } catch (error) {
-      console.error("Ошибка при создании уведомления:", error);
+      safeError("Ошибка при создании уведомления:", error);
       return null;
     }
   } else if (Notification.permission === "denied") {
-    console.warn("Notification permission denied");
+    safeWarn("Notification permission denied");
     return null;
   } else {
-    console.warn("Notification permission not granted yet");
+    safeWarn("Notification permission not granted yet");
     return null;
   }
 }
@@ -106,10 +106,8 @@ export async function testNotification() {
       });
 
       if (notification) {
-        console.log("✅ Уведомление успешно отправлено!");
         // Показываем дополнительное сообщение в консоли
         setTimeout(() => {
-          console.log("💡 Если уведомление не появилось, проверьте:\n1. Разрешения браузера на уведомления\n2. Настройки системы (не включен ли режим 'Не беспокоить')\n3. Вкладка браузера должна быть открыта (для теста)");
         }, 100);
         return true;
       } else {
@@ -117,7 +115,7 @@ export async function testNotification() {
         return false;
       }
     } catch (error) {
-      console.error("Ошибка при создании уведомления:", error);
+      safeError("Ошибка при создании уведомления:", error);
       alert(`Ошибка при создании уведомления: ${error.message}\n\nПроверьте консоль браузера для подробностей.`);
       return false;
     }
@@ -165,7 +163,7 @@ export async function checkNewOrders(adminToken, lastOrderDate = null) {
       }
     }
   } catch (e) {
-    console.error("Error checking new orders:", e);
+    safeError("Error checking new orders:", e);
   }
 
   return lastOrderDate;
@@ -236,7 +234,7 @@ export async function checkNewForms(adminToken, lastFeedbackDate = null, lastNur
 
     return { lastFeedbackDate: newLastFeedbackDate, lastNurseryDate: newLastNurseryDate };
   } catch (e) {
-    console.error("Error checking new forms:", e);
+    safeError("Error checking new forms:", e);
   }
 
   return { lastFeedbackDate, lastNurseryDate };
@@ -252,7 +250,6 @@ export async function initNotifications(adminToken, isStaff, isSuperUser) {
   // Запрашиваем разрешение
   const hasPermission = await requestNotificationPermission();
   if (!hasPermission) {
-    console.log("Notification permission denied");
     return null;
   }
 
@@ -318,14 +315,8 @@ export async function initNotifications(adminToken, isStaff, isSuperUser) {
           lastNurseryDate = new Date(newestForm.createdAt || newestForm.created_at || 0);
         }
       }
-
-      console.log("[Notifications] Инициализированы даты последних элементов:", {
-        lastOrderDate,
-        lastFeedbackDate,
-        lastNurseryDate,
-      });
     } catch (e) {
-      console.error("Error initializing notification dates:", e);
+      safeError("Error initializing notification dates:", e);
     }
   };
 

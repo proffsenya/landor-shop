@@ -4,8 +4,11 @@ import AdminSidebar from "@/components/admin/AdminSidebar";
 import AdminHeader from "@/components/admin/AdminHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Shield, UserCheck, Trash2, Plus, X } from "lucide-react";
+import { Trash2, Plus, X } from "lucide-react";
 import { checkAdminAccess, getAdminToken } from "@/utils/adminAuth";
+import { validateEmail, validateName, validatePassword, validatePhone } from "@/utils/validation";
+import { formatName, formatPhone } from "@/utils/formatting";
+import { safeError } from "@/utils/logger";
 
 export default function AdminUsers() {
   const navigate = useNavigate();
@@ -37,52 +40,42 @@ export default function AdminUsers() {
       if (res.ok) {
         const data = await res.json();
         const usersList = Array.isArray(data) ? data : [];
-        console.log("[AdminUsers] Loaded users:", usersList.length);
-        setUsers(usersList);
+        // Нормализуем поле isSuperUser (может приходить как isSuperuser, isSuperUser, is_super_user, superUser)
+        const normalizedUsers = usersList.map(user => {
+          // Определяем значение isSuperUser из разных возможных вариантов
+          let isSuperUserValue = false;
+          if (user.isSuperuser !== undefined) {
+            isSuperUserValue = Boolean(user.isSuperuser);
+          } else if (user.isSuperUser !== undefined) {
+            isSuperUserValue = Boolean(user.isSuperUser);
+          } else if (user.is_super_user !== undefined) {
+            isSuperUserValue = Boolean(user.is_super_user);
+          } else if (user.superUser !== undefined) {
+            isSuperUserValue = Boolean(user.superUser);
+          }
+          
+          return {
+            ...user,
+            isSuperUser: isSuperUserValue
+          };
+        });
+        setUsers(normalizedUsers);
       } else {
         const errorText = await res.text();
-        console.error("Failed to load users:", res.status, errorText);
+        safeError("Failed to load users:", res.status, errorText);
         setUsers([]);
       }
     } catch (e) {
-      console.error("Error loading users:", e);
+      safeError("Error loading users:", e);
     } finally {
       setLoading(false);
     }
   };
 
-  const toggleStaff = async (userEmail, currentStatus) => {
-    try {
-      const adminToken = getAdminToken();
-      // Используем email для идентификации пользователя
-      const res = await fetch(`/api/admin/users/${encodeURIComponent(userEmail)}/staff`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${adminToken}`,
-        },
-        body: JSON.stringify({ isStaff: !currentStatus }),
-      });
-
-      if (res.ok) {
-        loadUsers();
-      } else {
-        const errorText = await res.text();
-        alert(`Ошибка при обновлении статуса: ${errorText || res.statusText}`);
-      }
-    } catch (e) {
-      console.error("Error updating user status:", e);
-      alert("Ошибка при обновлении статуса");
-    }
-  };
 
   const handleDeleteUser = async (userEmail) => {
     if (!userEmail) {
       alert("Не удалось определить email пользователя");
-      return;
-    }
-
-    if (!confirm(`Вы уверены, что хотите удалить пользователя ${userEmail}? Это действие нельзя отменить.`)) {
       return;
     }
 
@@ -111,7 +104,7 @@ export default function AdminUsers() {
         alert(`Ошибка при удалении пользователя: ${errorMessage}`);
       }
     } catch (e) {
-      console.error("Error deleting user:", e);
+      safeError("Error deleting user:", e);
       alert("Ошибка при удалении пользователя");
     }
   };
@@ -123,13 +116,6 @@ export default function AdminUsers() {
       const adminToken = typeof window !== "undefined" ? localStorage.getItem("adminToken") : null;
       const isSuperUserLocal = typeof window !== "undefined" ? localStorage.getItem("isSuperUser") === "true" : false;
       
-      console.log("[AdminUsers] Token check:", {
-        hasAuthToken: !!authToken,
-        hasAdminToken: !!adminToken,
-        isSuperUser: isSuperUserLocal,
-        authTokenValue: authToken ? `${authToken.substring(0, 20)}...` : null,
-        adminTokenValue: adminToken ? `${adminToken.substring(0, 20)}...` : null,
-      });
 
       // Используем adminToken если есть, иначе authToken
       const tokenToUse = adminToken || (authToken && authToken !== "guest" ? authToken : null);
@@ -158,9 +144,6 @@ export default function AdminUsers() {
         isActive: true,
       };
 
-      console.log("[AdminUsers] Creating user with payload:", { ...payload, passwordHash: "***" });
-
-      console.log("[AdminUsers] Sending request to /api/users/admin/create with token:", tokenToUse ? `${tokenToUse.substring(0, 20)}...` : "null");
 
       const res = await fetch("/api/users/admin/create", {
         method: "POST",
@@ -171,7 +154,6 @@ export default function AdminUsers() {
         body: JSON.stringify(payload),
       });
 
-      console.log("[AdminUsers] Response status:", res.status, res.statusText);
 
       if (res.ok) {
         loadUsers();
@@ -197,11 +179,11 @@ export default function AdminUsers() {
           }
         }
         
-        console.error("[AdminUsers] Error creating user:", res.status, errorText);
+        safeError("[AdminUsers] Error creating user:", res.status, errorText);
         alert(`Ошибка при создании пользователя: ${errorMessage}`);
       }
     } catch (e) {
-      console.error("Error creating user:", e);
+      safeError("Error creating user:", e);
       alert(`Ошибка при создании пользователя: ${e.message || "Неизвестная ошибка"}`);
     }
   };
@@ -263,7 +245,7 @@ export default function AdminUsers() {
                       <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase hidden lg:table-cell">Телефон</th>
                       <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase hidden lg:table-cell">Дата регистрации</th>
                       <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Staff</th>
-                      <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase hidden md:table-cell">Super User</th>
+                      <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Super User</th>
                       <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Действия</th>
                   </tr>
                 </thead>
@@ -301,7 +283,7 @@ export default function AdminUsers() {
                             {user.isStaff ? "Да" : "Нет"}
                           </span>
                         </td>
-                          <td className="px-3 sm:px-6 py-4 whitespace-nowrap hidden md:table-cell">
+                          <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
                           <span className={`px-2 py-1 text-xs rounded-full ${
                             user.isSuperUser ? "bg-purple-100 text-purple-800" : "bg-gray-100 text-gray-800"
                           }`}>
@@ -310,30 +292,6 @@ export default function AdminUsers() {
                         </td>
                           <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm">
                             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-1 sm:gap-2">
-                          {!user.isSuperUser && (
-                            <button
-                              onClick={() => toggleStaff(user.email, user.isStaff)}
-                                  className={`px-2 sm:px-3 py-1 rounded text-xs font-medium transition-colors whitespace-nowrap ${
-                                user.isStaff
-                                  ? "bg-red-100 text-red-700 hover:bg-red-200"
-                                  : "bg-green-100 text-green-700 hover:bg-green-200"
-                              }`}
-                            >
-                              {user.isStaff ? (
-                                <>
-                                  <UserCheck className="w-3 h-3 inline mr-1" />
-                                      <span className="hidden sm:inline">Убрать Staff</span>
-                                      <span className="sm:hidden">Убрать</span>
-                                </>
-                              ) : (
-                                <>
-                                  <Shield className="w-3 h-3 inline mr-1" />
-                                      <span className="hidden sm:inline">Назначить Staff</span>
-                                      <span className="sm:hidden">Staff</span>
-                                </>
-                              )}
-                            </button>
-                          )}
                               {!user.isSuperUser && (
                                 <button
                                   onClick={() => handleDeleteUser(user.email)}
@@ -370,37 +328,149 @@ function CreateUserForm({ onClose, onSubmit }) {
     phone: "",
     password: "",
   });
+  const [errors, setErrors] = useState({
+    email: "",
+    firstName: "",
+    lastName: "",
+    middleName: "",
+    phone: "",
+    password: "",
+  });
+  const [touched, setTouched] = useState({
+    email: false,
+    firstName: false,
+    lastName: false,
+    middleName: false,
+    phone: false,
+    password: false,
+  });
   const [loading, setLoading] = useState(false);
+
+  // Валидация опционального телефона (если указан, проверяем формат)
+  const validateOptionalPhone = (value) => {
+    if (!value || !value.trim()) {
+      return ""; // Телефон необязателен
+    }
+    return validatePhone(value);
+  };
+
+  // Валидация всех полей
+  const validateForm = () => {
+    const newErrors = {
+      email: validateEmail(formData.email),
+      firstName: validateName(formData.firstName, "Имя"),
+      lastName: validateName(formData.lastName, "Фамилия"),
+      middleName: formData.middleName ? validateName(formData.middleName, "Отчество") : "",
+      phone: validateOptionalPhone(formData.phone),
+      password: validatePassword(formData.password),
+    };
+    
+    setErrors(newErrors);
+    return !newErrors.email && !newErrors.firstName && !newErrors.lastName && 
+           !newErrors.middleName && !newErrors.phone && !newErrors.password;
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    // Валидация обязательных полей
-    if (!formData.email || !formData.firstName || !formData.lastName || !formData.password) {
-      alert("Заполните все обязательные поля: Email, Имя, Фамилия, Пароль");
-      return;
-    }
-
-    // Валидация email
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(formData.email)) {
-      alert("Введите корректный email адрес");
-      return;
-    }
-
-    // Валидация пароля (минимум 6 символов)
-    if (formData.password.length < 6) {
-      alert("Пароль должен содержать минимум 6 символов");
+    // Помечаем все поля как "тронутые" для показа ошибок
+    setTouched({
+      email: true,
+      firstName: true,
+      lastName: true,
+      middleName: true,
+      phone: true,
+      password: true,
+    });
+    
+    // Валидация всех полей
+    if (!validateForm()) {
       return;
     }
 
     try {
       setLoading(true);
       await onSubmit(formData);
+      // Сбрасываем форму после успешного создания
+      setFormData({
+        email: "",
+        firstName: "",
+        lastName: "",
+        middleName: "",
+        phone: "",
+        password: "",
+      });
+      setErrors({
+        email: "",
+        firstName: "",
+        lastName: "",
+        middleName: "",
+        phone: "",
+        password: "",
+      });
+      setTouched({
+        email: false,
+        firstName: false,
+        lastName: false,
+        middleName: false,
+        phone: false,
+        password: false,
+      });
     } catch (e) {
-      console.error("Error in form submit:", e);
+      safeError("Error in form submit:", e);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Обработчики изменения полей с валидацией
+  const handleEmailChange = (e) => {
+    const value = e.target.value;
+    setFormData({ ...formData, email: value });
+    if (touched.email) {
+      setErrors({ ...errors, email: validateEmail(value) });
+    }
+  };
+
+  const handleFirstNameChange = (e) => {
+    const value = formatName(e.target.value);
+    setFormData({ ...formData, firstName: value });
+    if (touched.firstName) {
+      setErrors({ ...errors, firstName: validateName(value, "Имя") });
+    }
+  };
+
+  const handleLastNameChange = (e) => {
+    const value = formatName(e.target.value);
+    setFormData({ ...formData, lastName: value });
+    if (touched.lastName) {
+      setErrors({ ...errors, lastName: validateName(value, "Фамилия") });
+    }
+  };
+
+  const handleMiddleNameChange = (e) => {
+    const value = formatName(e.target.value);
+    setFormData({ ...formData, middleName: value });
+    if (touched.middleName && value) {
+      setErrors({ ...errors, middleName: validateName(value, "Отчество") });
+    } else if (touched.middleName) {
+      setErrors({ ...errors, middleName: "" });
+    }
+  };
+
+  const handlePhoneChange = (e) => {
+    const value = formatPhone(e.target.value);
+    setFormData({ ...formData, phone: value });
+    if (touched.phone) {
+      setErrors({ ...errors, phone: validateOptionalPhone(value) });
+    }
+  };
+
+  const handlePasswordChange = (e) => {
+    const value = e.target.value;
+    setFormData({ ...formData, password: value });
+    if (touched.password) {
+      setErrors({ ...errors, password: validatePassword(value) });
     }
   };
 
@@ -424,10 +494,15 @@ function CreateUserForm({ onClose, onSubmit }) {
             <Input
               type="email"
               value={formData.email}
-              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+              onChange={handleEmailChange}
+              onBlur={() => setTouched({ ...touched, email: true })}
               placeholder="user@example.com"
+              className={touched.email && errors.email ? "border-red-500" : ""}
               required
             />
+            {touched.email && errors.email && (
+              <p className="mt-1 text-xs text-red-500">{errors.email}</p>
+            )}
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -436,11 +511,16 @@ function CreateUserForm({ onClose, onSubmit }) {
             <Input
               type="password"
               value={formData.password}
-              onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+              onChange={handlePasswordChange}
+              onBlur={() => setTouched({ ...touched, password: true })}
               placeholder="Минимум 6 символов"
+              className={touched.password && errors.password ? "border-red-500" : ""}
               required
               minLength={6}
             />
+            {touched.password && errors.password && (
+              <p className="mt-1 text-xs text-red-500">{errors.password}</p>
+            )}
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -449,10 +529,15 @@ function CreateUserForm({ onClose, onSubmit }) {
             <Input
               type="text"
               value={formData.firstName}
-              onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+              onChange={handleFirstNameChange}
+              onBlur={() => setTouched({ ...touched, firstName: true })}
               placeholder="Иван"
+              className={touched.firstName && errors.firstName ? "border-red-500" : ""}
               required
             />
+            {touched.firstName && errors.firstName && (
+              <p className="mt-1 text-xs text-red-500">{errors.firstName}</p>
+            )}
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -461,10 +546,15 @@ function CreateUserForm({ onClose, onSubmit }) {
             <Input
               type="text"
               value={formData.lastName}
-              onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+              onChange={handleLastNameChange}
+              onBlur={() => setTouched({ ...touched, lastName: true })}
               placeholder="Иванов"
+              className={touched.lastName && errors.lastName ? "border-red-500" : ""}
               required
             />
+            {touched.lastName && errors.lastName && (
+              <p className="mt-1 text-xs text-red-500">{errors.lastName}</p>
+            )}
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -473,9 +563,14 @@ function CreateUserForm({ onClose, onSubmit }) {
             <Input
               type="text"
               value={formData.middleName}
-              onChange={(e) => setFormData({ ...formData, middleName: e.target.value })}
+              onChange={handleMiddleNameChange}
+              onBlur={() => setTouched({ ...touched, middleName: true })}
               placeholder="Иванович"
+              className={touched.middleName && errors.middleName ? "border-red-500" : ""}
             />
+            {touched.middleName && errors.middleName && (
+              <p className="mt-1 text-xs text-red-500">{errors.middleName}</p>
+            )}
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -484,9 +579,14 @@ function CreateUserForm({ onClose, onSubmit }) {
             <Input
               type="tel"
               value={formData.phone}
-              onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+              onChange={handlePhoneChange}
+              onBlur={() => setTouched({ ...touched, phone: true })}
               placeholder="+7 (999) 123-45-67"
+              className={touched.phone && errors.phone ? "border-red-500" : ""}
             />
+            {touched.phone && errors.phone && (
+              <p className="mt-1 text-xs text-red-500">{errors.phone}</p>
+            )}
           </div>
         </div>
         <div className="flex gap-3 pt-4">

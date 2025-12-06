@@ -3,12 +3,13 @@ import { useEffect } from "react";
 import { PageFade } from "@/utils/PageAnimations";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import { safeError } from "@/utils/logger";
 
 const NotFound = () => {
   const location = useLocation();
 
   useEffect(() => {
-    console.error(
+    safeError(
       "404 Error: User attempted to access non-existent route:",
       location.pathname,
     );

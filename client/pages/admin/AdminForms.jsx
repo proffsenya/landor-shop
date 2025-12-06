@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/pagination";
 import { checkAdminAccess, getAdminToken } from "@/utils/adminAuth";
 import { initNotifications } from "@/utils/notifications";
+import { safeError } from "@/utils/logger";
 import { Download, Mail, Phone, MapPin, FileText, Building2, Eye, Image as ImageIcon } from "lucide-react";
 
 export default function AdminForms() {
@@ -43,7 +44,7 @@ export default function AdminForms() {
     const adminToken = getAdminToken();
     if (adminToken && (staff || superUser)) {
       initNotifications(adminToken, staff, superUser).catch((e) => {
-        console.error("Error initializing notifications:", e);
+        safeError("Error initializing notifications:", e);
       });
     }
   }, [navigate]);
@@ -71,7 +72,7 @@ export default function AdminForms() {
         setNurseryForms(Array.isArray(data) ? data : []);
       }
     } catch (e) {
-      console.error("Error loading forms:", e);
+      safeError("Error loading forms:", e);
     } finally {
       setLoading(false);
     }
@@ -375,7 +376,7 @@ function NurseryFormsTable({ forms, currentPage, itemsPerPage, onPageChange }) {
 
       return await response.json();
     } catch (e) {
-      console.error("Error fetching form:", e);
+      safeError("Error fetching form:", e);
       throw e;
     }
   };
@@ -403,7 +404,7 @@ function NurseryFormsTable({ forms, currentPage, itemsPerPage, onPageChange }) {
       // Освобождаем URL после небольшой задержки
       setTimeout(() => URL.revokeObjectURL(url), 100);
     } catch (e) {
-      console.error("Error opening file:", e);
+      safeError("Error opening file:", e);
       alert("Не удалось открыть файл");
     } finally {
       setPreviewLoading(false);
@@ -428,7 +429,7 @@ function NurseryFormsTable({ forms, currentPage, itemsPerPage, onPageChange }) {
       const url = URL.createObjectURL(blob);
       setImagePreview(url);
     } catch (e) {
-      console.error("Error loading image preview:", e);
+      safeError("Error loading image preview:", e);
       alert("Не удалось загрузить изображение");
     } finally {
       setPreviewLoading(false);
@@ -462,7 +463,7 @@ function NurseryFormsTable({ forms, currentPage, itemsPerPage, onPageChange }) {
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
     } catch (e) {
-      console.error("Error downloading file:", e);
+      safeError("Error downloading file:", e);
       alert("Ошибка при загрузке файла");
     }
   };

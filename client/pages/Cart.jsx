@@ -13,6 +13,8 @@ import { formatName, formatPhone } from "@/utils/formatting";
 import { validateReceiver, validatePhone, validateAddress } from "@/utils/validation";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { handleApiError } from "@/utils/errorMessages";
+import { safeError, safeWarn } from "@/utils/logger";
 
 // Алиас для совместимости
 const formatReceiver = formatName;
@@ -82,6 +84,7 @@ export default function Cart() {
   const [address, setAddress] = useState("");
   const [customerNotes, setCustomerNotes] = useState("");
   const [toast, setToast] = useState("");
+  const [toastType, setToastType] = useState("success"); // "success" или "error"
   const [showAuthToast, setShowAuthToast] = useState(false);
   const [authToastMessage, setAuthToastMessage] = useState("");
   const [errors, setErrors] = useState({
@@ -93,9 +96,13 @@ export default function Cart() {
   const allSelected = selected.size === items.length && items.length > 0;
   const isEmpty = !loading && items.length === 0;
 
-  const showToast = (msg) => {
+  const showToast = (msg, duration = 3000, type = "success") => {
     setToast(msg);
-    setTimeout(() => setToast(""), 1500);
+    setToastType(type);
+    setTimeout(() => {
+      setToast("");
+      setToastType("success");
+    }, duration);
   };
 
   // ---- загрузка корзины с бэкенда ----
@@ -167,7 +174,6 @@ export default function Cart() {
   // Слушаем события обновления корзины - делаем легкий fetch только при изменениях
   useEffect(() => {
     const handleCartUpdate = () => {
-      console.log("[Cart] Cart update event received, checking for changes...");
       // Проверяем, изменился ли список в sessionStorage
       const storedIds = (() => {
         try {
@@ -193,10 +199,8 @@ export default function Cart() {
       
       if (idsChanged) {
         // Только если список действительно изменился, делаем легкий fetch
-        console.log("[Cart] List changed, fetching updated data...");
         fetchCart();
       } else {
-        console.log("[Cart] No changes detected, skipping fetch");
       }
     };
 
@@ -218,7 +222,7 @@ export default function Cart() {
     const vId = Number(item.variantId);
 
     if (!Number.isFinite(vId)) {
-      console.warn("[cart] variantId отсутствует у позиции, удалить нельзя:", item);
+      safeWarn("[cart] variantId отсутствует у позиции, удалить нельзя:", item);
       return false;
     }
 
@@ -233,14 +237,14 @@ export default function Cart() {
       });
 
       if (r.ok) return true;
-      console.warn(
+      safeWarn(
         "DELETE /api/cart/:variantId ->",
         r.status,
         await safeText(r)
       );
       return false;
     } catch (e) {
-      console.warn("delete error", e);
+      safeWarn("delete error", e);
       return false;
     }
   }
@@ -249,7 +253,7 @@ export default function Cart() {
   const changeQuantityOnServer = async (item, direction /* "inc" | "dec" */) => {
     const vId = Number(item.variantId);
     if (!Number.isFinite(vId)) {
-      console.warn("[cart] нет variantId у позиции", item);
+      safeWarn("[cart] нет variantId у позиции", item);
       return { ok: false, error: null };
     }
 
@@ -269,19 +273,8 @@ export default function Cart() {
       
       // Проверка на ошибку превышения количества
       if (res.status === 400 || res.status === 422) {
-        try {
-          const errorJson = JSON.parse(errorText);
-          if (errorJson.message && (errorJson.message.includes("stock") || errorJson.message.includes("наличи") || errorJson.message.includes("количеств"))) {
-            errorMessage = errorJson.message || "Недостаточно товара в наличии";
-          } else if (errorJson.message) {
-            errorMessage = errorJson.message;
-          }
-        } catch {
-          // Если не JSON, проверяем текст на наличие ключевых слов
-          if (errorText && (errorText.includes("stock") || errorText.includes("наличи") || errorText.includes("количеств"))) {
-            errorMessage = "Недостаточно товара в наличии";
-          }
-        }
+        // Используем утилиту для преобразования ошибки в понятное сообщение
+        errorMessage = await handleApiError(res, "изменение количества", "товар");
       }
       
       // Для ошибок сервера показываем понятное сообщение
@@ -289,10 +282,10 @@ export default function Cart() {
         errorMessage = "Ошибка сервера. Попробуйте позже";
       }
 
-      console.warn(url, res.status, errorText);
+      safeWarn(url, res.status, errorText);
       return { ok: false, error: errorMessage };
     } catch (e) {
-      console.warn(url, e);
+      safeWarn(url, e);
       return { ok: false, error: "Ошибка соединения. Попробуйте позже" };
     }
   };
@@ -311,13 +304,13 @@ export default function Cart() {
     const result = await changeQuantityOnServer(item, "inc");
     if (!result.ok) {
       if (result.error) {
-        showToast(result.error, 3000);
+        showToast(result.error, 5000, "error");
         // Если ошибка связана с количеством, обновляем корзину для получения актуального stock
         if (result.error.includes("наличи") || result.error.includes("количеств") || result.error.includes("stock")) {
           fetchCart();
         }
       } else {
-        showToast("Не удалось увеличить количество");
+        showToast("Не удалось увеличить количество", 3000, "error");
       }
       return;
     }
@@ -333,9 +326,9 @@ export default function Cart() {
     const result = await changeQuantityOnServer(item, "dec");
     if (!result.ok) {
       if (result.error) {
-        showToast(result.error, 3000);
+        showToast(result.error, 5000, "error");
       } else {
-        showToast("Не удалось уменьшить количество");
+        showToast("Не удалось уменьшить количество", 3000, "error");
       }
       return;
     }
@@ -517,19 +510,12 @@ export default function Cart() {
           setShowAuthToast(true);
           return;
         }
-        const errorText = await response.text();
-        let errorMessage = `Ошибка ${response.status}`;
-        try {
-          const errorJson = JSON.parse(errorText);
-          errorMessage = errorJson.message || errorJson.error || errorMessage;
-        } catch {
-          errorMessage = errorText || errorMessage;
-        }
+        // Используем утилиту для преобразования ошибки в понятное сообщение
+        const errorMessage = await handleApiError(response, "оформление заказа", "заказ");
         throw new Error(errorMessage);
       }
 
       const orderData = await response.json();
-      console.log("Order created:", orderData);
       
       // Получаем orderId из ответа
       const orderId = orderData?.id || orderData?.orderId;
@@ -563,14 +549,13 @@ export default function Cart() {
 
         if (!paymentResponse.ok) {
           const errorText = await paymentResponse.text();
-          console.warn("Payment API error:", paymentResponse.status, errorText);
+          safeWarn("Payment API error:", paymentResponse.status, errorText);
           // Не прерываем процесс, заказ уже создан
         } else {
           const paymentData = await paymentResponse.json();
-          console.log("Payment created:", paymentData);
         }
       } catch (paymentError) {
-        console.error("Error creating payment:", paymentError);
+        safeError("Error creating payment:", paymentError);
         // Не прерываем процесс, заказ уже создан
       }
       
@@ -583,8 +568,8 @@ export default function Cart() {
       }, 1500);
 
     } catch (error) {
-      console.error("Error creating order:", error);
-      showToast(error.message || "Не удалось оформить заказ. Попробуйте позже.");
+      safeError("Error creating order:", error);
+      showToast(error.message || "Не удалось оформить заказ. Попробуйте позже.", 5000, "error");
     }
   };
 
@@ -1037,7 +1022,7 @@ export default function Cart() {
 
 
         {/* Тосты */}
-        <ToastMotion show={!!toast}>{toast}</ToastMotion>
+        <ToastMotion show={!!toast} type={toastType}>{toast}</ToastMotion>
         <AuthToast 
           show={showAuthToast} 
           onClose={() => setShowAuthToast(false)}

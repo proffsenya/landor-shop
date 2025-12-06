@@ -13,6 +13,7 @@ import { motion } from "framer-motion";
 import { ScrollFade, StaggerParent } from "@/utils/CatalogAnimations";
 import { PageFade, ToastMotion } from "@/utils/PageAnimations";
 import { getAdminToken } from "@/utils/adminAuth";
+import { safeError, safeWarn } from "@/utils/logger";
 
 // -------- Вспомогательные блоки ----------
 const FilterSection = memo(({ title, children, isExpanded = true }) => {
@@ -264,7 +265,7 @@ export default function Catalog() {
       
       return true;
     } catch (e) {
-      console.warn("Failed to restore filters from storage:", e);
+      safeWarn("Failed to restore filters from storage:", e);
       return false;
     }
   }, []);
@@ -378,7 +379,7 @@ export default function Catalog() {
               return { cardId: card.cardId, image: imageUrl || "/korm1.svg" };
             }
           } catch (e) {
-            console.warn(`Failed to load image from ${card.image}:`, e);
+            safeWarn(`Failed to load image from ${card.image}:`, e);
           }
         }
         return { cardId: card.cardId, image: "/korm1.svg" };
@@ -464,7 +465,7 @@ export default function Catalog() {
             window.dispatchEvent(new Event("catalog:update"));
           }
         } catch (e) {
-          console.warn("Failed to save catalog:all to sessionStorage:", e);
+          safeWarn("Failed to save catalog:all to sessionStorage:", e);
         }
         
         // Загружаем изображения в фоне
@@ -482,7 +483,7 @@ export default function Catalog() {
       });
       if (!res.ok) {
         const errorText = await res.text();
-        console.error("API error:", res.status, errorText);
+        safeError("API error:", res.status, errorText);
         throw new Error(`HTTP ${res.status}`);
       }
 
@@ -491,7 +492,7 @@ export default function Catalog() {
       // API /api/products/cards/search-by-url возвращает уже готовые карточки (варианты)
       // Структура: [{ id, displayName, price, stock, weight, imageUrl }, ...]
       if (!Array.isArray(data)) {
-        console.warn("API returned non-array data:", data);
+        safeWarn("API returned non-array data:", data);
         setProducts([]);
         setPage(1);
         setLoading(false);
@@ -561,7 +562,7 @@ export default function Catalog() {
           // Отправляем событие для обновления поиска в Header
           window.dispatchEvent(new Event("catalog:update"));
         } catch (e) {
-          console.warn("Failed to save catalog:all to sessionStorage:", e);
+          safeWarn("Failed to save catalog:all to sessionStorage:", e);
         }
       }
       
@@ -586,7 +587,7 @@ export default function Catalog() {
       }
       
       const errorText = error.message || "Ошибка загрузки";
-      console.error("Error fetching cards:", error);
+      safeError("Error fetching cards:", error);
       setError(errorText);
       setLoading(false);
     } finally {
@@ -629,7 +630,7 @@ export default function Catalog() {
       
       const res = await fetch(url);
       if (!res.ok) {
-        console.warn("Failed to load all products for search:", res.status);
+        safeWarn("Failed to load all products for search:", res.status);
         return;
       }
 
@@ -669,7 +670,7 @@ export default function Catalog() {
       // Отправляем событие для обновления поиска в Header
       window.dispatchEvent(new Event("catalog:update"));
     } catch (e) {
-      console.warn("Error loading all products for search:", e);
+      safeWarn("Error loading all products for search:", e);
     }
   }, []);
 
@@ -743,7 +744,7 @@ export default function Catalog() {
       // Сбрасываем filtersRestored сразу после первой проверки, чтобы не срабатывать при изменении фильтров
       setFiltersRestored(false);
     } catch (e) {
-      console.warn("Failed to apply restored filters:", e);
+      safeWarn("Failed to apply restored filters:", e);
       setFiltersRestored(false);
     }
     // Зависимости только от filtersRestored, чтобы срабатывать только один раз
@@ -811,8 +812,6 @@ export default function Catalog() {
         });
       }
 
-      console.log("[Catalog] Breeds grouped by category (dynamic):", {
-        breedsByCategory,
         categoryIds,
         categoriesCount: Array.isArray(categories) ? categories.length : 0,
       });
@@ -977,16 +976,10 @@ export default function Catalog() {
         loading: false,
       };
       
-      console.log("[Catalog] Setting availableFilters with breedsByCategory:", {
-        breedsByCategory,
-        hasBreedsByCategory: !!updatedFilters.breedsByCategory,
-        categories: updatedFilters.categories,
-        categoriesCount: updatedFilters.categories.length,
-      });
       
       setAvailableFilters(updatedFilters);
     } catch (e) {
-      console.error("Error loading filters:", e);
+      safeError("Error loading filters:", e);
       setAvailableFilters((prev) => ({ ...prev, loading: false }));
     }
   }, []);
@@ -1024,7 +1017,7 @@ export default function Catalog() {
       try {
         sessionStorage.removeItem("catalog:all");
       } catch (e) {
-        console.warn("Failed to clear catalog cache:", e);
+        safeWarn("Failed to clear catalog cache:", e);
       }
       
       // Очищаем кэш запросов каталога
@@ -1043,7 +1036,7 @@ export default function Catalog() {
       try {
         sessionStorage.removeItem("catalog:all");
       } catch (e) {
-        console.warn("Failed to clear catalog cache:", e);
+        safeWarn("Failed to clear catalog cache:", e);
       }
       
       // Очищаем кэш запросов каталога
@@ -1237,8 +1230,6 @@ export default function Catalog() {
     const queryParams = generateQueryParams(); // "typeoffood_dry=true&brand_landy=true&category_cat=true&breed_for-sterilized=true"
     const filtersUrlString = queryParams ? `?${queryParams}` : "";
 
-    console.log("Applying filters, queryParams:", queryParams);
-    console.log("Filters URL string:", filtersUrlString);
 
     // обновляем URL страницы
     window.history.pushState({}, "", filtersUrlString || window.location.pathname);
@@ -1410,27 +1401,15 @@ export default function Catalog() {
                 ? availableFilters.categories.filter((cat) => cat.slug !== "filler")
                 : [];
               
-              console.log("[Catalog] Rendering category filters:", {
-                allCategories: availableFilters.categories,
-                categoriesToRender: categoriesToRender,
-                breedsByCategory: availableFilters.breedsByCategory,
-                breedsByCategoryKeys: availableFilters.breedsByCategory ? Object.keys(availableFilters.breedsByCategory) : [],
-              });
               
               return categoriesToRender
                 .map((category) => {
                   const categorySlug = category.slug;
                   const breeds = availableFilters.breedsByCategory?.[categorySlug] || [];
                   
-                  console.log(`[Catalog] Processing category ${category.name} (${categorySlug}):`, {
-                    categoryId: category.id,
-                    breedsCount: breeds.length,
-                    hasBreeds: breeds.length > 0,
-                  });
                   
                   // Пропускаем категории без пород
                   if (breeds.length === 0) {
-                    console.log(`[Catalog] Skipping category ${category.name} - no breeds`);
                     return null;
                   }
                 

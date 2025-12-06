@@ -7,6 +7,7 @@ import { Eye } from "lucide-react";
 import { checkAdminAccess, getAdminToken } from "@/utils/adminAuth";
 import { initNotifications } from "@/utils/notifications";
 import { formatPhone } from "@/utils/formatting";
+import { safeError, safeWarn } from "@/utils/logger";
 
 export default function AdminOrders() {
   const navigate = useNavigate();
@@ -31,7 +32,7 @@ export default function AdminOrders() {
     const adminToken = getAdminToken();
     if (adminToken && (staff || superUser)) {
       initNotifications(adminToken, staff, superUser).catch((e) => {
-        console.error("Error initializing notifications:", e);
+        safeError("Error initializing notifications:", e);
       });
     }
   }, [navigate]);
@@ -51,13 +52,12 @@ export default function AdminOrders() {
           ...order,
           orderStatus: order.orderStatus ? String(order.orderStatus).trim().replace(/^["']|["']$/g, '') : order.orderStatus
         }));
-        console.log("[AdminOrders] Loaded orders:", normalizedOrders.map(o => ({ id: o.id, status: o.orderStatus })));
         setOrders(normalizedOrders);
       } else {
-        console.error("Failed to load orders:", res.status);
+        safeError("Failed to load orders:", res.status);
       }
     } catch (e) {
-      console.error("Error loading orders:", e);
+      safeError("Error loading orders:", e);
     } finally {
       setLoading(false);
     }
@@ -88,7 +88,7 @@ export default function AdminOrders() {
     
     const translated = statusMap[normalizedStatus];
     if (!translated) {
-      console.warn("[AdminOrders] Unknown order status:", status, "normalized:", normalizedStatus);
+      safeWarn("[AdminOrders] Unknown order status:", status, "normalized:", normalizedStatus);
       return status; // Возвращаем оригинальный статус, если не найден перевод
     }
     
@@ -134,7 +134,7 @@ export default function AdminOrders() {
         alert(`Ошибка при обновлении статуса: ${errorText || res.statusText}`);
       }
     } catch (e) {
-      console.error("Error updating order status:", e);
+      safeError("Error updating order status:", e);
       alert("Ошибка при обновлении статуса");
     }
   };
@@ -286,7 +286,7 @@ function OrderModal({ order, onClose, onUpdateStatus }) {
     
     const translated = statusMap[normalizedStatus];
     if (!translated) {
-      console.warn("[OrderModal] Unknown order status:", status, "normalized:", normalizedStatus);
+      safeWarn("[OrderModal] Unknown order status:", status, "normalized:", normalizedStatus);
       return status; // Возвращаем оригинальный статус, если не найден перевод
     }
     

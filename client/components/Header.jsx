@@ -7,6 +7,7 @@ import GlobalSearch from "@/components/GlobalSearch";
 
 
 import { getAuthToken } from "@/utils/auth";
+import { safeWarn } from "@/utils/logger";
 
 export default function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -47,7 +48,7 @@ export default function Header() {
 
       setter(Number.isFinite(count) ? count : 0);
     } catch (e) {
-      console.warn(`[header] load count failed for ${url}:`, e);
+      safeWarn(`[header] load count failed for ${url}:`, e);
       setter(0);
     }
   };
@@ -71,7 +72,7 @@ export default function Header() {
           setAllProducts([]);
         }
       } catch (e) {
-        console.warn("Failed to load products from sessionStorage:", e);
+        safeWarn("Failed to load products from sessionStorage:", e);
         setAllProducts([]);
       }
     };

@@ -4,6 +4,7 @@ import AdminSidebar from "@/components/admin/AdminSidebar";
 import AdminHeader from "@/components/admin/AdminHeader";
 import { checkAdminAccess, getAdminToken } from "@/utils/adminAuth";
 import { initNotifications } from "@/utils/notifications";
+import { safeError } from "@/utils/logger";
 import { Package, ShoppingCart, Users, FolderTree, Plus, Edit, Eye, FileText, Sliders } from "lucide-react";
 
 export default function AdminDashboard() {
@@ -40,7 +41,7 @@ export default function AdminDashboard() {
         // Сохраняем функцию очистки для cleanup при размонтировании
         return cleanup;
       }).catch((e) => {
-        console.error("Error initializing notifications:", e);
+        safeError("Error initializing notifications:", e);
       });
     }
   }, [navigate]);
@@ -96,7 +97,7 @@ export default function AdminDashboard() {
         setStats(prev => ({ ...prev, users: Array.isArray(users) ? users.length : 0 }));
       }
     } catch (e) {
-      console.error("Error loading stats:", e);
+      safeError("Error loading stats:", e);
     } finally {
       setLoading(false);
     }

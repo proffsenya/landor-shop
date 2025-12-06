@@ -147,7 +147,7 @@ export default function ProductsSection({ title, linkText = "Все товары
         data = await res.json();
       } catch (e) {
         // Если не получилось, просто не показываем товары
-        console.warn("[ProductsSection] fetch error", e);
+        // Error handled silently for non-authenticated users
         data = [];
       }
 

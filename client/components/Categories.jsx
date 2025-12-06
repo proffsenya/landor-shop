@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { HoverLift, StaggerItem } from "../utils/CatalogAnimations";
 import { getAdminToken } from "@/utils/adminAuth";
+import { safeError, safeWarn } from "@/utils/logger";
 
 // Маппинг slug'ов категорий на изображения и цвета
 const categoryConfig = {
@@ -47,7 +48,6 @@ export default function Categories() {
       
       if (res.ok) {
         const data = await res.json();
-        console.log("[Categories] Loaded categories from API:", data);
         
         // Определяем порядок категорий: cat, minicat, filler (посередине), dog, minidog
         const allowedSlugs = ["cat", "minicat", "filler", "dog", "minidog"];
@@ -94,14 +94,13 @@ export default function Categories() {
           })
           .filter(Boolean); // Убираем null значения (на всякий случай)
         
-        console.log("[Categories] Processed categories:", processedCategories);
         setCategories(processedCategories);
       } else {
-        console.error("Failed to load categories:", res.status);
+        safeError("Failed to load categories:", res.status);
         setCategories([]);
       }
     } catch (e) {
-      console.error("Error loading categories:", e);
+      safeError("Error loading categories:", e);
       setCategories([]);
     } finally {
       setLoading(false);
@@ -115,7 +114,6 @@ export default function Categories() {
   // Слушаем события обновления категорий из админки
   useEffect(() => {
     const handleCategoriesUpdated = () => {
-      console.log("[Categories] Categories updated event received, reloading...");
       loadCategories();
     };
 

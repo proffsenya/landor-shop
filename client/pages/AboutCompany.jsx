@@ -58,10 +58,10 @@ export default function AboutCompany() {
                 </p>
                 <ul className="pl-6 space-y-2 text-gray-700">
                   <li className="text-base sm:text-lg">
-                    <strong>Телефон:</strong> +7 (999) 999-99-99
+                    <strong>Телефон:</strong> +7(903)167-18-50
                   </li>
                   <li className="text-base sm:text-lg">
-                    <strong>Email:</strong> info@landor-shop.ru
+                    <strong>Email:</strong> landorshop@yandex.ru
                   </li>
                   <li className="text-base sm:text-lg">
                     <strong>Часы работы:</strong> ежедневно с 9:00 до 21:00

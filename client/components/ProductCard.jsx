@@ -11,6 +11,7 @@ const STORAGE_CART = (authToken) => `cart:variants:${authToken || "guest"}`;
 const STORAGE_FAVS = (authToken) => `favs:variants:${authToken || "guest"}`;
 
 import { getAuthToken } from "@/utils/auth";
+import { safeWarn } from "@/utils/logger";
 
 // --- ДОБАВЬ ЭТИ ХЕЛПЕРЫ ВЫШЕ (рядом с loadSet/saveSet) ---
 async function safeText(res) {
@@ -25,10 +26,10 @@ async function apiDeleteFavorite(variantId, authToken) {
       throw new Error("401 Unauthorized");
     }
     if (r.ok) return true;
-    console.warn("DELETE /api/favorites/:variantId ->", r.status, await safeText(r));
+    safeWarn("DELETE /api/favorites/:variantId ->", r.status, await safeText(r));
   } catch (e) {
     if (e.message === "401 Unauthorized") throw e;
-    console.warn("favorites delete path err", e);
+    safeWarn("favorites delete path err", e);
   }
 
   try {
@@ -37,10 +38,10 @@ async function apiDeleteFavorite(variantId, authToken) {
       throw new Error("401 Unauthorized");
     }
     if (r.ok) return true;
-    console.warn("DELETE /api/favorites?variantId ->", r.status, await safeText(r));
+    safeWarn("DELETE /api/favorites?variantId ->", r.status, await safeText(r));
   } catch (e) {
     if (e.message === "401 Unauthorized") throw e;
-    console.warn("favorites delete query err", e);
+    safeWarn("favorites delete query err", e);
   }
 
   try {
@@ -53,10 +54,10 @@ async function apiDeleteFavorite(variantId, authToken) {
       throw new Error("401 Unauthorized");
     }
     if (r.ok) return true;
-    console.warn("DELETE /api/favorites body ->", r.status, await safeText(r));
+    safeWarn("DELETE /api/favorites body ->", r.status, await safeText(r));
   } catch (e) {
     if (e.message === "401 Unauthorized") throw e;
-    console.warn("favorites delete body err", e);
+    safeWarn("favorites delete body err", e);
   }
 
   return false;
@@ -70,7 +71,7 @@ async function apiDeleteFromCart(variantId, authToken) {
   const vId = Number(variantId);
   
   if (!Number.isFinite(vId)) {
-    console.warn("[cart] variantId невалиден:", variantId);
+    safeWarn("[cart] variantId невалиден:", variantId);
     return false;
   }
 
@@ -84,14 +85,14 @@ async function apiDeleteFromCart(variantId, authToken) {
       }),
     });
     if (r.ok) return true;
-    console.warn("DELETE /api/cart/:variantId ->", r.status, await safeText(r));
-  } catch (e) { console.warn("cart delete path err", e); }
+    safeWarn("DELETE /api/cart/:variantId ->", r.status, await safeText(r));
+  } catch (e) { safeWarn("cart delete path err", e); }
 
   try {
     const r = await fetch(`/api/cart?variantId=${encodeURIComponent(vId)}`, { method: "DELETE", headers });
     if (r.ok) return true;
-    console.warn("DELETE /api/cart?variantId ->", r.status, await safeText(r));
-  } catch (e) { console.warn("cart delete query err", e); }
+    safeWarn("DELETE /api/cart?variantId ->", r.status, await safeText(r));
+  } catch (e) { safeWarn("cart delete query err", e); }
 
   try {
     const r = await fetch(`/api/cart`, {
@@ -100,8 +101,8 @@ async function apiDeleteFromCart(variantId, authToken) {
       body: JSON.stringify({ variantId: vId, quantity: 1 })
     });
     if (r.ok) return true;
-    console.warn("DELETE /api/cart body ->", r.status, await safeText(r));
-  } catch (e) { console.warn("cart delete body err", e); }
+    safeWarn("DELETE /api/cart body ->", r.status, await safeText(r));
+  } catch (e) { safeWarn("cart delete body err", e); }
 
   return false;
 }
@@ -251,7 +252,7 @@ const ProductCard = memo(function ProductCard({
       window.dispatchEvent(new Event("cart:update"));
       showToast("Товар добавлен в корзину");
     } catch (err) {
-      console.warn("Ошибка при добавлении в корзину:", err);
+      safeWarn("Ошибка при добавлении в корзину:", err);
       showToast("Не удалось добавить в корзину", 2000);
     }
   } else {
@@ -265,7 +266,7 @@ const ProductCard = memo(function ProductCard({
       window.dispatchEvent(new Event("cart:update"));
       showToast("Товар удалён из корзины");
     } else {
-      console.warn("Не удалось удалить из корзины");
+      safeWarn("Не удалось удалить из корзины");
       showToast("Не получилось удалить. Повторите позже", 2000);
     }
   }
@@ -321,7 +322,7 @@ const handleToggleFavorite = useCallback(async (e) => {
       // откат
       setIsFavorite(false);
       const rb = loadSet(favsKey); rb.delete(vidStr); saveSet(favsKey, rb);
-      console.warn("Не удалось добавить в избранное:", err);
+      safeWarn("Не удалось добавить в избранное:", err);
       showToast("Не удалось добавить в избранное", 2000);
     }
   } else {
@@ -335,7 +336,7 @@ const handleToggleFavorite = useCallback(async (e) => {
       // откат
       setIsFavorite(true);
       const rb = loadSet(favsKey); rb.add(vidStr); saveSet(favsKey, rb);
-      console.warn("Не удалось удалить из избранного");
+      safeWarn("Не удалось удалить из избранного");
       showToast("Не удалось удалить из избранного", 2000);
       }
     } catch (e) {
@@ -347,7 +348,7 @@ const handleToggleFavorite = useCallback(async (e) => {
       } else {
         setIsFavorite(true);
         const rb = loadSet(favsKey); rb.add(vidStr); saveSet(favsKey, rb);
-        console.warn("Не удалось удалить из избранного");
+        safeWarn("Не удалось удалить из избранного");
         showToast("Не удалось удалить из избранного", 2000);
       }
     }

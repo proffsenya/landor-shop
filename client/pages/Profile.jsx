@@ -10,6 +10,7 @@ import { getAuthToken } from "@/utils/auth";
 import { formatName, formatPhone } from "@/utils/formatting";
 import { validateName, validateEmail, validatePhone, validatePassword, validateConfirmPassword } from "@/utils/validation";
 import { checkAdminAccess } from "@/utils/adminAuth";
+import { safeError, safeWarn } from "@/utils/logger";
 import { Shield } from "lucide-react";
 
 // Моки
@@ -165,7 +166,7 @@ export default function Profile() {
           setIsSuperUser(localStorage.getItem("isSuperUser") === "true");
         }
       } catch (e) {
-        console.error("Error fetching profile:", e);
+        safeError("Error fetching profile:", e);
         setError("Не удалось загрузить профиль");
       } finally {
         setLoading(false);
@@ -205,7 +206,7 @@ export default function Profile() {
         : [];
       setOrders(normalizedOrders);
       } catch (e) {
-        console.error("Error fetching orders:", e);
+        safeError("Error fetching orders:", e);
         setOrders([]);
       } finally {
         setOrdersLoading(false);
@@ -220,7 +221,6 @@ export default function Profile() {
   useEffect(() => {
     const handleOrderStatusUpdated = async (event) => {
       const { orderId, newStatus } = event.detail;
-      console.log("[Profile] Order status updated:", { orderId, newStatus });
       
       // Обновляем локальное состояние заказов
       setOrders((prevOrders) =>
@@ -276,7 +276,7 @@ export default function Profile() {
       };
       setOrderDetails(normalizedOrderDetails);
     } catch (e) {
-      console.error("Error fetching order details:", e);
+      safeError("Error fetching order details:", e);
       showToast("Не удалось загрузить детали заказа", 3000);
       setOrderDetails(null);
     } finally {
@@ -331,7 +331,7 @@ export default function Profile() {
     
     const translated = statusMap[normalizedStatus];
     if (!translated) {
-      console.warn("[Profile] Unknown order status:", status, "normalized:", normalizedStatus);
+      safeWarn("[Profile] Unknown order status:", status, "normalized:", normalizedStatus);
       return status; // Возвращаем оригинальный статус, если не найден перевод
     }
     
@@ -380,11 +380,6 @@ export default function Profile() {
         confirmPassword: passwordData.confirmPassword,
       };
 
-      console.log("Sending password change request:", {
-        url: "/api/users/profile/changepassword",
-        method: "PUT",
-        body: requestBody,
-      });
 
       const res = await fetch("/api/users/profile/changepassword", {
         method: "PUT",
@@ -395,11 +390,10 @@ export default function Profile() {
         body: JSON.stringify(requestBody),
       });
 
-      console.log("Password change response status:", res.status);
 
       if (!res.ok) {
         const errorText = await res.text();
-        console.error("Password change error response:", {
+        safeError("Password change error response:", {
           status: res.status,
           statusText: res.statusText,
           body: errorText,
@@ -417,7 +411,6 @@ export default function Profile() {
       // Проверяем, есть ли ответ от сервера
       const responseData = await res.json().catch(() => null);
       if (responseData) {
-        console.log("Password change success response:", responseData);
       }
 
       // Очищаем поля пароля после успешного изменения
@@ -430,7 +423,7 @@ export default function Profile() {
       showToast("Пароль успешно изменен");
       return true;
     } catch (e) {
-      console.error("Error changing password:", e);
+      safeError("Error changing password:", e);
       setErrors((prev) => ({
         ...prev,
         password: e.message || "Не удалось изменить пароль. Проверьте текущий пароль.",
@@ -526,7 +519,6 @@ export default function Profile() {
             localStorage.setItem("token", newToken);
           }
           tokenUpdated = true;
-          console.log("Token updated in localStorage from response body (email changed)");
         }
 
         // Проверяем заголовки ответа на наличие нового токена
@@ -538,13 +530,11 @@ export default function Profile() {
             localStorage.setItem("authToken", newToken);
             localStorage.setItem("token", newToken);
             tokenUpdated = true;
-            console.log("Token updated in localStorage from Authorization header (email changed)");
           } else if (xAuthToken) {
             newToken = xAuthToken;
             localStorage.setItem("authToken", newToken);
             localStorage.setItem("token", newToken);
             tokenUpdated = true;
-            console.log("Token updated in localStorage from X-Auth-Token header (email changed)");
           }
         }
 
@@ -552,7 +542,7 @@ export default function Profile() {
         // возможно нужно перезагрузить страницу или использовать текущий токен
         // (в зависимости от логики сервера)
         if (!tokenUpdated) {
-          console.warn("Token not updated by server after email change. Current token may be invalid.");
+          safeWarn("Token not updated by server after email change. Current token may be invalid.");
           // Можно попробовать перезагрузить страницу для получения нового токена
           // или показать предупреждение пользователю
         }
@@ -561,7 +551,6 @@ export default function Profile() {
         if (data.email) {
           localStorage.setItem("authEmail", data.email);
           localStorage.setItem("email", data.email);
-          console.log("Email updated in localStorage:", data.email);
         }
 
         // Отправляем событие об обновлении токена, чтобы другие компоненты перезагрузились
@@ -603,7 +592,7 @@ export default function Profile() {
 
       return true;
     } catch (e) {
-      console.error("Error updating profile:", e);
+      safeError("Error updating profile:", e);
       showToast("Не удалось обновить профиль. Попробуйте позже.");
       return false;
     }
@@ -952,7 +941,7 @@ export default function Profile() {
                     <tbody>
                       {orders.map((order) => (
                         <tr key={order.id} className="border-b border-[#F3F3F3]">
-                          <td className="py-2 text-[13px] sm:text-[14px]">Заказ №{order.id}</td>
+                          <td className="py-2 text-[13px] sm:text-[14px]">#{order.id}</td>
                           <td className="py-2 text-[13px] sm:text-[14px] text-[#6F6F6F]">
                             {formatDate(order.createdAt)}
                           </td>

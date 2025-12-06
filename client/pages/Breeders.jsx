@@ -13,6 +13,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { getAuthToken } from "@/utils/auth";
 import { validateReceiver, validateEmail, validatePhone } from "@/utils/validation";
 import { formatReceiver, formatPhone } from "@/utils/formatting";
+import { safeError } from "@/utils/logger";
 
 export default function Breeders() {
   const [formData, setFormData] = useState({
@@ -180,12 +181,6 @@ export default function Breeders() {
       const jsonBlob = new Blob([jsonString], { type: "application/json" });
       formDataToSend.append("nurseryFormDTO", jsonBlob);
       
-      // Логируем для отладки
-      console.log("FormData entries:");
-      for (let pair of formDataToSend.entries()) {
-        console.log(pair[0], pair[1]);
-      }
-      console.log("nurseryFormDTO JSON:", jsonString);
 
       // Устанавливаем заголовки (НЕ устанавливаем Content-Type - браузер сделает это автоматически для FormData)
       const headers = {
@@ -210,18 +205,17 @@ export default function Breeders() {
         let errorText = "";
         try {
           errorText = await response.text();
-          console.error("Error response:", errorText);
+          safeError("Error response:", errorText);
           const errorJson = JSON.parse(errorText);
           errorText = errorJson.message || errorJson.error || JSON.stringify(errorJson);
         } catch (e) {
-          console.error("Error parsing response:", e);
+          safeError("Error parsing response:", e);
           errorText = errorText || `Internal Server Error (${response.status})`;
         }
         throw new Error(`HTTP ${response.status}: ${errorText}`);
       }
 
       const responseData = await response.json();
-      console.log("Success response:", responseData);
 
       // Сброс формы
       setFormData({
@@ -235,7 +229,7 @@ export default function Breeders() {
       });
       showToast("Заявка отправлена! Менеджер свяжется с вами в ближайшее время.");
     } catch (error) {
-      console.error("Error submitting form:", error);
+      safeError("Error submitting form:", error);
       // Проверяем, не 401 ли это
       if (error?.message && (error.message.includes("401") || error.message.includes("Unauthorized"))) {
         setAuthToastMessage("Для отправки заявки необходимо авторизоваться");
