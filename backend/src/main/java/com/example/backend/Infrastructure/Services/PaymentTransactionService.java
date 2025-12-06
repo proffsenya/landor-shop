@@ -76,7 +76,6 @@ public class PaymentTransactionService {
 
 
 
-
     public ReceiptDTO processMockTransaction(Long userId, Long orderId, String paymentMethod, BigDecimal requestedAmount) {
         User user = userRepository.findById(userId).orElseThrow(() -> new InvalidRequestException("User not found: payment is impossible"));
         Order order = orderRepository.findById(orderId).orElseThrow(() -> new InvalidRequestException("Order not found"));

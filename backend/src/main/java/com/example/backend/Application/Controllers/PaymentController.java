@@ -17,7 +17,7 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/admin/payments")
-@PreAuthorize("hasRole('STAFF') or hasRole('SEPERUSER')")
+@PreAuthorize("hasRole('STAFF') or hasRole('SUPERUSER')")
 class PaymentController {
     private final PaymentTransactionService paymentTransactionService;
     private final OrderService orderService;
@@ -58,24 +58,24 @@ class PaymentController {
         return ResponseEntity.ok(OrderDTO.from(order));
     }
 
-    @PostMapping("/mock/{orderId}")
-    public ResponseEntity<ReceiptDTO> processMockPayment(
-            @PathVariable Long orderId,
-            @AuthenticationPrincipal CustomUserDetails userPrincipal,
-            @RequestBody PaymentRequest paymentRequest){
-
-        Long currentUserId = userPrincipal.getId();
-        Order order = orderService.getOrderById(orderId);
-
-        if (!order.getUser().getId().equals(currentUserId)) {
-            throw new AccessDeniedException("You are not the owner of this order");
-        }
-
-        String method = paymentRequest != null ? paymentRequest.paymentMethod() : "MOCK";
-        java.math.BigDecimal amount = paymentRequest != null ? paymentRequest.amount() : null;
-
-        var receipt = paymentTransactionService.processMockTransaction(currentUserId, orderId, method, amount);
-        return ResponseEntity.ok(receipt);
-    }
+//    @PostMapping("/mock/{orderId}")
+//    public ResponseEntity<ReceiptDTO> processMockPayment(
+//            @PathVariable Long orderId,
+//            @AuthenticationPrincipal CustomUserDetails userPrincipal,
+//            @RequestBody PaymentRequest paymentRequest){
+//
+//        Long currentUserId = userPrincipal.getId();
+//        Order order = orderService.getOrderById(orderId);
+//
+//        if (!order.getUser().getId().equals(currentUserId)) {
+//            throw new AccessDeniedException("You are not the owner of this order");
+//        }
+//
+//        String method = paymentRequest != null ? paymentRequest.paymentMethod() : "MOCK";
+//        java.math.BigDecimal amount = paymentRequest != null ? paymentRequest.amount() : null;
+//
+//        var receipt = paymentTransactionService.processMockTransaction(currentUserId, orderId, method, amount);
+//        return ResponseEntity.ok(receipt);
+//    }
 
 }
