@@ -121,11 +121,12 @@ export default function AdminFilters() {
   const [loading, setLoading] = useState(true);
   const [selectedFilterType, setSelectedFilterType] = useState("");
   const [items, setItems] = useState([]);
+  const [toast, setToast] = useState({ message: "", type: "success", show: false });
   const [itemsLoading, setItemsLoading] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [toast, setToast] = useState("");
+  const [toast, setToast] = useState({ message: "", type: "success", show: false });
 
   useEffect(() => {
     const { isSuperUser: superUser, hasAccess } = checkAdminAccess();
@@ -393,15 +394,15 @@ export default function AdminFilters() {
           </div>
         </main>
       </div>
-      
-      {/* Toast уведомления */}
-      <ToastMotion show={!!toast}>{toast}</ToastMotion>
+      <ToastMotion show={toast.show} type={toast.type}>
+        {toast.message}
+      </ToastMotion>
     </div>
   );
 }
 
 // Компонент формы для создания/редактирования
-function FilterForm({ filterType, config, item, items, onClose, onSave }) {
+function FilterForm({ filterType, config, item, items, onClose, onSave, showToast }) {
   const [formData, setFormData] = useState({});
   const [loading, setLoading] = useState(false);
   const [categories, setCategories] = useState([]);
@@ -455,7 +456,7 @@ function FilterForm({ filterType, config, item, items, onClose, onSave }) {
     const requiredFields = config.fields.filter(f => f.required);
     for (const field of requiredFields) {
       if (!formData[field.key] || formData[field.key].toString().trim() === "") {
-        alert(`Заполните поле "${field.label}"`);
+        showToast(`Заполните поле "${field.label}"`, "error");
         return;
       }
     }
@@ -594,17 +595,18 @@ function FilterForm({ filterType, config, item, items, onClose, onSave }) {
       });
 
       if (res.ok) {
+        showToast(editingItem ? "Элемент успешно обновлен" : "Элемент успешно создан");
         onSave();
         // Отправляем событие для обновления каталога
         window.dispatchEvent(new Event("catalog:filters-updated"));
       } else {
         // Используем утилиту для преобразования ошибки в понятное сообщение
         const errorMessage = await handleApiError(res, "сохранение", config.label.toLowerCase());
-        alert(`Ошибка при сохранении: ${errorMessage}`);
+        showToast(`Ошибка при сохранении: ${errorMessage}`, "error");
       }
     } catch (e) {
       safeError("Error saving item:", e);
-      alert("Ошибка при сохранении");
+      showToast("Ошибка при сохранении", "error");
     } finally {
       setLoading(false);
     }

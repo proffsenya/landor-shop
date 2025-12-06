@@ -9,6 +9,7 @@ import { checkAdminAccess, getAdminToken } from "@/utils/adminAuth";
 import { validateEmail, validateName, validatePassword, validatePhone } from "@/utils/validation";
 import { formatName, formatPhone } from "@/utils/formatting";
 import { safeError } from "@/utils/logger";
+import { ToastMotion } from "@/utils/PageAnimations";
 
 export default function AdminUsers() {
   const navigate = useNavigate();
@@ -17,6 +18,7 @@ export default function AdminUsers() {
   const [users, setUsers] = useState([]);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showCreateForm, setShowCreateForm] = useState(false);
+  const [toast, setToast] = useState({ message: "", type: "success", show: false });
 
   useEffect(() => {
     const { isSuperUser: superUser, hasAccess } = checkAdminAccess();
@@ -72,17 +74,21 @@ export default function AdminUsers() {
     }
   };
 
+  const showToast = (message, type = "success") => {
+    setToast({ message, type, show: true });
+    setTimeout(() => setToast({ message: "", type: "success", show: false }), 3000);
+  };
 
-  const handleDeleteUser = async (userEmail) => {
-    if (!userEmail) {
-      alert("Не удалось определить email пользователя");
+  const handleDeleteUser = async (userId) => {
+    if (!userId) {
+      showToast("Не удалось определить ID пользователя", "error");
       return;
     }
 
     try {
       const adminToken = getAdminToken();
-      // Используем email для идентификации пользователя
-      const res = await fetch(`/api/users/${encodeURIComponent(userEmail)}`, {
+      // Используем userId для идентификации пользователя
+      const res = await fetch(`/api/users/${encodeURIComponent(userId)}`, {
         method: "DELETE",
         headers: {
           Authorization: `Bearer ${adminToken}`,
@@ -91,7 +97,7 @@ export default function AdminUsers() {
 
       if (res.ok) {
         loadUsers();
-        alert("Пользователь успешно удален");
+        showToast("Пользователь успешно удален");
       } else {
         const errorText = await res.text();
         let errorMessage = `Ошибка ${res.status}`;
@@ -101,11 +107,11 @@ export default function AdminUsers() {
         } catch {
           errorMessage = errorText || errorMessage;
         }
-        alert(`Ошибка при удалении пользователя: ${errorMessage}`);
+        showToast(`Ошибка при удалении пользователя: ${errorMessage}`, "error");
       }
     } catch (e) {
       safeError("Error deleting user:", e);
-      alert("Ошибка при удалении пользователя");
+      showToast("Ошибка при удалении пользователя", "error");
     }
   };
 
@@ -121,7 +127,7 @@ export default function AdminUsers() {
       const tokenToUse = adminToken || (authToken && authToken !== "guest" ? authToken : null);
       
       if (!tokenToUse) {
-        alert("Ошибка: токен авторизации не найден. Пожалуйста, войдите заново.");
+        showToast("Ошибка: токен авторизации не найден. Пожалуйста, войдите заново.", "error");
         navigate("/admin/login");
         return;
       }
@@ -129,7 +135,7 @@ export default function AdminUsers() {
       // Проверяем, что пользователь действительно superuser
       const { isSuperUser: superUser } = checkAdminAccess();
       if (!superUser) {
-        alert("Ошибка: недостаточно прав для создания пользователя. Требуется роль Super User.");
+        showToast("Ошибка: недостаточно прав для создания пользователя. Требуется роль Super User.", "error");
         return;
       }
 
@@ -158,7 +164,7 @@ export default function AdminUsers() {
       if (res.ok) {
         loadUsers();
         setShowCreateForm(false);
-        alert("Пользователь успешно создан");
+        showToast("Пользователь успешно создан");
       } else {
         const errorText = await res.text();
         let errorMessage = `Ошибка ${res.status}`;
@@ -180,11 +186,11 @@ export default function AdminUsers() {
         }
         
         safeError("[AdminUsers] Error creating user:", res.status, errorText);
-        alert(`Ошибка при создании пользователя: ${errorMessage}`);
+        showToast(`Ошибка при создании пользователя: ${errorMessage}`, "error");
       }
     } catch (e) {
       safeError("Error creating user:", e);
-      alert(`Ошибка при создании пользователя: ${e.message || "Неизвестная ошибка"}`);
+      showToast(`Ошибка при создании пользователя: ${e.message || "Неизвестная ошибка"}`, "error");
     }
   };
 
@@ -258,7 +264,7 @@ export default function AdminUsers() {
                     </tr>
                   ) : (
                     users.map((user, index) => (
-                      <tr key={user.email || index}>
+                      <tr key={user.userId || user.email || index}>
                           <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-900">{index + 1}</td>
                           <td className="px-3 sm:px-6 py-4 text-sm text-gray-900">
                             <span className="truncate block max-w-[150px] sm:max-w-none" title={user.email || "-"}>
@@ -294,7 +300,7 @@ export default function AdminUsers() {
                             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-1 sm:gap-2">
                               {!user.isSuperUser && (
                                 <button
-                                  onClick={() => handleDeleteUser(user.email)}
+                                  onClick={() => handleDeleteUser(user.userId)}
                                   className="px-2 sm:px-3 py-1 rounded text-xs font-medium transition-colors bg-red-100 text-red-700 hover:bg-red-200 flex items-center justify-center gap-1"
                                   title="Удалить пользователя"
                                 >
@@ -314,6 +320,9 @@ export default function AdminUsers() {
           </div>
         </main>
       </div>
+      <ToastMotion show={toast.show} type={toast.type}>
+        {toast.message}
+      </ToastMotion>
     </div>
   );
 }

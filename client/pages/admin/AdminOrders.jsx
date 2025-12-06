@@ -8,6 +8,7 @@ import { checkAdminAccess, getAdminToken } from "@/utils/adminAuth";
 import { initNotifications } from "@/utils/notifications";
 import { formatPhone } from "@/utils/formatting";
 import { safeError, safeWarn } from "@/utils/logger";
+import { ToastMotion } from "@/utils/PageAnimations";
 
 export default function AdminOrders() {
   const navigate = useNavigate();
@@ -16,6 +17,7 @@ export default function AdminOrders() {
   const [orders, setOrders] = useState([]);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [toast, setToast] = useState({ message: "", type: "success", show: false });
 
   useEffect(() => {
     const { isStaff: staff, isSuperUser: superUser, hasAccess } = checkAdminAccess();
@@ -131,11 +133,11 @@ export default function AdminOrders() {
         loadOrders();
       } else {
         const errorText = await res.text();
-        alert(`Ошибка при обновлении статуса: ${errorText || res.statusText}`);
+        showToast(`Ошибка при обновлении статуса: ${errorText || res.statusText}`, "error");
       }
     } catch (e) {
       safeError("Error updating order status:", e);
-      alert("Ошибка при обновлении статуса");
+      showToast("Ошибка при обновлении статуса", "error");
     }
   };
 
@@ -427,6 +429,9 @@ function OrderModal({ order, onClose, onUpdateStatus }) {
           </div>
         </div>
       </div>
+      <ToastMotion show={toast.show} type={toast.type}>
+        {toast.message}
+      </ToastMotion>
     </div>
   );
 }

@@ -15,6 +15,7 @@ import { Plus, Edit, Trash2, X } from "lucide-react";
 import { checkAdminAccess, getAdminToken } from "@/utils/adminAuth";
 import { handleApiError } from "@/utils/errorMessages";
 import { safeError } from "@/utils/logger";
+import { ToastMotion } from "@/utils/PageAnimations";
 
 export default function AdminProducts() {
   const navigate = useNavigate();
@@ -25,6 +26,7 @@ export default function AdminProducts() {
   const [showForm, setShowForm] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
   const [expandedProductId, setExpandedProductId] = useState(null);
+  const [toast, setToast] = useState({ message: "", type: "success", show: false });
 
   // Списки для выпадающих списков
   const [categories, setCategories] = useState([]);
@@ -157,14 +159,15 @@ export default function AdminProducts() {
 
       if (res.ok) {
         loadAllData();
+        showToast("Товар успешно удален");
       } else {
         const errorMessage = await handleApiError(res, "удаление", "товар");
-        alert(errorMessage);
+        showToast(errorMessage, "error");
       }
     } catch (e) {
       safeError("Error deleting product:", e);
       const errorMessage = await handleApiError(e, "удаление", "товар");
-      alert(errorMessage);
+      showToast(errorMessage, "error");
     }
   };
 
@@ -444,6 +447,9 @@ export default function AdminProducts() {
           </div>
         </main>
       </div>
+      <ToastMotion show={toast.show} type={toast.type}>
+        {toast.message}
+      </ToastMotion>
     </div>
   );
 }
@@ -533,7 +539,7 @@ function ProductForm({
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.name || !formData.slug) {
-      alert("Заполните название и slug");
+      showToast("Заполните название и slug", "error");
       return;
     }
 
@@ -776,6 +782,7 @@ function ProductForm({
 
       if (res.ok) {
         const savedProduct = await res.json();
+        showToast(product ? "Товар успешно обновлен" : "Товар успешно создан");
         onSave();
         // Если это создание, можно сразу открыть загрузку изображений
         if (!product && savedProduct.id) {
@@ -785,12 +792,12 @@ function ProductForm({
         safeError("Error saving product:", res.status);
         safeError("Payload that was sent:", payload);
         const errorMessage = await handleApiError(res, "сохранение", "товар");
-        alert(`Ошибка при сохранении: ${errorMessage}`);
+        showToast(`Ошибка при сохранении: ${errorMessage}`, "error");
       }
     } catch (e) {
       safeError("Error saving product:", e);
       const errorMessage = await handleApiError(e, "сохранение", "товар");
-      alert(`Ошибка при сохранении: ${errorMessage}`);
+      showToast(`Ошибка при сохранении: ${errorMessage}`, "error");
     } finally {
       setSaving(false);
     }

@@ -812,10 +812,6 @@ export default function Catalog() {
         });
       }
 
-        categoryIds,
-        categoriesCount: Array.isArray(categories) ? categories.length : 0,
-      });
-
       // Инициализируем фильтры на основе загруженных данных
       // Обновляем только если фильтры пустые или если нужно добавить новые
       setBrandFilters((prev) => {
@@ -942,7 +938,7 @@ export default function Catalog() {
           }
         });
         return newFilters;
-          });
+      });
         } else {
           // Для новых категорий используем общий механизм через catFilters, dogFilters и т.д.
           // Или создаем динамический state для новых категорий

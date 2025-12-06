@@ -15,6 +15,7 @@ import {
 import { checkAdminAccess, getAdminToken } from "@/utils/adminAuth";
 import { initNotifications } from "@/utils/notifications";
 import { safeError } from "@/utils/logger";
+import { ToastMotion } from "@/utils/PageAnimations";
 import { Download, Mail, Phone, MapPin, FileText, Building2, Eye, Image as ImageIcon } from "lucide-react";
 
 export default function AdminForms() {
@@ -48,6 +49,11 @@ export default function AdminForms() {
       });
     }
   }, [navigate]);
+
+  const showToast = (message, type = "success") => {
+    setToast({ message, type, show: true });
+    setTimeout(() => setToast({ message: "", type: "success", show: false }), 3000);
+  };
 
   const loadForms = async () => {
     try {
@@ -405,7 +411,7 @@ function NurseryFormsTable({ forms, currentPage, itemsPerPage, onPageChange }) {
       setTimeout(() => URL.revokeObjectURL(url), 100);
     } catch (e) {
       safeError("Error opening file:", e);
-      alert("Не удалось открыть файл");
+      showToast("Не удалось открыть файл", "error");
     } finally {
       setPreviewLoading(false);
     }
@@ -430,7 +436,7 @@ function NurseryFormsTable({ forms, currentPage, itemsPerPage, onPageChange }) {
       setImagePreview(url);
     } catch (e) {
       safeError("Error loading image preview:", e);
-      alert("Не удалось загрузить изображение");
+      showToast("Не удалось загрузить изображение", "error");
     } finally {
       setPreviewLoading(false);
     }
@@ -438,7 +444,7 @@ function NurseryFormsTable({ forms, currentPage, itemsPerPage, onPageChange }) {
 
   const handleDownloadFile = async (form) => {
     if (!form.id) {
-      alert("ID формы не найден");
+      showToast("ID формы не найден", "error");
       return;
     }
 
@@ -464,7 +470,7 @@ function NurseryFormsTable({ forms, currentPage, itemsPerPage, onPageChange }) {
       URL.revokeObjectURL(url);
     } catch (e) {
       safeError("Error downloading file:", e);
-      alert("Ошибка при загрузке файла");
+      showToast("Ошибка при загрузке файла", "error");
     }
   };
 
