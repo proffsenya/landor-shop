@@ -27,23 +27,23 @@ class PaymentController {
     }
 
     @GetMapping("/unpaid")
-    public ResponseEntity<List<OrderResponseDTO>> getUnpaidOrders(){
+    public ResponseEntity<List<OrderDTO>> getUnpaidOrders(){
         List<OrderDTO> unpaidOrders = paymentTransactionService.getUnpaidOrders();
 
-        List<OrderResponseDTO> summaries = unpaidOrders.stream()
-                .map(order -> new OrderResponseDTO(
-                        order.id(),
-                        order.orderStatus(),
-                        order.totalAmount(),
-                        order.paymentStatus(),
-                        order.shippingAddress(),
-                        order.billingAddress(),
-                        order.customerNotes(),
-                        order.createdAt()
-                ))
-                .collect(Collectors.toList());
+//        List<OrderResponseDTO> summaries = unpaidOrders.stream()
+//                .map(order -> new OrderResponseDTO(
+//                        order.id(),
+//                        order.orderStatus(),
+//                        order.totalAmount(),
+//                        order.paymentStatus(),
+//                        order.shippingAddress(),
+//                        order.billingAddress(),
+//                        order.customerNotes(),
+//                        order.createdAt()
+//                ))
+//                .collect(Collectors.toList());
 
-        return ResponseEntity.ok(summaries);
+        return ResponseEntity.ok(unpaidOrders);
     }
 
     @PostMapping("/{orderId}/confirm")
@@ -52,7 +52,7 @@ class PaymentController {
         return ResponseEntity.ok(confirmedOrder);
     }
 
-    @PostMapping("/{orderId}/details")
+    @GetMapping("/{orderId}/details")
     public ResponseEntity<OrderDTO> getOrderDetails(@PathVariable("orderId") Long orderId){
         var order = orderService.getOrderById(orderId);
         return ResponseEntity.ok(OrderDTO.from(order));

@@ -9,6 +9,7 @@ import com.example.backend.Infrastructure.Filtering.ProductSpecificationBuilder;
 import com.example.backend.Infrastructure.Repos.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
@@ -361,18 +362,18 @@ public class ProductService {
     }
 
     @Transactional(readOnly = true)
-    public List<VariantCardDTO> filterProductCardsByUrl(String filtersUrl) {
+    public Page<VariantCardDTO> filterProductCardsByUrl(String filtersUrl, Pageable pageable) {
         ProductFilter filter = FilterParser.parseFromUrlString(filtersUrl);
         Specification<ProductVariant> spec = ProductSpecificationBuilder.build(filter);
 
-        List<ProductVariant> products;
+        Page<ProductVariant> page;
         if (spec == null) {
-            products = productVariantRepository.findAll();
+            page = productVariantRepository.findAll(pageable);
         } else {
-            products = productVariantRepository.findAll(spec);
+            page = productVariantRepository.findAll(spec, pageable);
         }
 
-        return products.stream().map(this::toVariantCardDTO).toList();
+        return page.map(this::toVariantCardDTO);
     }
 
     private ProductCardDTO toProductCardDTO(Product product) {

@@ -4,6 +4,8 @@ import com.example.backend.Domain.Models.Product;
 import com.example.backend.Domain.Models.ProductVariant;
 import jakarta.persistence.LockModeType;
 import jakarta.validation.constraints.Size;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.*;
@@ -18,6 +20,35 @@ public interface ProductVariantRepository extends JpaRepository<ProductVariant, 
      @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select pv from ProductVariant pv where pv.id = :id")
     Optional<ProductVariant> findByIdForUpdate(@Param("id") Long id);
+
+    @EntityGraph(attributePaths = {"product",
+            "product.categories",
+            "product.breeds",
+            "product.countries",
+            "product.typeoffoods",
+            "product.flavors",
+            "product.brand",
+            "product.productType",
+            "product.images",
+            "product.images.productVariant",
+            "colors",
+            "scents"})
+    @Override
+    Page<ProductVariant> findAll(Specification<ProductVariant> spec, Pageable pageable);
+
+    @EntityGraph(attributePaths = {"product",
+            "product.categories",
+            "product.breeds",
+            "product.countries",
+            "product.typeoffoods",
+            "product.flavors",
+            "product.brand",
+            "product.productType",
+            "product.images",
+            "product.images.productVariant",
+            "colors",
+            "scents"})
+    Page<ProductVariant> findAll(Pageable pageable);
 
     @EntityGraph(attributePaths = {"product",
             "product.categories",
