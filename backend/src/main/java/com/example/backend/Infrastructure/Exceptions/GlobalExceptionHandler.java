@@ -10,20 +10,28 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    //400
     @ExceptionHandler(InvalidRequestException.class)
     public ResponseEntity<ErrorResponse> handleInvalidRequest(
             InvalidRequestException ex,
             HttpServletRequest request) {
 
+        HttpStatus status = determineStatus(ex);
+
         ErrorResponse error = new ErrorResponse(
-                HttpStatus.BAD_REQUEST.value(),
-                "Bad Request",
+                status.value(),
+                status.getReasonPhrase(),
                 ex.getMessage(),
                 request.getRequestURI()
         );
 
-        return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
+        return new ResponseEntity<>(error, status);
+    }
+
+    private HttpStatus determineStatus(InvalidRequestException ex) {
+         if (ex.getMessage().contains("bad request")) return HttpStatus.BAD_REQUEST;
+         if (ex.getMessage().contains("forbidden")) return HttpStatus.FORBIDDEN;
+
+        return HttpStatus.NOT_FOUND;
     }
 
     // 404
@@ -42,21 +50,21 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(error, HttpStatus.NOT_FOUND);
     }
 
-    // 403
-    @ExceptionHandler(InvalidResourseException.class)
-    public ResponseEntity<ErrorResponse> handleForbidden(
-            InvalidResourseException ex,
-            HttpServletRequest request) {
-
-        ErrorResponse error = new ErrorResponse(
-                HttpStatus.NOT_FOUND.value(),
-                "Not Found",
-                ex.getMessage(),
-                request.getRequestURI()
-        );
-
-        return new ResponseEntity<>(error, HttpStatus.FORBIDDEN);
-    }
+//    // 403
+//    @ExceptionHandler(InvalidRequestException.class)
+//    public ResponseEntity<ErrorResponse> handleForbidden(
+//            InvalidResourseException ex,
+//            HttpServletRequest request) {
+//
+//        ErrorResponse error = new ErrorResponse(
+//                HttpStatus.FORBIDDEN.value(),
+//                "Forbidden",
+//                ex.getMessage(),
+//                request.getRequestURI()
+//        );
+//
+//        return new ResponseEntity<>(error, HttpStatus.FORBIDDEN);
+//    }
 
     //500
     @ExceptionHandler(Exception.class)
