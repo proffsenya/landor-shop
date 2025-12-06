@@ -204,7 +204,18 @@ export default function Profile() {
             orderStatus: order.orderStatus ? String(order.orderStatus).trim().replace(/^["']|["']$/g, '') : order.orderStatus
           }))
         : [];
-      setOrders(normalizedOrders);
+      
+      // Сортируем заказы: новые сверху (по дате создания или ID)
+      const sortedOrders = normalizedOrders.sort((a, b) => {
+        // Сначала пробуем по дате создания
+        if (a.createdAt && b.createdAt) {
+          return new Date(b.createdAt) - new Date(a.createdAt);
+        }
+        // Если даты нет, сортируем по ID (больший ID = новее)
+        return (b.id || 0) - (a.id || 0);
+      });
+      
+      setOrders(sortedOrders);
       } catch (e) {
         safeError("Error fetching orders:", e);
         setOrders([]);
@@ -940,30 +951,42 @@ export default function Profile() {
                 <div className="mt-3 py-8 text-center text-gray-500">У вас пока нет заказов</div>
               ) : (
                 <div className="mt-3 overflow-x-auto">
-                  <table className="w-full min-w-[420px]">
+                  <table className="w-full min-w-[550px]">
                     <thead>
                       <tr className="text-[#1E1E1E] border-b border-[#E8E8E8]">
-                        <th className="py-2 text-left font-normal text-[13px] sm:text-[14px]">Номер</th>
-                        <th className="py-2 text-left font-normal text-[13px] sm:text-[14px]">Дата</th>
-                        <th className="py-2 text-left font-normal text-[13px] sm:text-[14px]">Сумма</th>
-                        <th className="py-2 text-left font-normal text-[13px] sm:text-[14px]">Статус</th>
-                        <th className="py-2 text-left font-normal text-[13px] sm:text-[14px]"></th>
+                        <th className="py-2 text-center font-normal text-[13px] sm:text-[14px]">Номер</th>
+                        <th className="py-2 text-center font-normal text-[13px] sm:text-[14px]">Дата</th>
+                        <th className="py-2 text-center font-normal text-[13px] sm:text-[14px]">Сумма</th>
+                        <th className="py-2 text-center font-normal text-[13px] sm:text-[14px]">Статус оплаты</th>
+                        <th className="py-2 text-center font-normal text-[13px] sm:text-[14px]">Статус</th>
+                        <th className="py-2 text-center font-normal text-[13px] sm:text-[14px]"></th>
                       </tr>
                     </thead>
                     <tbody>
                       {orders.map((order) => (
                         <tr key={order.id} className="border-b border-[#F3F3F3]">
-                          <td className="py-2 text-[13px] sm:text-[14px]">#{order.id}</td>
-                          <td className="py-2 text-[13px] sm:text-[14px] text-[#6F6F6F]">
+                          <td className="py-2 text-center text-[13px] sm:text-[14px]">#{order.id}</td>
+                          <td className="py-2 text-center text-[13px] sm:text-[14px] text-[#6F6F6F]">
                             {formatDate(order.createdAt)}
                           </td>
-                          <td className="py-2 text-[13px] sm:text-[14px] text-[#6F6F6F]">
+                          <td className="py-2 text-center text-[13px] sm:text-[14px] text-[#6F6F6F]">
                             {order.totalAmount ? `${order.totalAmount.toLocaleString("ru-RU")} ₽` : "-"}
                           </td>
-                          <td className="py-2 text-[13px] sm:text-[14px] text-[#6F6F6F]">
+                          <td className="py-2 text-center">
+                            <span className={`inline-block px-2 py-1 text-xs rounded-full font-medium ${
+                              order.paymentStatus?.toLowerCase() === "paid" 
+                                ? "bg-green-100 text-green-800" 
+                                : order.paymentStatus?.toLowerCase() === "refunded"
+                                ? "bg-yellow-100 text-yellow-800"
+                                : "bg-red-100 text-red-800"
+                            }`}>
+                              {formatPaymentStatus(order.paymentStatus)}
+                            </span>
+                          </td>
+                          <td className="py-2 text-center text-[13px] sm:text-[14px] text-[#6F6F6F]">
                             {formatOrderStatus(order.orderStatus)}
                           </td>
-                          <td className="py-2">
+                          <td className="py-2 text-center">
                             <button
                               type="button"
                               onClick={() => handleOpenOrder(order.id)}

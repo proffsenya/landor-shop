@@ -1327,7 +1327,7 @@ function ProductForm({
                   }
                   placeholder="0"
                 />
-                <p className="mt-1 text-xs text-gray-500">Не работает!! Заготовка</p>
+                <p className="mt-1 text-xs text-gray-500">⚠️Не работает!! Заготовка</p>
               </div>
               <div>
                 <label className="block mb-1 text-sm font-medium text-gray-700">
@@ -1345,7 +1345,7 @@ function ProductForm({
                   }}
                   placeholder="4.5"
                 />
-                <p className="mt-1 text-xs text-gray-500">Не работает!! Заготовка</p>
+                <p className="mt-1 text-xs text-gray-500">⚠️Не работает!! Заготовка</p>
               </div>
               <div className="flex items-center gap-2">
                 <input
@@ -1377,8 +1377,8 @@ function ProductForm({
               </div>
             </div>
             <div className="mt-2 space-y-1 text-xs text-gray-500">
-              <p><strong>Активен:</strong> Если отмечено, товар виден на сайте. Если снято - товар скрыт, но остается в БД.</p>
-              <p><strong>Рекомендуемый:</strong>Не работает!! Заготовка</p>
+              <p><strong>Активен:</strong> ⚠️ Не работает!! Заготовка</p>
+              <p><strong>Рекомендуемый:</strong>⚠️ Не работает!! Заготовка</p>
             </div>
           </div>
         )}

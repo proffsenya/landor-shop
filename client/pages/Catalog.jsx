@@ -510,12 +510,15 @@ export default function Catalog() {
         throw new Error(`HTTP ${res.status}`);
       }
 
-      const data = await res.json();
+      const response = await res.json();
       
-      // API /api/products/cards/search-by-url возвращает уже готовые карточки (варианты)
-      // Структура: [{ id, displayName, price, stock, weight, imageUrl }, ...]
+      // API /api/products/cards/search-by-url возвращает объект с полем content (Spring Data Page)
+      // Структура: { content: [{ id, displayName, price, stock, weight, imageUrl }, ...], ... }
+      // Или может быть просто массив для обратной совместимости
+      const data = Array.isArray(response) ? response : (response?.content || []);
+      
       if (!Array.isArray(data)) {
-        safeWarn("API returned non-array data:", data);
+        safeWarn("API returned non-array data:", response);
         setProducts([]);
         setPage(1);
         setLoading(false);
@@ -734,7 +737,11 @@ export default function Catalog() {
         return;
       }
 
-      const data = await res.json();
+      const response = await res.json();
+      
+      // API может возвращать объект с полем content (Spring Data Page) или просто массив
+      const data = Array.isArray(response) ? response : (response?.content || []);
+      
       if (!Array.isArray(data)) {
         return;
       }
@@ -1212,10 +1219,15 @@ export default function Catalog() {
 
       // Динамически устанавливаем фильтры в состояние для отображения в UI
       if (categoryParam === "filler") {
-        // Для наполнителей устанавливаем фильтр категории и ВСЕ запахи
+        // Для наполнителей устанавливаем фильтр категории, тип продукта "Наполнитель" и ВСЕ запахи
         setCategoryFilters((prev) => ({
           ...prev,
           all: false,
+          filler: true,
+        }));
+        // Устанавливаем фильтр типа продукта "Наполнитель"
+        setProductTypeFilters((prev) => ({
+          ...prev,
           filler: true,
         }));
         const scents = availableFilters.scents || [];

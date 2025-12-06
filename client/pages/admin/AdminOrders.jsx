@@ -16,6 +16,8 @@ export default function AdminOrders() {
   const [loading, setLoading] = useState(true);
   const [orders, setOrders] = useState([]);
   const [selectedOrder, setSelectedOrder] = useState(null);
+  const [orderDetails, setOrderDetails] = useState(null);
+  const [loadingDetails, setLoadingDetails] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [toast, setToast] = useState({ message: "", type: "success", show: false });
   const [showUnpaidOnly, setShowUnpaidOnly] = useState(false);
@@ -74,7 +76,18 @@ export default function AdminOrders() {
             orderStatus: status || order.orderStatus
           };
         });
-        setOrders(normalizedOrders);
+        
+        // Сортируем заказы: новые сверху (по дате создания или ID)
+        const sortedOrders = normalizedOrders.sort((a, b) => {
+          // Сначала пробуем по дате создания
+          if (a.createdAt && b.createdAt) {
+            return new Date(b.createdAt) - new Date(a.createdAt);
+          }
+          // Если даты нет, сортируем по ID (больший ID = новее)
+          return (b.id || 0) - (a.id || 0);
+        });
+        
+        setOrders(sortedOrders);
       } else {
         safeError("Failed to load orders:", res.status);
       }
@@ -185,7 +198,18 @@ export default function AdminOrders() {
             orderStatus: status || order.orderStatus
           };
         });
-        setOrders(normalizedOrders);
+        
+        // Сортируем заказы: новые сверху (по дате создания или ID)
+        const sortedOrders = normalizedOrders.sort((a, b) => {
+          // Сначала пробуем по дате создания
+          if (a.createdAt && b.createdAt) {
+            return new Date(b.createdAt) - new Date(a.createdAt);
+          }
+          // Если даты нет, сортируем по ID (больший ID = новее)
+          return (b.id || 0) - (a.id || 0);
+        });
+        
+        setOrders(sortedOrders);
       } else {
         safeError("Failed to load unpaid orders:", res.status);
         showToast("Ошибка при загрузке неоплаченных заказов", "error");
@@ -223,6 +247,8 @@ export default function AdminOrders() {
         // Обновляем selectedOrder, если он открыт
         if (selectedOrder && selectedOrder.id === orderId) {
           setSelectedOrder({ ...selectedOrder, orderStatus: newStatus });
+          // Перезагружаем детали заказа
+          await loadOrderDetails(orderId);
         }
         
         // Отправляем событие для обновления профиля пользователя
@@ -246,6 +272,35 @@ export default function AdminOrders() {
       safeError("Error updating order status:", e);
       showToast("Ошибка при обновлении статуса", "error");
     }
+  };
+
+  const loadOrderDetails = async (orderId) => {
+    try {
+      setLoadingDetails(true);
+      const adminToken = getAdminToken();
+      const res = await fetch(`/api/admin/payments/${orderId}/details`, {
+        headers: { Authorization: `Bearer ${adminToken}` },
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setOrderDetails(data);
+      } else {
+        safeError("Failed to load order details:", res.status);
+        showToast("Ошибка при загрузке деталей заказа", "error");
+      }
+    } catch (e) {
+      safeError("Error loading order details:", e);
+      showToast("Ошибка при загрузке деталей заказа", "error");
+    } finally {
+      setLoadingDetails(false);
+    }
+  };
+
+  const handleOrderClick = async (order) => {
+    setSelectedOrder(order);
+    setOrderDetails(null); // Сбрасываем предыдущие детали
+    await loadOrderDetails(order.id);
   };
 
   const confirmPayment = async (orderId, amount, paymentMethod) => {
@@ -277,6 +332,8 @@ export default function AdminOrders() {
         // Обновляем selectedOrder, если он открыт
         if (selectedOrder && selectedOrder.id === orderId) {
           setSelectedOrder({ ...selectedOrder, paymentStatus: "paid" });
+          // Перезагружаем детали заказа
+          await loadOrderDetails(orderId);
         }
         
         showToast("Оплата успешно подтверждена");
@@ -424,7 +481,7 @@ export default function AdminOrders() {
                         </td>
                           <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm">
                           <button
-                            onClick={() => setSelectedOrder(order)}
+                            onClick={() => handleOrderClick(order)}
                               className="text-[#6F2A2B] hover:text-[#5a2223] p-1"
                               title="Просмотр"
                           >
@@ -445,11 +502,24 @@ export default function AdminOrders() {
           </div>
         </main>
       </div>
+      
+      {selectedOrder && (
+        <OrderModal
+          order={orderDetails || selectedOrder}
+          loading={loadingDetails}
+          onClose={() => {
+            setSelectedOrder(null);
+            setOrderDetails(null);
+          }}
+          onUpdateStatus={updateOrderStatus}
+          onConfirmPayment={confirmPayment}
+        />
+      )}
     </div>
   );
 }
 
-function OrderModal({ order, onClose, onUpdateStatus, onConfirmPayment }) {
+function OrderModal({ order, loading, onClose, onUpdateStatus, onConfirmPayment }) {
   // Форматирование статуса заказа
   const formatOrderStatus = (status) => {
     if (!status) return "-";
@@ -516,7 +586,7 @@ function OrderModal({ order, onClose, onUpdateStatus, onConfirmPayment }) {
       >
         <div className="p-4 sm:p-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Заказ #{order.id}</h2>
+            <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Заказ #{order?.id || "-"}</h2>
             <button
               onClick={onClose}
               className="text-gray-400 hover:text-gray-600 text-2xl leading-none"
@@ -525,86 +595,102 @@ function OrderModal({ order, onClose, onUpdateStatus, onConfirmPayment }) {
             </button>
           </div>
 
-          <div className="space-y-4">
+          {loading ? (
+            <div className="flex items-center justify-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#6F2A2B]"></div>
+            </div>
+          ) : (
+          <div className="space-y-6">
             {/* Общая информация */}
-            <div>
-              <h3 className="text-sm sm:text-base font-semibold text-gray-900 mb-2">Информация о заказе</h3>
-              <div className="bg-gray-50 rounded-lg p-3 sm:p-4 space-y-2">
-                <p className="text-sm sm:text-base">
-                  <span className="font-medium">Дата создания:</span> {order.createdAt ? new Date(order.createdAt).toLocaleString("ru-RU") : "-"}
-                </p>
-                <p className="text-sm sm:text-base">
-                  <span className="font-medium">Статус заказа:</span> {formatOrderStatus(order.orderStatus)}
-                </p>
-                <p className="text-sm sm:text-base">
-                  <span className="font-medium">Статус оплаты:</span> {formatPaymentStatus(order.paymentStatus)}
-                </p>
-                <p className="text-sm sm:text-base">
-                  <span className="font-medium">Метод оплаты:</span> {order.paymentMethod || "-"}
-                </p>
-                <p className="text-sm sm:text-base">
-                  <span className="font-medium">Сумма:</span> {new Intl.NumberFormat("ru-RU", {
-                    style: "currency",
-                    currency: "RUB",
-                  }).format(order.totalAmount || 0)}
-                </p>
+            <div className="border-b border-[#E8E8E8] pb-4">
+              <h3 className="text-lg font-semibold text-[#1E1E1E] mb-3">Общая информация</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+                <div>
+                  <span className="text-[#6F6F6F]">Статус заказа:</span>
+                  <span className="ml-2 font-medium text-[#1E1E1E]">
+                    {formatOrderStatus(order.orderStatus)}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-[#6F6F6F]">Статус оплаты:</span>
+                  <span className="ml-2 font-medium text-[#1E1E1E]">
+                    {formatPaymentStatus(order.paymentStatus)}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-[#6F6F6F]">Метод оплаты:</span>
+                  <span className="ml-2 font-medium text-[#1E1E1E]">
+                    {order.paymentMethod || "-"}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-[#6F6F6F]">Дата создания:</span>
+                  <span className="ml-2 font-medium text-[#1E1E1E]">
+                    {order.createdAt ? new Date(order.createdAt).toLocaleDateString("ru-RU", {
+                      day: "2-digit",
+                      month: "2-digit",
+                      year: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit"
+                    }) : "-"}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-[#6F6F6F]">Сумма заказа:</span>
+                  <span className="ml-2 font-medium text-[#1E1E1E]">
+                    {order.totalAmount ? `${order.totalAmount.toLocaleString("ru-RU")} ₽` : "-"}
+                  </span>
+                </div>
               </div>
             </div>
 
             {/* Информация о клиенте */}
             {order.customerSnapshot && Object.keys(order.customerSnapshot).length > 0 && (
-              <div>
-                <h3 className="text-sm sm:text-base font-semibold text-gray-900 mb-2">Информация о клиенте</h3>
-                <div className="bg-gray-50 rounded-lg p-3 sm:p-4 space-y-2">
+              <div className="border-b border-[#E8E8E8] pb-4">
+                <h3 className="text-lg font-semibold text-[#1E1E1E] mb-3">Информация о клиенте</h3>
+                <div className="text-sm text-[#1E1E1E] space-y-1">
                   {order.customerSnapshot.last_name && (
-                    <p className="text-sm sm:text-base">
-                      <span className="font-medium">Фамилия:</span> {order.customerSnapshot.last_name}
-                    </p>
+                    <div><strong>Фамилия:</strong> {order.customerSnapshot.last_name}</div>
                   )}
                   {order.customerSnapshot.first_name && (
-                    <p className="text-sm sm:text-base">
-                      <span className="font-medium">Имя:</span> {order.customerSnapshot.first_name}
-                    </p>
+                    <div><strong>Имя:</strong> {order.customerSnapshot.first_name}</div>
                   )}
                   {order.customerSnapshot.middle_name && (
-                    <p className="text-sm sm:text-base">
-                      <span className="font-medium">Отчество:</span> {order.customerSnapshot.middle_name}
-                    </p>
+                    <div><strong>Отчество:</strong> {order.customerSnapshot.middle_name}</div>
                   )}
                   {order.customerSnapshot.email && (
-                    <p className="text-sm sm:text-base">
-                      <span className="font-medium">Email:</span> {order.customerSnapshot.email}
-                    </p>
+                    <div><strong>Email:</strong> {order.customerSnapshot.email}</div>
                   )}
                   {order.customerSnapshot.phone && (
-                    <p className="text-sm sm:text-base">
-                      <span className="font-medium">Телефон:</span> {formatPhone(order.customerSnapshot.phone)}
-                    </p>
+                    <div><strong>Телефон:</strong> {formatPhone(order.customerSnapshot.phone)}</div>
                   )}
                 </div>
               </div>
             )}
 
-            {/* Товары */}
+            {/* Товары в заказе */}
             {order.items && order.items.length > 0 && (
-              <div>
-                <h3 className="text-sm sm:text-base font-semibold text-gray-900 mb-2">Товары</h3>
-                <div className="space-y-2">
+              <div className="border-b border-[#E8E8E8] pb-4">
+                <h3 className="text-lg font-semibold text-[#1E1E1E] mb-3">Товары</h3>
+                <div className="space-y-3">
                   {order.items.map((item) => (
-                    <div key={item.id || item.productId} className="bg-gray-50 rounded-lg p-3 sm:p-4 flex flex-col sm:flex-row sm:justify-between gap-2">
-                      <div>
-                        <p className="text-sm sm:text-base font-medium">{item.productName || "-"}</p>
-                        <p className="text-xs sm:text-sm text-gray-500">Количество: {item.quantity || 0}</p>
+                    <div key={item.id || item.productId} className="flex justify-between items-start p-3 bg-gray-50 rounded-lg">
+                      <div className="flex-1">
+                        <div className="font-medium text-[#1E1E1E]">{item.productName || "-"}</div>
+                        <div className="text-sm text-[#6F6F6F] mt-1">
+                          Количество: {item.quantity || 0}
+                        </div>
                         {item.productId && (
-                          <p className="text-xs sm:text-sm text-gray-500">ID товара: {item.productId}</p>
+                          <div className="text-sm text-[#6F6F6F] mt-1">
+                            ID товара: {item.productId}
+                          </div>
                         )}
                       </div>
-                      <p className="text-sm sm:text-base font-medium">
-                        {new Intl.NumberFormat("ru-RU", {
-                          style: "currency",
-                          currency: "RUB",
-                        }).format(item.totalPrice || 0)}
-                      </p>
+                      <div className="text-right">
+                        <div className="font-medium text-[#1E1E1E]">
+                          {item.totalPrice ? `${item.totalPrice.toLocaleString("ru-RU")} ₽` : "-"}
+                        </div>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -612,33 +698,37 @@ function OrderModal({ order, onClose, onUpdateStatus, onConfirmPayment }) {
             )}
 
             {/* Адрес доставки */}
-            {order.shippingAddress && (
-              <div>
-                <h3 className="text-sm sm:text-base font-semibold text-gray-900 mb-2">Адрес доставки</h3>
-                <div className="bg-gray-50 rounded-lg p-3 sm:p-4 space-y-2">
+            {order.shippingAddress && Object.keys(order.shippingAddress).length > 0 && (
+              <div className="border-b border-[#E8E8E8] pb-4">
+                <h3 className="text-lg font-semibold text-[#1E1E1E] mb-3">Адрес доставки</h3>
+                <div className="text-sm text-[#1E1E1E] space-y-1">
                   {order.shippingAddress.name && (
-                    <p className="text-sm sm:text-base">
-                      <span className="font-medium">Получатель:</span> {order.shippingAddress.name}
-                    </p>
+                    <div><strong>Получатель:</strong> {order.shippingAddress.name}</div>
                   )}
                   {order.shippingAddress.phone && (
-                    <p className="text-sm sm:text-base">
-                      <span className="font-medium">Телефон:</span> {formatPhone(order.shippingAddress.phone)}
-                    </p>
+                    <div><strong>Телефон:</strong> {order.shippingAddress.phone}</div>
                   )}
                   {order.shippingAddress.street && (
-                    <p className="text-sm sm:text-base">
-                      <span className="font-medium">Адрес:</span> {order.shippingAddress.street}
-                    </p>
+                    <div><strong>Адрес:</strong> {order.shippingAddress.street}</div>
                   )}
+                </div>
+              </div>
+            )}
+
+            {/* Примечания клиента */}
+            {order.customerNotes && (
+              <div className="border-b border-[#E8E8E8] pb-4">
+                <h3 className="text-lg font-semibold text-[#1E1E1E] mb-3">Примечания клиента</h3>
+                <div className="text-sm text-[#1E1E1E] whitespace-pre-wrap">
+                  {order.customerNotes}
                 </div>
               </div>
             )}
 
             {/* Управление заказом */}
             <div>
-              <h3 className="text-sm sm:text-base font-semibold text-gray-900 mb-2">Управление заказом</h3>
-              <div className="bg-gray-50 rounded-lg p-3 sm:p-4 space-y-3">
+              <h3 className="text-lg font-semibold text-[#1E1E1E] mb-3">Управление заказом</h3>
+              <div className="space-y-3">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Изменить статус заказа:
@@ -674,6 +764,7 @@ function OrderModal({ order, onClose, onUpdateStatus, onConfirmPayment }) {
               </div>
             </div>
           </div>
+          )}
         </div>
       </div>
     </div>
