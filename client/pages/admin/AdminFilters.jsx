@@ -126,7 +126,6 @@ export default function AdminFilters() {
   const [showForm, setShowForm] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [toast, setToast] = useState({ message: "", type: "success", show: false });
 
   useEffect(() => {
     const { isSuperUser: superUser, hasAccess } = checkAdminAccess();
@@ -201,9 +200,9 @@ export default function AdminFilters() {
   };
 
   // Функция для показа toast уведомлений
-  const showToast = (message, duration = 3000) => {
-    setToast(message);
-    setTimeout(() => setToast(""), duration);
+  const showToast = (message, type = "success", duration = 3000) => {
+    setToast({ message, type, show: true });
+    setTimeout(() => setToast({ message: "", type: "success", show: false }), duration);
   };
 
   // Удаление элемента
@@ -248,7 +247,7 @@ export default function AdminFilters() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+      <div className="flex items-center justify-center min-h-screen bg-gray-100">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#6F2A2B]"></div>
       </div>
     );
@@ -268,15 +267,13 @@ export default function AdminFilters() {
           isOpen={sidebarOpen}
           onClose={() => setSidebarOpen(false)}
         />
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 w-full lg:w-auto">
+        <main className="flex-1 w-full p-4 sm:p-6 lg:p-8 lg:w-auto">
           <div className="max-w-[1600px] mx-auto">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4 sm:mb-6">
-              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Фильтры</h1>
-            </div>
+            <h1 className="mb-4 text-2xl font-bold text-gray-900 sm:text-3xl sm:mb-6">Фильтры</h1>
 
             {/* Выбор типа фильтра */}
-            <div className="bg-white rounded-lg shadow p-4 sm:p-6 mb-6">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+            <div className="p-4 mb-6 bg-white rounded-lg shadow sm:p-6">
+              <label className="block mb-2 text-sm font-medium text-gray-700">
                 Выберите тип фильтра
               </label>
               <Select value={selectedFilterType} onValueChange={handleFilterTypeChange}>
@@ -300,6 +297,7 @@ export default function AdminFilters() {
                 config={config}
                 item={editingItem}
                 items={items}
+                showToast={showToast}
                 onClose={() => {
                   setShowForm(false);
                   setEditingItem(null);
@@ -314,8 +312,8 @@ export default function AdminFilters() {
 
             {/* Таблица элементов */}
             {selectedFilterType && config && (
-              <div className="bg-white rounded-lg shadow overflow-hidden">
-                <div className="p-4 sm:p-6 border-b border-gray-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div className="overflow-hidden bg-white rounded-lg shadow">
+                <div className="flex flex-col gap-4 p-4 border-b border-gray-200 sm:p-6 sm:flex-row sm:items-center sm:justify-between">
                   <h2 className="text-xl font-semibold text-gray-900">{config.label}</h2>
                   <Button
                     onClick={() => {
@@ -338,33 +336,33 @@ export default function AdminFilters() {
                     <table className="w-full min-w-[600px]">
                       <thead className="bg-gray-50">
                         <tr>
-                          <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">ID</th>
-                          <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Название</th>
+                          <th className="px-3 py-3 text-xs font-medium text-left text-gray-500 uppercase sm:px-6">ID</th>
+                          <th className="px-3 py-3 text-xs font-medium text-left text-gray-500 uppercase sm:px-6">Название</th>
                           {config.fields.some(f => f.key === "slug") && (
-                          <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase hidden md:table-cell">Slug</th>
+                          <th className="hidden px-3 py-3 text-xs font-medium text-left text-gray-500 uppercase sm:px-6 md:table-cell">Slug</th>
                           )}
                           {config.fields.some(f => f.key === "canonicalName") && (
-                            <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase hidden md:table-cell">Каноническое название</th>
+                            <th className="hidden px-3 py-3 text-xs font-medium text-left text-gray-500 uppercase sm:px-6 md:table-cell">Каноническое название</th>
                           )}
                           {config.fields.some(f => f.key === "isActive") && (
-                            <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Активна</th>
+                            <th className="px-3 py-3 text-xs font-medium text-left text-gray-500 uppercase sm:px-6">Активна</th>
                           )}
-                          <th className="px-3 sm:px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Действия</th>
+                          <th className="px-3 py-3 text-xs font-medium text-center text-gray-500 uppercase sm:px-6">Действия</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-200">
                         {items.map((item) => (
-                          <tr key={item.id}>
-                            <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-900">{item.id}</td>
-                            <td className="px-3 sm:px-6 py-4 text-sm text-gray-900">{item.name || "-"}</td>
+                          <tr key={item.id} className="transition-colors hover:bg-gray-50">
+                            <td className="px-3 py-4 text-sm text-gray-900 sm:px-6 whitespace-nowrap">{item.id}</td>
+                            <td className="px-3 py-4 text-sm text-gray-900 sm:px-6">{item.name || "-"}</td>
                             {config.fields.some(f => f.key === "slug") && (
-                            <td className="px-3 sm:px-6 py-4 text-sm text-gray-500 hidden md:table-cell">{item.slug || "-"}</td>
+                            <td className="hidden px-3 py-4 text-sm text-gray-500 sm:px-6 md:table-cell">{item.slug || "-"}</td>
                             )}
                             {config.fields.some(f => f.key === "canonicalName") && (
-                              <td className="px-3 sm:px-6 py-4 text-sm text-gray-500 hidden md:table-cell">{item.canonicalName || "-"}</td>
+                              <td className="hidden px-3 py-4 text-sm text-gray-500 sm:px-6 md:table-cell">{item.canonicalName || "-"}</td>
                             )}
                             {config.fields.some(f => f.key === "isActive") && (
-                              <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
+                              <td className="px-3 py-4 sm:px-6 whitespace-nowrap">
                                 <span className={`px-2 py-1 text-xs rounded-full ${
                                   item.isActive ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"
                                 }`}>
@@ -372,7 +370,7 @@ export default function AdminFilters() {
                                 </span>
                               </td>
                             )}
-                            <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm">
+                            <td className="px-3 py-4 text-sm sm:px-6 whitespace-nowrap">
                               <div className="flex items-center justify-center gap-2 sm:gap-4">
                                 <button
                                   onClick={() => handleDelete(item.id)}
@@ -624,25 +622,63 @@ function FilterForm({ filterType, config, item, items, onClose, onSave, showToas
   };
 
   return (
-    <div className="bg-white rounded-lg shadow p-6 mb-6">
-      <h2 className="text-xl font-semibold mb-4">
+    <div className="p-6 mb-6 bg-white rounded-lg shadow">
+      <h2 className="mb-4 text-xl font-semibold">
         {item ? `Редактировать ${config.label.toLowerCase()}` : `Добавить ${config.label.toLowerCase()}`}
       </h2>
+      
+      {/* Инструкции по заполнению фильтров */}
+      <div className="p-4 mb-6 border-l-4 border-blue-500 rounded-r bg-blue-50">
+        <h3 className="flex items-center gap-2 mb-2 text-sm font-semibold text-blue-900">
+          <span>📋</span> Инструкция по заполнению данных для базы данных
+        </h3>
+        <div className="space-y-2 text-xs text-blue-800 sm:text-sm">
+          <p><strong>Важно:</strong> Все данные сохраняются в базу данных и используются для фильтрации товаров на сайте!</p>
+          <ul className="ml-2 space-y-1 list-disc list-inside">
+            <li><strong>Название *</strong> - Название элемента на русском языке. Будет отображаться на сайте. Пример: "Royal Canin", "Корм для собак", "Курица"</li>
+            <li><strong>Slug *</strong> - Уникальный идентификатор для URL (только латиница, цифры и дефисы). Автоматически формируется из названия. Пример: "royal-canin", "korm-dlya-sobak", "kuritsa"</li>
+            {config.label === "Категории" && (
+              <>
+                <li><strong>Родительская категория</strong> - Если это подкатегория, выберите родительскую категорию. ⚠️НИЧЕГО НЕ ВЫБИРАТЬ!!!</li>
+                <li><strong>Активна</strong> ?? - Если отмечено, категория видна на сайте. Если снято - скрыта, но остается в БД.</li>
+              </>
+            )}
+            {config.label === "Породы" && (
+              <li><strong>Категория *</strong> - Выберите категорию, к которой относится порода. Пример: "Собаки" или "Кошки"</li>
+            )}
+            {config.label === "Вкусы" && (
+              <li><strong>Каноническое название *</strong> - Научное или стандартное название вкуса. Используется для внутренней идентификации в БД. Пример: "CHICKEN", "BEEF"</li>
+            )}
+          </ul>
+          <p className="mt-2 text-xs font-semibold">⚠️ ВАЖНО ДЛЯ БД:</p>
+          <ul className="ml-2 space-y-1 text-xs list-disc list-inside">
+            <li>Slug должен быть уникальным! Нельзя создать два элемента с одинаковым slug.</li>
+            <li>Slug используется в URL страниц, поэтому его нельзя изменить после создания.</li>
+            <li>После создания элемента его можно использовать при добавлении товаров.</li>
+          </ul>
+        </div>
+      </div>
+
       <form onSubmit={handleSubmit} className="space-y-4">
         {config.fields.map((field) => {
           if (field.type === "checkbox") {
             return (
-              <div key={field.key} className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  id={field.key}
-                  checked={formData[field.key] || false}
-                  onChange={(e) => setFormData({ ...formData, [field.key]: e.target.checked })}
-                  className="w-4 h-4 text-[#6F2A2B] border-gray-300 rounded focus:ring-[#6F2A2B]"
-                />
-                <label htmlFor={field.key} className="text-sm font-medium text-gray-700">
-                  {field.label}
-                </label>
+              <div key={field.key}>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id={field.key}
+                    checked={formData[field.key] || false}
+                    onChange={(e) => setFormData({ ...formData, [field.key]: e.target.checked })}
+                    className="w-4 h-4 text-[#6F2A2B] border-gray-300 rounded focus:ring-[#6F2A2B]"
+                  />
+                  <label htmlFor={field.key} className="text-sm font-medium text-gray-700">
+                    {field.label}
+                  </label>
+                </div>
+                {field.key === "isActive" && (
+                  <p className="mt-1 text-xs text-gray-500">Если отмечено, категория видна на сайте. Если снято - скрыта, но остается в БД.</p>
+                )}
               </div>
             );
           }
@@ -650,7 +686,7 @@ function FilterForm({ filterType, config, item, items, onClose, onSave, showToas
           if (field.type === "textarea") {
             return (
               <div key={field.key}>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block mb-1 text-sm font-medium text-gray-700">
                   {field.label} {field.required && "*"}
                 </label>
                 <textarea
@@ -658,8 +694,10 @@ function FilterForm({ filterType, config, item, items, onClose, onSave, showToas
                   onChange={(e) => setFormData({ ...formData, [field.key]: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#6F2A2B]"
                   rows="3"
+                  placeholder="Подробное описание..."
                   required={field.required}
                 />
+                <p className="mt-1 text-xs text-gray-500">Подробное описание. Будет отображаться на странице категории. Можно использовать HTML для форматирования.</p>
               </div>
             );
           }
@@ -671,7 +709,7 @@ function FilterForm({ filterType, config, item, items, onClose, onSave, showToas
             const currentValue = formData[field.key] && formData[field.key] !== "" ? formData[field.key] : undefined;
             return (
               <div key={field.key}>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block mb-1 text-sm font-medium text-gray-700">
                   {field.label} {field.required && "*"}
                 </label>
                 <Select
@@ -698,6 +736,12 @@ function FilterForm({ filterType, config, item, items, onClose, onSave, showToas
                     )}
                   </SelectContent>
                 </Select>
+                {field.key === "categoryId" && (
+                  <p className="mt-1 text-xs text-gray-500">Выберите категорию, к которой относится порода.</p>
+                )}
+                {field.key === "parentId" && (
+                  <p className="mt-1 text-xs text-gray-500">Если это подкатегория, выберите родительскую категорию. Оставьте пустым, если это основная категория.</p>
+                )}
               </div>
             );
           }
@@ -705,7 +749,7 @@ function FilterForm({ filterType, config, item, items, onClose, onSave, showToas
           // Обычное текстовое поле
           return (
             <div key={field.key}>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block mb-1 text-sm font-medium text-gray-700">
                 {field.label} {field.required && "*"}
               </label>
               <Input
@@ -718,9 +762,26 @@ function FilterForm({ filterType, config, item, items, onClose, onSave, showToas
                   }
                   setFormData({ ...formData, [field.key]: value });
                 }}
-                placeholder={field.key === "slug" ? "example-slug" : field.key === "canonicalName" ? "Каноническое название" : ""}
+                placeholder={
+                  field.key === "slug" 
+                    ? "example-slug" 
+                    : field.key === "canonicalName" 
+                    ? "CHICKEN, BEEF, FISH..." 
+                    : field.key === "name"
+                    ? "Например: Royal Canin"
+                    : ""
+                }
                 required={field.required}
               />
+              {field.key === "name" && (
+                <p className="mt-1 text-xs text-gray-500">Название на русском языке. Будет отображаться на сайте пользователям.</p>
+              )}
+              {field.key === "slug" && (
+                <p className="mt-1 text-xs text-gray-500">Уникальный идентификатор для URL. Только латиница, цифры и дефисы. Используется в адресе страницы.</p>
+              )}
+              {field.key === "canonicalName" && (
+                <p className="mt-1 text-xs text-gray-500">Каноническое название (обычно на английском, заглавными буквами). Используется для внутренней идентификации в БД. Пример: "CHICKEN", "BEEF", "FISH"</p>
+              )}
             </div>
           );
         })}

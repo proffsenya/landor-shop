@@ -439,13 +439,6 @@ export default function Cart() {
         return;
       }
 
-      // Вычисляем сумму только выбранных товаров
-      const selectedTotalPrice = selectedItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-
-      // Парсим адрес для формирования billingAddress и shippingAddress
-      // Формат адреса: "г. Москва, ул. Ленина, д. 10, кв. 25"
-      const addressParts = address.trim().split(",").map((s) => s.trim());
-      
       // Нормализуем номер телефона для отправки в API (убираем форматирование, оставляем только цифры)
       // Гарантируем, что номер начинается с 7
       let normalizedPhone = phone.replace(/[\s\-()\+]/g, "");
@@ -482,12 +475,22 @@ export default function Cart() {
         email: "", // Email можно получить из профиля, если нужно
       };
 
+      // Маппинг способа оплаты для API (передаем строковые значения как отображаются пользователю)
+      const paymentMethodMap = {
+        cash: "наличными",
+        sbp: "СБП",
+        requisites: "По реквизитам"
+      };
+      
+      const apiPaymentMethod = paymentMethodMap[payMethod] || "наличными";
+
       const requestBody = {
         cartItemIds: cartItemIds,
         billingAddress: billingAddress,
         shippingAddress: shippingAddress,
         customerSnapshot: customerSnapshot,
         customerNotes: customerNotes.trim() || "",
+        paymentMethod: apiPaymentMethod,
       };
 
       const headers = {
@@ -515,49 +518,7 @@ export default function Cart() {
         throw new Error(errorMessage);
       }
 
-      const orderData = await response.json();
-      
-      // Получаем orderId из ответа
-      const orderId = orderData?.id || orderData?.orderId;
-      
-      if (!orderId) {
-        throw new Error("Не удалось получить ID заказа");
-      }
-
-      // Маппинг способа оплаты для API (передаем строковые значения как отображаются пользователю)
-      const paymentMethodMap = {
-        cash: "наличными",
-        sbp: "СБП",
-        requisites: "По реквизитам"
-      };
-      
-      const apiPaymentMethod = paymentMethodMap[payMethod] || "наличными";
-      
-      // Вызываем API оплаты
-      try {
-        const paymentResponse = await fetch(`/api/payments/mock/${orderId}`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${authToken}`,
-          },
-          body: JSON.stringify({
-            amount: selectedTotalPrice,
-            paymentMethod: apiPaymentMethod,
-          }),
-        });
-
-        if (!paymentResponse.ok) {
-          const errorText = await paymentResponse.text();
-          safeWarn("Payment API error:", paymentResponse.status, errorText);
-          // Не прерываем процесс, заказ уже создан
-        } else {
-          const paymentData = await paymentResponse.json();
-        }
-      } catch (paymentError) {
-        safeError("Error creating payment:", paymentError);
-        // Не прерываем процесс, заказ уже создан
-      }
+      await response.json();
       
       showToast("Заказ успешно оформлен!");
       
@@ -576,7 +537,7 @@ export default function Cart() {
   return (
     <div className="flex flex-col min-h-screen bg-white">
       <Header />
-      <PageFade className="flex-grow flex flex-col">
+      <PageFade className="flex flex-col flex-grow">
         <div className="flex-grow container mx-auto px-4 sm:px-6 lg:px-[80px] py-8 lg:py-10">
           <BreadcrumbNav items={[
             { label: "Главная", to: "/" },
@@ -1011,7 +972,7 @@ export default function Cart() {
                       onClick={onPay}
                       className="w-full h-[48px] sm:h-[50px] rounded bg-[#6F2A2B] text-white text-[15px] sm:text-[16px] hover:bg-[#5a2223]"
                     >
-                      Оплатить
+                      Заказать
                     </button>
                   </div>
                 </div>

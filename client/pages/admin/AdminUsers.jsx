@@ -264,7 +264,7 @@ export default function AdminUsers() {
                     </tr>
                   ) : (
                     users.map((user, index) => (
-                      <tr key={user.userId || user.email || index}>
+                      <tr key={user.userId || user.email || index} className="hover:bg-gray-50 transition-colors">
                           <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-900">{index + 1}</td>
                           <td className="px-3 sm:px-6 py-4 text-sm text-gray-900">
                             <span className="truncate block max-w-[150px] sm:max-w-none" title={user.email || "-"}>

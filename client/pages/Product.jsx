@@ -333,6 +333,14 @@ export default function Product() {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
         if (!mounted) return;
+        
+        // Проверяем, активен ли товар
+        if (data.isActive === false) {
+          // Товар неактивен - перенаправляем на каталог
+          navigate("/catalog");
+          return;
+        }
+        
         setProduct(data);
       } catch (e) {
         if (!mounted) return;

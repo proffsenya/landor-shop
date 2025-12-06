@@ -75,6 +75,11 @@ function resolveImageUrl(product, variant) {
 
 // как в каталоге: разворачиваем продукт в карточки по каждому варианту
 function expandProductToVariantCards(product) {
+  // Пропускаем неактивные товары
+  if (product?.isActive === false) {
+    return [];
+  }
+  
   const pid = Number(product?.id ?? product?.productId ?? NaN);
   const variants = Array.isArray(product?.variants) ? product.variants : [];
 
@@ -160,19 +165,34 @@ export default function ProductsSection({ title, linkText = "Все товары
         // Проверяем, есть ли у первого элемента variants (структура с variants)
         const hasVariants = data[0]?.variants && Array.isArray(data[0].variants);
         
+        // Фильтруем неактивные товары
+        const activeData = data.filter(item => {
+          // Если в ответе есть isActive, используем его
+          if (item?.isActive !== undefined) {
+            return item.isActive !== false;
+          }
+          // Если нет информации, оставляем (для обратной совместимости)
+          return true;
+        });
+        
         if (hasVariants) {
           // Структура с variants - используем существующую логику
-          allVariantCards = data
+          allVariantCards = activeData
             .flatMap(expandProductToVariantCards)
             .filter((x) => Number.isFinite(x.productId) && Number.isFinite(x.variantId));
         } else {
           // Плоская структура карточек - преобразуем в нужный формат
-          allVariantCards = data
+          allVariantCards = activeData
             .map((card) => {
               const variantId = card?.id ?? null;
               const productId = card?.parentId ?? card?.productId ?? null;
               
               if (!Number.isFinite(variantId) || !Number.isFinite(productId)) {
+                return null;
+              }
+              
+              // Дополнительная проверка isActive для плоской структуры
+              if (card?.isActive === false || card?.productIsActive === false) {
                 return null;
               }
               

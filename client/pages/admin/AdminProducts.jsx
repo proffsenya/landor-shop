@@ -149,6 +149,11 @@ export default function AdminProducts() {
     }
   };
 
+  const showToast = (message, type = "success") => {
+    setToast({ message, type, show: true });
+    setTimeout(() => setToast({ message: "", type: "success", show: false }), 3000);
+  };
+
   const handleDelete = async (productId) => {
     try {
       const adminToken = getAdminToken();
@@ -173,7 +178,7 @@ export default function AdminProducts() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+      <div className="flex items-center justify-center min-h-screen bg-gray-100">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#6F2A2B]"></div>
       </div>
     );
@@ -191,10 +196,10 @@ export default function AdminProducts() {
           isOpen={sidebarOpen}
           onClose={() => setSidebarOpen(false)}
         />
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 w-full lg:w-auto">
+        <main className="flex-1 w-full p-4 sm:p-6 lg:p-8 lg:w-auto">
           <div className="max-w-[1600px] mx-auto">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4 sm:mb-6">
-              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Товары</h1>
+            <div className="flex flex-col gap-4 mb-4 sm:flex-row sm:items-center sm:justify-between sm:mb-6">
+              <h1 className="text-2xl font-bold text-gray-900 sm:text-3xl">Товары</h1>
               <Button
                 onClick={() => {
                   setEditingProduct(null);
@@ -220,6 +225,7 @@ export default function AdminProducts() {
                 colors={colors}
                 scents={scents}
                 productTypes={productTypes}
+                showToast={showToast}
                 onClose={() => {
                   setShowForm(false);
                   setEditingProduct(null);
@@ -232,30 +238,30 @@ export default function AdminProducts() {
               />
             )}
 
-
-            <div className="bg-white rounded-lg shadow overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="w-full min-w-[1000px]">
+            <div className="overflow-hidden bg-white rounded-lg shadow">
+              {/* Десктопная таблица */}
+              <div className="hidden overflow-x-auto md:block">
+                <table className="w-full min-w-[800px]">
                 <thead className="bg-gray-50">
                   <tr>
-                      <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">ID</th>
-                      <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Название</th>
-                      <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase hidden lg:table-cell">Варианты</th>
-                      <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Цена</th>
-                      <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase hidden lg:table-cell">Вес</th>
-                      <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Наличие</th>
-                      <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Действия</th>
+                      <th className="px-3 py-3 text-xs font-medium text-left text-gray-500 uppercase sm:px-6">ID</th>
+                      <th className="px-3 py-3 text-xs font-medium text-left text-gray-500 uppercase sm:px-6">Название</th>
+                      <th className="hidden px-3 py-3 text-xs font-medium text-left text-gray-500 uppercase sm:px-6 lg:table-cell">Варианты</th>
+                      <th className="px-3 py-3 text-xs font-medium text-left text-gray-500 uppercase sm:px-6">Цена</th>
+                      <th className="hidden px-3 py-3 text-xs font-medium text-left text-gray-500 uppercase sm:px-6 lg:table-cell">Вес</th>
+                      <th className="px-3 py-3 text-xs font-medium text-left text-gray-500 uppercase sm:px-6">Наличие</th>
+                      <th className="px-3 py-3 text-xs font-medium text-left text-gray-500 uppercase sm:px-6">Действия</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
                   {products.length === 0 ? (
                     <tr>
-                        <td colSpan="7" className="px-3 sm:px-6 py-4 text-center text-gray-500">
+                        <td colSpan="7" className="px-3 py-4 text-center text-gray-500 sm:px-6">
                         Нет товаров
                       </td>
                     </tr>
                   ) : (
-                    products.map((product) => {
+                    products.map((product, index) => {
                       // Вычисляем статистику по вариантам
                       const variants = product.variants || [];
                       const variantCount = variants.length;
@@ -268,12 +274,17 @@ export default function AdminProducts() {
                         ? `${minPrice.toFixed(2)} ₽` 
                         : `${minPrice.toFixed(2)} - ${maxPrice.toFixed(2)} ₽`;
                       
-                      // Веса (уникальные значения)
+                      // Веса (уникальные значения) - конвертируем граммы в килограммы
                       const weights = [...new Set(variants.map(v => v.weight || 0).filter(w => w > 0))];
+                      const formatWeight = (grams) => {
+                        const kg = grams / 1000;
+                        // Убираем лишние нули, но оставляем минимум один знак после запятой для дробных значений
+                        return kg % 1 === 0 ? `${kg} кг` : `${kg.toFixed(3).replace(/\.?0+$/, '')} кг`;
+                      };
                       const weightDisplay = weights.length > 0 
                         ? weights.length === 1 
-                          ? `${weights[0]} г`
-                          : `${weights.join(', ')} г`
+                          ? formatWeight(weights[0])
+                          : weights.map(w => formatWeight(w)).join(', ')
                         : "-";
                       
                       // Общее наличие
@@ -286,18 +297,18 @@ export default function AdminProducts() {
                       
                       return (
                         <React.Fragment key={product.id}>
-                      <tr 
-                        onClick={() => setExpandedProductId(isExpanded ? null : product.id)}
-                        className="cursor-pointer hover:bg-gray-50 transition-colors"
-                      >
-                          <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-900">{product.id}</td>
-                          <td className="px-3 sm:px-6 py-4 text-sm text-gray-900">
+                          <tr 
+                            onClick={() => setExpandedProductId(isExpanded ? null : product.id)}
+                            className="transition-colors cursor-pointer hover:bg-gray-50"
+                          >
+                            <td className="px-3 py-4 text-sm text-gray-900 sm:px-6 whitespace-nowrap">{product.id}</td>
+                            <td className="px-3 py-4 text-sm text-gray-900 sm:px-6">
                             <div className="flex items-center gap-2">
                               {firstImage && (
                                 <img 
                                   src={firstImage} 
                                   alt={product.name || product.productName}
-                                  className="w-10 h-10 object-cover rounded"
+                                  className="object-cover w-10 h-10 rounded"
                                   onError={(e) => {
                                     e.currentTarget.style.display = 'none';
                                   }}
@@ -305,32 +316,32 @@ export default function AdminProducts() {
                               )}
                               <span>{product.name || product.productName}</span>
                             </div>
-                          </td>
-                          <td className="px-3 sm:px-6 py-4 text-sm text-gray-500 hidden lg:table-cell">
-                            {variantCount > 0 ? (
-                              <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">
-                                {variantCount} {variantCount === 1 ? 'вариант' : variantCount < 5 ? 'варианта' : 'вариантов'}
+                            </td>
+                            <td className="hidden px-3 py-4 text-sm text-gray-500 sm:px-6 lg:table-cell">
+                              {variantCount > 0 ? (
+                                <span className="px-2 py-1 text-xs text-blue-800 bg-blue-100 rounded">
+                                  {variantCount} {variantCount === 1 ? 'вариант' : variantCount < 5 ? 'варианта' : 'вариантов'}
+                                </span>
+                              ) : "-"}
+                            </td>
+                            <td className="px-3 py-4 text-sm text-gray-900 sm:px-6 whitespace-nowrap">
+                              {priceRange !== "0.00 ₽" ? priceRange : "-"}
+                            </td>
+                            <td className="hidden px-3 py-4 text-sm text-gray-500 sm:px-6 lg:table-cell">
+                              {weightDisplay}
+                            </td>
+                            <td className="px-3 py-4 text-sm sm:px-6">
+                              <span className={`px-2 py-1 rounded text-xs ${
+                                totalStock > 0 
+                                  ? "bg-green-100 text-green-800" 
+                                  : "bg-red-100 text-red-800"
+                              }`}>
+                                {totalStock} шт.
                               </span>
-                            ) : "-"}
-                          </td>
-                          <td className="px-3 sm:px-6 py-4 text-sm text-gray-900 whitespace-nowrap">
-                            {priceRange !== "0.00 ₽" ? priceRange : "-"}
-                          </td>
-                          <td className="px-3 sm:px-6 py-4 text-sm text-gray-500 hidden lg:table-cell">
-                            {weightDisplay}
-                          </td>
-                          <td className="px-3 sm:px-6 py-4 text-sm">
-                            <span className={`px-2 py-1 rounded text-xs ${
-                              totalStock > 0 
-                                ? "bg-green-100 text-green-800" 
-                                : "bg-red-100 text-red-800"
-                            }`}>
-                              {totalStock} шт.
-                            </span>
-                          </td>
-                          <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm" onClick={(e) => e.stopPropagation()}>
-                            <div className="flex items-center gap-1 sm:gap-2">
-                            <button
+                            </td>
+                            <td className="px-3 py-4 text-sm sm:px-6 whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
+                              <div className="flex items-center gap-1 sm:gap-2">
+                              <button
                               onClick={async (e) => {
                                 e.stopPropagation();
                                 // Всегда загружаем детали для редактирования
@@ -359,74 +370,77 @@ export default function AdminProducts() {
                             >
                               <Edit className="w-4 h-4" />
                             </button>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleDelete(product.id);
-                              }}
-                              className="text-red-600 hover:text-red-800"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                      {isExpanded && variantCount > 0 && (
-                        <tr>
-                          <td colSpan="7" className="px-3 sm:px-6 py-4 bg-gray-50">
-                            <div className="space-y-4">
-                              <h3 className="font-semibold text-gray-900 mb-3">
-                                Варианты товара ({variantCount})
-                              </h3>
-                              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDelete(product.id);
+                                }}
+                                className="text-red-600 hover:text-red-800"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                            </td>
+                          </tr>
+                          {isExpanded && variantCount > 0 && (
+                            <tr>
+                            <td colSpan="7" className="px-3 py-4 sm:px-6 bg-gray-50">
+                              <div className="space-y-4">
+                                <h3 className="mb-3 font-semibold text-gray-900">
+                                  Варианты товара ({variantCount})
+                                </h3>
+                              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                                 {variants.map((variant) => (
                                   <div 
                                     key={variant.id}
-                                    className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
+                                    className="p-4 transition-shadow bg-white border border-gray-200 rounded-lg hover:shadow-md"
                                   >
-                                    <div className="flex items-start gap-3">
-                                      {variant.imageUrl && (
-                                        <img 
-                                          src={variant.imageUrl} 
-                                          alt={variant.displayName}
-                                          className="w-16 h-16 object-cover rounded flex-shrink-0"
-                                          onError={(e) => {
-                                            e.currentTarget.src = '/korm1.svg';
-                                          }}
-                                        />
-                                      )}
-                                      <div className="flex-1 min-w-0">
-                                        <p className="text-sm font-medium text-gray-900 mb-2 truncate">
-                                          {variant.displayName}
-                                        </p>
-                                        <div className="space-y-1 text-xs text-gray-600">
-                                          <div className="flex justify-between">
-                                            <span>ID варианта:</span>
-                                            <span className="font-medium">{variant.id}</span>
+                                      <div className="flex items-start gap-3">
+                                        {variant.imageUrl && (
+                                          <img 
+                                            src={variant.imageUrl} 
+                                            alt={variant.displayName}
+                                            className="flex-shrink-0 object-cover w-16 h-16 rounded"
+                                            onError={(e) => {
+                                              e.currentTarget.src = '/korm1.svg';
+                                            }}
+                                          />
+                                        )}
+                                        <div className="flex-1 min-w-0">
+                                          <p className="mb-2 text-sm font-medium text-gray-900 truncate">
+                                            {variant.displayName}
+                                          </p>
+                                          <div className="space-y-1 text-xs text-gray-600">
+                                            <div className="flex justify-between">
+                                              <span>ID варианта:</span>
+                                              <span className="font-medium">{variant.id}</span>
+                                            </div>
+                                            <div className="flex justify-between">
+                                              <span>Цена:</span>
+                                              <span className="font-medium text-[#6F2A2B]">
+                                                {variant.price ? `${variant.price.toFixed(2)} ₽` : "-"}
+                                              </span>
+                                            </div>
+                                            <div className="flex justify-between">
+                                              <span>Вес:</span>
+                                              <span className="font-medium">
+                                                {variant.weight ? (() => {
+                                                  const kg = variant.weight / 1000;
+                                                  return kg % 1 === 0 ? `${kg} кг` : `${kg.toFixed(3).replace(/\.?0+$/, '')} кг`;
+                                                })() : "-"}
+                                              </span>
+                                            </div>
+                                            <div className="flex justify-between">
+                                              <span>Наличие:</span>
+                                              <span className={`font-medium ${
+                                                (variant.stock || 0) > 0 
+                                                  ? "text-green-600" 
+                                                  : "text-red-600"
+                                              }`}>
+                                                {variant.stock || 0} шт.
+                                              </span>
+                                            </div>
                                           </div>
-                                          <div className="flex justify-between">
-                                            <span>Цена:</span>
-                                            <span className="font-medium text-[#6F2A2B]">
-                                              {variant.price ? `${variant.price.toFixed(2)} ₽` : "-"}
-                                            </span>
-                                          </div>
-                                          <div className="flex justify-between">
-                                            <span>Вес:</span>
-                                            <span className="font-medium">
-                                              {variant.weight ? `${variant.weight} г` : "-"}
-                                            </span>
-                                          </div>
-                                          <div className="flex justify-between">
-                                            <span>Наличие:</span>
-                                            <span className={`font-medium ${
-                                              (variant.stock || 0) > 0 
-                                                ? "text-green-600" 
-                                                : "text-red-600"
-                                            }`}>
-                                              {variant.stock || 0} шт.
-                                            </span>
-                                          </div>
-                                        </div>
                                       </div>
                                     </div>
                                   </div>
@@ -435,13 +449,218 @@ export default function AdminProducts() {
                             </div>
                           </td>
                         </tr>
-                      )}
-                    </React.Fragment>
-                    );
+                          )}
+                        </React.Fragment>
+                      );
                     })
                   )}
                 </tbody>
               </table>
+              </div>
+
+              {/* Мобильные карточки */}
+              <div className="md:hidden">
+                {products.length === 0 ? (
+                  <div className="p-6 text-center text-gray-500">
+                    Нет товаров
+                  </div>
+                ) : (
+                  <div className="divide-y divide-gray-200">
+                    {products.map((product) => {
+                      const variants = product.variants || [];
+                      const variantCount = variants.length;
+                      const prices = variants.map(v => v.price || 0).filter(p => p > 0);
+                      const minPrice = prices.length > 0 ? Math.min(...prices) : 0;
+                      const maxPrice = prices.length > 0 ? Math.max(...prices) : 0;
+                      const priceRange = minPrice === maxPrice 
+                        ? `${minPrice.toFixed(2)} ₽` 
+                        : `${minPrice.toFixed(2)} - ${maxPrice.toFixed(2)} ₽`;
+                      const weights = [...new Set(variants.map(v => v.weight || 0).filter(w => w > 0))];
+                      const formatWeight = (grams) => {
+                        const kg = grams / 1000;
+                        // Убираем лишние нули, но оставляем минимум один знак после запятой для дробных значений
+                        return kg % 1 === 0 ? `${kg} кг` : `${kg.toFixed(3).replace(/\.?0+$/, '')} кг`;
+                      };
+                      const weightDisplay = weights.length > 0 
+                        ? weights.length === 1 
+                          ? formatWeight(weights[0])
+                          : weights.map(w => formatWeight(w)).join(', ')
+                        : "-";
+                      const totalStock = variants.reduce((sum, v) => sum + (v.stock || 0), 0);
+                      const firstImage = variants.find(v => v.imageUrl)?.imageUrl;
+                      const isExpanded = expandedProductId === product.id;
+
+                      return (
+                        <React.Fragment key={product.id}>
+                          <div 
+                            onClick={() => setExpandedProductId(isExpanded ? null : product.id)}
+                            className="p-4 transition-colors cursor-pointer hover:bg-gray-50"
+                          >
+                            <div className="flex items-start gap-3">
+                              {firstImage && (
+                                <img 
+                                  src={firstImage} 
+                                  alt={product.name || product.productName}
+                                  className="flex-shrink-0 object-cover w-16 h-16 rounded"
+                                  onError={(e) => {
+                                    e.currentTarget.style.display = 'none';
+                                  }}
+                                />
+                              )}
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-start justify-between gap-2 mb-2">
+                                  <div className="flex-1 min-w-0">
+                                    <p className="text-sm font-medium text-gray-900 truncate">
+                                      {product.name || product.productName}
+                                    </p>
+                                    <p className="mt-1 text-xs text-gray-500">ID: {product.id}</p>
+                                  </div>
+                                  <div className="flex items-center flex-shrink-0 gap-2" onClick={(e) => e.stopPropagation()}>
+                                    <button
+                                      onClick={async (e) => {
+                                        e.stopPropagation();
+                                        if (product.id) {
+                                          try {
+                                            const adminToken = getAdminToken();
+                                            const res = await fetch(`/api/products/${product.id}/details`, {
+                                              headers: { Authorization: `Bearer ${adminToken}` },
+                                            });
+                                            if (res.ok) {
+                                              const details = await res.json();
+                                              setEditingProduct(details);
+                                            } else {
+                                              setEditingProduct(product);
+                                            }
+                                          } catch (e) {
+                                            safeError("Error loading product details:", e);
+                                            setEditingProduct(product);
+                                          }
+                                        } else {
+                                          setEditingProduct(product);
+                                        }
+                                        setShowForm(true);
+                                      }}
+                                      className="text-[#6F2A2B] hover:text-[#5a2223] p-1"
+                                    >
+                                      <Edit className="w-4 h-4" />
+                                    </button>
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleDelete(product.id);
+                                      }}
+                                      className="p-1 text-red-600 hover:text-red-800"
+                                    >
+                                      <Trash2 className="w-4 h-4" />
+                                    </button>
+                                  </div>
+                                </div>
+                                <div className="space-y-1.5">
+                                  {variantCount > 0 && (
+                                    <div className="flex items-center gap-2">
+                                      <span className="text-xs text-gray-500">Варианты:</span>
+                                      <span className="px-2 py-0.5 bg-blue-100 text-blue-800 rounded text-xs">
+                                        {variantCount} {variantCount === 1 ? 'вариант' : variantCount < 5 ? 'варианта' : 'вариантов'}
+                                      </span>
+                                    </div>
+                                  )}
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-xs text-gray-500">Цена:</span>
+                                    <span className="text-sm font-medium text-gray-900">
+                                      {priceRange !== "0.00 ₽" ? priceRange : "-"}
+                                    </span>
+                                  </div>
+                                  {weightDisplay !== "-" && (
+                                    <div className="flex items-center gap-2">
+                                      <span className="text-xs text-gray-500">Вес:</span>
+                                      <span className="text-sm text-gray-700">{weightDisplay}</span>
+                                    </div>
+                                  )}
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-xs text-gray-500">Наличие:</span>
+                                    <span className={`px-2 py-0.5 rounded text-xs ${
+                                      totalStock > 0 
+                                        ? "bg-green-100 text-green-800" 
+                                        : "bg-red-100 text-red-800"
+                                    }`}>
+                                      {totalStock} шт.
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                          {isExpanded && variantCount > 0 && (
+                            <div className="px-4 pb-4 bg-gray-50">
+                              <div className="pt-2 space-y-3">
+                                <h3 className="text-sm font-semibold text-gray-900">
+                                  Варианты товара ({variantCount})
+                                </h3>
+                                <div className="space-y-3">
+                                  {variants.map((variant) => (
+                                    <div 
+                                      key={variant.id}
+                                      className="p-3 bg-white border border-gray-200 rounded-lg"
+                                    >
+                                      <div className="flex items-start gap-3">
+                                        {variant.imageUrl && (
+                                          <img 
+                                            src={variant.imageUrl} 
+                                            alt={variant.displayName}
+                                            className="flex-shrink-0 object-cover w-12 h-12 rounded"
+                                            onError={(e) => {
+                                              e.currentTarget.src = '/korm1.svg';
+                                            }}
+                                          />
+                                        )}
+                                        <div className="flex-1 min-w-0">
+                                          <p className="text-sm font-medium text-gray-900 mb-1.5 truncate">
+                                            {variant.displayName}
+                                          </p>
+                                          <div className="space-y-1 text-xs text-gray-600">
+                                            <div className="flex justify-between">
+                                              <span>ID:</span>
+                                              <span className="font-medium">{variant.id}</span>
+                                            </div>
+                                            <div className="flex justify-between">
+                                              <span>Цена:</span>
+                                              <span className="font-medium text-[#6F2A2B]">
+                                                {variant.price ? `${variant.price.toFixed(2)} ₽` : "-"}
+                                              </span>
+                                            </div>
+                                            <div className="flex justify-between">
+                                              <span>Вес:</span>
+                                              <span className="font-medium">
+                                                {variant.weight ? (() => {
+                                                  const kg = variant.weight / 1000;
+                                                  return kg % 1 === 0 ? `${kg} кг` : `${kg.toFixed(3).replace(/\.?0+$/, '')} кг`;
+                                                })() : "-"}
+                                              </span>
+                                            </div>
+                                            <div className="flex justify-between">
+                                              <span>Наличие:</span>
+                                              <span className={`font-medium ${
+                                                (variant.stock || 0) > 0 
+                                                  ? "text-green-600" 
+                                                  : "text-red-600"
+                                              }`}>
+                                                {variant.stock || 0} шт.
+                                              </span>
+                                            </div>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </React.Fragment>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -465,6 +684,7 @@ function ProductForm({
   colors,
   scents,
   productTypes,
+  showToast,
   onClose,
   onSave,
 }) {
@@ -516,7 +736,10 @@ function ProductForm({
         : [],
       brandId: product.brandId ? String(product.brandId) : "",
       productTypeId: product.productTypeId ? String(product.productTypeId) : "",
-      variants: product.variants || [],
+          variants: (product.variants || []).map(v => ({
+            ...v,
+            weight: v.weight ? v.weight / 1000 : 0, // Конвертируем граммы в килограммы для отображения
+          })),
       quantityInStock: product.quantityInStock || 0,
       isActive: product.isActive !== undefined ? product.isActive : true,
       isFeatured: product.isFeatured !== undefined ? product.isFeatured : false,
@@ -645,7 +868,7 @@ function ProductForm({
               sku: v.sku || "",
           price: Number(v.price) || 0,
           stock: Number(v.stock) || 0,
-          weight: Number(v.weight) || 0,
+          weight: Number(v.weight) ? Number(v.weight) * 1000 : 0, // Конвертируем килограммы обратно в граммы для сохранения
           colorIds: Array.isArray(v.colorIds) 
                 ? v.colorIds.map((c) => {
                     if (typeof c === "object" && c.id !== undefined) {
@@ -759,7 +982,7 @@ function ProductForm({
               price: Number(v.price) || 0,
               oldPrice: (v.oldPrice !== undefined && v.oldPrice !== null && v.oldPrice !== "" && !isNaN(Number(v.oldPrice)) && Number(v.oldPrice) !== 0) ? Number(v.oldPrice) : null,
               stock: Number(v.stock) || 0,
-              weight: Number(v.weight) || 0,
+              weight: Number(v.weight) ? Number(v.weight) * 1000 : 0, // Конвертируем килограммы обратно в граммы для сохранения
               colorIds: colorObjects,
               scentIds: scentObjects,
               displayName: v.displayName || "",
@@ -844,25 +1067,48 @@ function ProductForm({
   };
 
   return (
-    <div className="bg-white rounded-lg shadow p-6 mb-6 max-h-[90vh] overflow-y-auto">
-      <h2 className="text-xl font-semibold mb-4">
+    <div className="bg-white rounded-lg shadow p-4 sm:p-6 mb-6 max-h-[90vh] overflow-y-auto">
+      <h2 className="mb-4 text-lg font-semibold sm:text-xl">
         {product ? "Редактировать товар" : "Добавить товар"}
       </h2>
+      
+      {/* Инструкции по заполнению */}
+      <div className="p-4 mb-6 border-l-4 border-blue-500 rounded-r bg-blue-50">
+        <h3 className="flex items-center gap-2 mb-2 text-sm font-semibold text-blue-900">
+          <span>📋</span> Инструкция по заполнению данных для базы данных
+        </h3>
+        <div className="space-y-2 text-xs text-blue-800 sm:text-sm">
+          <p><strong>Важно:</strong> Все данные сохраняются в базу данных. Заполняйте поля внимательно!</p>
+          <ul className="ml-2 space-y-1 list-disc list-inside">
+            <li><strong>Название *</strong> - Полное название товара на русском языке. Пример: "Корм для собак премиум класса"</li>
+            <li><strong>Slug *</strong> - Уникальный идентификатор для URL (только латиница, цифры и дефисы). Автоматически формируется из названия. Пример: "korm-dlya-sobak-premium"</li>
+            <li><strong>Описание</strong> - Подробное описание товара.</li>
+            <li><strong>Бренд</strong> - Выберите бренд из списка. Если бренда нет, сначала создайте его в разделе "Фильтры".</li>
+            <li><strong>Тип продукта</strong> - Категория продукта (корм, аксессуар и т.д.). Выберите из списка.</li>
+            <li><strong>Категории/Породы/Страны/Тип корма/Вкусы</strong> - Можно выбрать несколько значений. Эти данные используются для фильтрации на сайте.</li>
+            <li><strong>Варианты товара</strong> - Обязательно добавьте хотя бы один вариант! Вариант = конкретная упаковка товара (размер, вес, цвет и т.д.)</li>
+            <li><strong>Изображения</strong> - Загружайте только при создании нового товара. Формат: JPEG. Рекомендуемый размер: не менее 800x800px.</li>
+          </ul>
+        </div>
+      </div>
+
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block mb-1 text-sm font-medium text-gray-700">
               Название *
             </label>
             <Input
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              placeholder="Например: Корм для собак премиум класса"
               required
             />
+            <p className="mt-1 text-xs text-gray-500">Полное название товара, которое будет отображаться на сайте</p>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Slug *
+            <label className="block mb-1 text-sm font-medium text-gray-700">
+              Slug * (URL-адрес)
             </label>
             <Input
               value={formData.slug}
@@ -872,13 +1118,15 @@ function ProductForm({
                   slug: e.target.value.toLowerCase().replace(/\s+/g, "-"),
                 })
               }
+              placeholder="korm-dlya-sobak-premium"
               required
             />
+            <p className="mt-1 text-xs text-gray-500">Уникальный идентификатор для URL. Только латиница, цифры и дефисы. Используется в адресе страницы товара.</p>
           </div>
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block mb-1 text-sm font-medium text-gray-700">
             Описание
           </label>
           <textarea
@@ -888,12 +1136,14 @@ function ProductForm({
             }
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#6F2A2B]"
             rows="3"
+            placeholder="Подробное описание товара, его характеристики, состав, преимущества..."
           />
+          <p className="mt-1 text-xs text-gray-500">Подробное описание товара. Будет отображаться на странице товара. Можно использовать HTML для форматирования.</p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block mb-1 text-sm font-medium text-gray-700">
               Примечание по кормлению
             </label>
             <textarea
@@ -903,10 +1153,12 @@ function ProductForm({
               }
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#6F2A2B]"
               rows="2"
+              placeholder="Например: Рекомендуемая суточная норма для взрослой собаки 20-30 кг: 300-400 г"
             />
+            <p className="mt-1 text-xs text-gray-500">Инструкции по кормлению, дозировке, рекомендации по применению</p>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block mb-1 text-sm font-medium text-gray-700">
               Гарантированные показатели
             </label>
             <textarea
@@ -916,13 +1168,15 @@ function ProductForm({
               }
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#6F2A2B]"
               rows="2"
+              placeholder="Например: Белок: 28%, Жир: 15%, Клетчатка: 4%, Влажность: 10%"
             />
+            <p className="mt-1 text-xs text-gray-500">Гарантированный анализ состава (белки, жиры, углеводы, клетчатка и т.д.)</p>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block mb-1 text-sm font-medium text-gray-700">
               Бренд
             </label>
             <Select
@@ -942,9 +1196,10 @@ function ProductForm({
                 ))}
               </SelectContent>
             </Select>
+            <p className="mt-1 text-xs text-gray-500">Выберите производителя товара. Если бренда нет в списке, создайте его в разделе "Фильтры" → "Бренды"</p>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block mb-1 text-sm font-medium text-gray-700">
               Тип продукта
             </label>
             <Select
@@ -964,45 +1219,67 @@ function ProductForm({
                 ))}
               </SelectContent>
             </Select>
+            <p className="mt-1 text-xs text-gray-500">Категория продукта (корм, аксессуар, игрушка и т.д.). Если типа нет, создайте его в разделе "Фильтры"</p>
           </div>
         </div>
 
         {/* Множественный выбор */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <MultiSelectField
-            label="Категории"
-            options={categories}
-            selected={formData.categoryIds}
-            onChange={(value) => toggleMultiSelect("categoryIds", value)}
-          />
-          <MultiSelectField
-            label="Породы"
-            options={breeds}
-            selected={formData.breedIds}
-            onChange={(value) => toggleMultiSelect("breedIds", value)}
-          />
-          <MultiSelectField
-            label="Страны"
-            options={countries}
-            selected={formData.countryIds}
-            onChange={(value) => toggleMultiSelect("countryIds", value)}
-          />
-          <MultiSelectField
-            label="Тип корма"
-            options={typeoffood}
-            selected={formData.typeoffoodIds}
-            onChange={(value) => toggleMultiSelect("typeoffoodIds", value)}
-          />
-          <MultiSelectField
-            label="Вкусы"
-            options={flavors}
-            selected={formData.flavorIds}
-            onChange={(value) => toggleMultiSelect("flavorIds", value)}
-          />
+        <div className="p-3 mb-4 border border-yellow-200 rounded bg-yellow-50">
+          <p className="mb-2 text-xs text-yellow-800"><strong>💡 Важно:</strong> Выберите все подходящие значения. Эти данные используются для фильтрации товаров на сайте!</p>
+        </div>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div>
+            <MultiSelectField
+              label="Категории"
+              options={categories}
+              selected={formData.categoryIds}
+              onChange={(value) => toggleMultiSelect("categoryIds", value)}
+            />
+            <p className="mt-1 text-xs text-gray-500">Выберите категории товара (можно несколько). Пример: "Корм для собак", "Сухой корм"</p>
+          </div>
+          <div>
+            <MultiSelectField
+              label="Породы"
+              options={breeds}
+              selected={formData.breedIds}
+              onChange={(value) => toggleMultiSelect("breedIds", value)}
+            />
+            <p className="mt-1 text-xs text-gray-500">Для каких пород подходит товар. Можно выбрать несколько пород</p>
+          </div>
+          <div>
+            <MultiSelectField
+              label="Страны"
+              options={countries}
+              selected={formData.countryIds}
+              onChange={(value) => toggleMultiSelect("countryIds", value)}
+            />
+            <p className="mt-1 text-xs text-gray-500">Страна производства товара</p>
+          </div>
+          <div>
+            <MultiSelectField
+              label="Тип корма"
+              options={typeoffood}
+              selected={formData.typeoffoodIds}
+              onChange={(value) => toggleMultiSelect("typeoffoodIds", value)}
+            />
+            <p className="mt-1 text-xs text-gray-500">Тип корма: сухой, влажный, консервы и т.д.</p>
+          </div>
+          <div>
+            <MultiSelectField
+              label="Вкусы"
+              options={flavors}
+              selected={formData.flavorIds}
+              onChange={(value) => toggleMultiSelect("flavorIds", value)}
+            />
+            <p className="mt-1 text-xs text-gray-500">Вкусовые варианты товара (курица, говядина, рыба и т.д.)</p>
+          </div>
         </div>
 
         {/* Варианты */}
         <div>
+          <div className="p-3 mb-3 border border-red-200 rounded bg-red-50">
+            <p className="text-xs text-red-800"><strong>⚠️ ОБЯЗАТЕЛЬНО:</strong> Товар должен иметь хотя бы один вариант! Вариант = конкретная упаковка товара (размер, вес, цвет).</p>
+          </div>
           <div className="flex items-center justify-between mb-2">
             <label className="block text-sm font-medium text-gray-700">
               Варианты товара
@@ -1012,6 +1289,7 @@ function ProductForm({
               Добавить вариант
             </Button>
           </div>
+          <p className="mb-3 text-xs text-gray-500">Вариант - это конкретная упаковка товара с определенным весом, ценой и наличием. Например: "Корм для собак, 2 кг, 1500 руб" - это один вариант. "Корм для собак, 5 кг, 3000 руб" - другой вариант.</p>
           {formData.variants.map((variant, index) => (
             <VariantForm
               key={index}
@@ -1028,62 +1306,79 @@ function ProductForm({
 
         {/* Дополнительные поля для редактирования */}
         {product && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Количество на складе
-              </label>
-              <Input
-                type="number"
-                value={formData.quantityInStock}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    quantityInStock: Number(e.target.value),
-                  })
-                }
-              />
+          <div>
+            <div className="p-3 mb-3 border border-gray-200 rounded bg-gray-50">
+              <p className="text-xs text-gray-700"><strong>ℹ️ Дополнительные настройки:</strong> Эти поля доступны только при редактировании существующего товара.</p>
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Рейтинг
-              </label>
-              <Input
-                type="number"
-                value={formData.rating || ""}
-                onChange={(e) => {
-                  const value = e.target.value;
-                  setFormData({ ...formData, rating: value === "" ? "" : Number(value) });
-                }}
-              />
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div>
+                <label className="block mb-1 text-sm font-medium text-gray-700">
+                  Количество на складе
+                </label>
+                <Input
+                  type="number"
+                  min="0"
+                  value={formData.quantityInStock}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      quantityInStock: Number(e.target.value),
+                    })
+                  }
+                  placeholder="0"
+                />
+                <p className="mt-1 text-xs text-gray-500">Не работает!! Заготовка</p>
+              </div>
+              <div>
+                <label className="block mb-1 text-sm font-medium text-gray-700">
+                  Рейтинг
+                </label>
+                <Input
+                  type="number"
+                  step="0.1"
+                  min="0"
+                  max="5"
+                  value={formData.rating || ""}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setFormData({ ...formData, rating: value === "" ? "" : Number(value) });
+                  }}
+                  placeholder="4.5"
+                />
+                <p className="mt-1 text-xs text-gray-500">Не работает!! Заготовка</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="isActive"
+                  checked={formData.isActive}
+                  onChange={(e) =>
+                    setFormData({ ...formData, isActive: e.target.checked })
+                  }
+                  className="w-4 h-4 text-[#6F2A2B] border-gray-300 rounded focus:ring-[#6F2A2B]"
+                />
+                <label htmlFor="isActive" className="text-sm font-medium text-gray-700">
+                  Активен
+                </label>
+              </div>
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="isFeatured"
+                  checked={formData.isFeatured}
+                  onChange={(e) =>
+                    setFormData({ ...formData, isFeatured: e.target.checked })
+                  }
+                  className="w-4 h-4 text-[#6F2A2B] border-gray-300 rounded focus:ring-[#6F2A2B]"
+                />
+                <label htmlFor="isFeatured" className="text-sm font-medium text-gray-700">
+                  Рекомендуемый
+                </label>
+              </div>
             </div>
-            <div className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                id="isActive"
-                checked={formData.isActive}
-                onChange={(e) =>
-                  setFormData({ ...formData, isActive: e.target.checked })
-                }
-                className="w-4 h-4 text-[#6F2A2B] border-gray-300 rounded focus:ring-[#6F2A2B]"
-              />
-              <label htmlFor="isActive" className="text-sm font-medium text-gray-700">
-                Активен
-              </label>
-            </div>
-            <div className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                id="isFeatured"
-                checked={formData.isFeatured}
-                onChange={(e) =>
-                  setFormData({ ...formData, isFeatured: e.target.checked })
-                }
-                className="w-4 h-4 text-[#6F2A2B] border-gray-300 rounded focus:ring-[#6F2A2B]"
-              />
-              <label htmlFor="isFeatured" className="text-sm font-medium text-gray-700">
-                Рекомендуемый
-              </label>
+            <div className="mt-2 space-y-1 text-xs text-gray-500">
+              <p><strong>Активен:</strong> Если отмечено, товар виден на сайте. Если снято - товар скрыт, но остается в БД.</p>
+              <p><strong>Рекомендуемый:</strong>Не работает!! Заготовка</p>
             </div>
           </div>
         )}
@@ -1091,9 +1386,18 @@ function ProductForm({
         {/* Поле для выбора изображений (только при создании) */}
         {!product && (
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block mb-1 text-sm font-medium text-gray-700">
               Изображения товара
             </label>
+            <div className="p-3 mb-2 border border-green-200 rounded bg-green-50">
+              <p className="text-xs text-green-800"><strong>📸 Требования к изображениям:</strong></p>
+              <ul className="mt-1 space-y-1 text-xs text-green-700 list-disc list-inside">
+                <li>Формат: JPEG</li>
+                <li>Рекомендуемый размер: минимум 800x800 пикселей</li>
+                <li>Количество изображений = количество вариантов товара. Фотографии должны быть по такому же порядку как и вариант.</li>
+                <li>Первое изображение будет главным (превью) в карточке товара в каталоге</li>
+              </ul>
+            </div>
             <input
               type="file"
               multiple
@@ -1109,18 +1413,19 @@ function ProductForm({
                 Выбрано файлов: {imageFiles.length}
               </p>
             )}
+            <p className="mt-1 text-xs text-gray-500">Изображения загружаются только при создании нового товара. После создания товара изображения можно добавить через редактирование.</p>
           </div>
         )}
 
-        <div className="flex gap-3 pt-4">
+        <div className="flex flex-col gap-3 pt-4 sm:flex-row">
           <Button
             type="submit"
-            className="bg-[#6F2A2B] text-white hover:bg-[#5a2223]"
+            className="bg-[#6F2A2B] text-white hover:bg-[#5a2223] w-full sm:w-auto"
             disabled={saving}
           >
             {saving ? "Сохранение..." : "Сохранить"}
           </Button>
-          <Button type="button" onClick={onClose} variant="outline">
+          <Button type="button" onClick={onClose} variant="outline" className="w-full sm:w-auto">
             Отмена
           </Button>
         </div>
@@ -1132,17 +1437,17 @@ function ProductForm({
 function MultiSelectField({ label, options, selected, onChange }) {
   return (
     <div>
-      <label className="block text-sm font-medium text-gray-700 mb-1">
+      <label className="block mb-1 text-sm font-medium text-gray-700">
         {label}
       </label>
-      <div className="border border-gray-300 rounded-md p-2 min-h-[100px] max-h-[200px] overflow-y-auto">
+      <div className="border border-gray-300 rounded-md p-2 sm:p-3 min-h-[100px] max-h-[200px] overflow-y-auto">
         {options.length === 0 ? (
           <p className="text-sm text-gray-500">Нет доступных опций</p>
         ) : (
           options.map((option) => (
             <label
               key={option.id}
-              className="flex items-center gap-2 p-1 hover:bg-gray-50 cursor-pointer"
+              className="flex items-center gap-2 p-1 cursor-pointer hover:bg-gray-50"
             >
               <input
                 type="checkbox"
@@ -1161,109 +1466,134 @@ function MultiSelectField({ label, options, selected, onChange }) {
 
 function VariantForm({ variant, index, colors, scents, onChange, onRemove, isEdit }) {
   return (
-    <div className="border border-gray-300 rounded-lg p-4 mb-4">
+    <div className="p-3 mb-4 border border-gray-300 rounded-lg sm:p-4">
       <div className="flex items-center justify-between mb-3">
-        <h4 className="font-medium">Вариант {index + 1}</h4>
+        <h4 className="text-sm font-medium sm:text-base">Вариант {index + 1}</h4>
         <button
           type="button"
           onClick={() => onRemove(index)}
-          className="text-red-600 hover:text-red-800"
+          className="p-1 text-red-600 hover:text-red-800"
         >
           <X className="w-4 h-4" />
         </button>
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            SKU
+          <label className="block mb-1 text-sm font-medium text-gray-700">
+            SKU (Артикул)
           </label>
           <Input
             value={variant.sku || ""}
             onChange={(e) => onChange(index, "sku", e.target.value)}
+            placeholder="Например: COR-001-2KG"
           />
+          <p className="mt-1 text-xs text-gray-500">Уникальный артикул товара. Используется для учета на складе. Формат: буквы и цифры</p>
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Цена
+          <label className="block mb-1 text-sm font-medium text-gray-700">
+            Цена (₽)
           </label>
           <Input
             type="number"
+            step="0.01"
+            min="0"
             value={variant.price || 0}
             onChange={(e) => onChange(index, "price", Number(e.target.value))}
+            placeholder="1500.00"
           />
+          <p className="mt-1 text-xs text-gray-500">Цена в рублях. Можно указать копейки (например: 1499.99).</p>
         </div>
         {isEdit && (
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Старая цена
+            <label className="block mb-1 text-sm font-medium text-gray-700">
+              Старая цена (₽)
             </label>
             <Input
               type="number"
+              step="0.01"
+              min="0"
               value={variant.oldPrice || ""}
               onChange={(e) => {
                 const value = e.target.value;
                 onChange(index, "oldPrice", value === "" ? "" : Number(value));
               }}
+              placeholder="2000.00"
             />
+            <p className="mt-1 text-xs text-gray-500">Цена до скидки (для отображения зачеркнутой цены). Оставьте пустым, если скидки нет.</p>
           </div>
         )}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Остаток
+          <label className="block mb-1 text-sm font-medium text-gray-700">
+            Остаток (шт.)
           </label>
           <Input
             type="number"
+            min="0"
             value={variant.stock || 0}
             onChange={(e) => onChange(index, "stock", Number(e.target.value))}
+            placeholder="0"
           />
+          <p className="mt-1 text-xs text-gray-500">Количество товара на складе. Только целые числа (0, 1, 2, 10, 100...).</p>
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Вес
+          <label className="block mb-1 text-sm font-medium text-gray-700">
+            Вес (кг)
           </label>
           <Input
             type="number"
+            min="0"
+            step="0.001"
             value={variant.weight || 0}
             onChange={(e) => onChange(index, "weight", Number(e.target.value))}
+            placeholder="2.0"
           />
+          <p className="mt-1 text-xs text-gray-500">Вес упаковки в килограммах. Пример: 2 (для 2 кг), 0.5 (для 500 г), 1.5 (для 1.5 кг). Можно использовать десятичные дроби.</p>
         </div>
         {isEdit && (
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block mb-1 text-sm font-medium text-gray-700">
               Отображаемое название
             </label>
             <Input
               value={variant.displayName || ""}
               onChange={(e) => onChange(index, "displayName", e.target.value)}
+              placeholder="Например: Корм для собак, 2 кг"
             />
+            <p className="mt-1 text-xs text-gray-500">Название варианта, которое будет показано покупателю. Если не указано, будет сгенерировано автоматически.</p>
           </div>
         )}
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-        <MultiSelectField
-          label="Цвета"
-          options={colors}
-          selected={Array.isArray(variant.colorIds) ? variant.colorIds.map((c) => (typeof c === "object" ? c.id : c)) : []}
-          onChange={(value) => {
-            const current = variant.colorIds || [];
-            const newIds = current.includes(value)
-              ? current.filter((c) => (typeof c === "object" ? c.id : c) !== value)
-              : [...current, value];
-            onChange(index, "colorIds", newIds);
-          }}
-        />
-        <MultiSelectField
-          label="Запахи"
-          options={scents}
-          selected={Array.isArray(variant.scentIds) ? variant.scentIds.map((s) => (typeof s === "object" ? s.id : s)) : []}
-          onChange={(value) => {
-            const current = variant.scentIds || [];
-            const newIds = current.includes(value)
-              ? current.filter((s) => (typeof s === "object" ? s.id : s) !== value)
-              : [...current, value];
-            onChange(index, "scentIds", newIds);
-          }}
-        />
+      <div className="grid grid-cols-1 gap-4 mt-4 sm:grid-cols-2">
+        <div>
+          <MultiSelectField
+            label="Цвета"
+            options={colors}
+            selected={Array.isArray(variant.colorIds) ? variant.colorIds.map((c) => (typeof c === "object" ? c.id : c)) : []}
+            onChange={(value) => {
+              const current = variant.colorIds || [];
+              const newIds = current.includes(value)
+                ? current.filter((c) => (typeof c === "object" ? c.id : c) !== value)
+                : [...current, value];
+              onChange(index, "colorIds", newIds);
+            }}
+          />
+          <p className="mt-1 text-xs text-gray-500">Цвет упаковки или товара (если применимо). Можно выбрать несколько цветов.</p>
+        </div>
+        <div>
+          <MultiSelectField
+            label="Запахи"
+            options={scents}
+            selected={Array.isArray(variant.scentIds) ? variant.scentIds.map((s) => (typeof s === "object" ? s.id : s)) : []}
+            onChange={(value) => {
+              const current = variant.scentIds || [];
+              const newIds = current.includes(value)
+                ? current.filter((s) => (typeof s === "object" ? s.id : s) !== value)
+                : [...current, value];
+              onChange(index, "scentIds", newIds);
+            }}
+          />
+          <p className="mt-1 text-xs text-gray-500">Аромат товара (если применимо). Можно выбрать несколько запахов.</p>
+        </div>
       </div>
     </div>
   );

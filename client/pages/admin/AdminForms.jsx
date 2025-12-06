@@ -239,7 +239,7 @@ function FeedbackFormsTable({ forms, currentPage, itemsPerPage, onPageChange }) 
             </tr>
           ) : (
                 paginatedForms.map((form) => (
-              <tr key={form.id}>
+              <tr key={form.id} className="hover:bg-gray-50 transition-colors">
                     <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-900">{form.id}</td>
                     <td className="px-3 sm:px-6 py-4 text-sm text-gray-900">{form.name || "-"}</td>
                     <td className="px-3 sm:px-6 py-4 text-sm text-gray-500 hidden md:table-cell">
@@ -563,7 +563,7 @@ function NurseryFormsTable({ forms, currentPage, itemsPerPage, onPageChange }) {
             </tr>
           ) : (
                 paginatedForms.map((form) => (
-              <tr key={form.id}>
+              <tr key={form.id} className="hover:bg-gray-50 transition-colors">
                     <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-900">{form.id}</td>
                     <td className="px-3 sm:px-6 py-4 text-sm text-gray-900">
                   <div className="flex items-center gap-1">

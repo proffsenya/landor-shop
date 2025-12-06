@@ -127,6 +127,11 @@ const getFirstImage = (product) => {
 
 // ---------- Преобразование продукта в карточки ----------
 const expandProductToCards = (product) => {
+  // Пропускаем неактивные товары
+  if (product?.isActive === false) {
+    return [];
+  }
+  
   if (Array.isArray(product?.variants) && product.variants.length > 0) {
     return product.variants.map((v) => {
       const price = Number(v?.price ?? 0);
@@ -436,8 +441,18 @@ export default function Catalog() {
         setError("");
         const cards = cachedData.cards;
         
+        // Фильтруем неактивные товары из кэша
+        const activeCards = cards.filter(card => {
+          // Если в кэше есть информация об isActive, используем её
+          if (card.isActive !== undefined) {
+            return card.isActive !== false;
+          }
+          // Если нет информации, показываем (для обратной совместимости)
+          return true;
+        });
+        
         // Сначала показываем карточки с fallback изображениями
-        const cardsWithFallback = cards.map((card) => ({
+        const cardsWithFallback = activeCards.map((card) => ({
           ...card,
           image: "/korm1.svg",
           imageUrl: card.image,
@@ -448,8 +463,16 @@ export default function Catalog() {
         try {
           const existing = sessionStorage.getItem("catalog:all");
           if (!existing) {
+            // Фильтруем неактивные товары перед сохранением в sessionStorage
+            const activeCardsForSearch = cards.filter(card => {
+              if (card.isActive !== undefined) {
+                return card.isActive !== false;
+              }
+              return true;
+            });
+            
             // Сохраняем полные данные для поиска с картинками, ценами и весом
-            const searchData = cards.map((card) => ({
+            const searchData = activeCardsForSearch.map((card) => ({
               id: card.id || card.variantId,
               variantId: card.variantId || card.id,
               productId: card.productId || card.parentId,
@@ -500,7 +523,7 @@ export default function Catalog() {
       }
       
       // Оптимизированное создание карточек (минимальные вычисления)
-      const cards = data.map((item) => {
+      const cardsWithProductInfo = data.map((item) => {
         const variantId = item?.id ?? null;
         const imageUrl = item?.imageUrl || "";
         
@@ -531,7 +554,76 @@ export default function Catalog() {
           stock: Number(item?.stock ?? 0) || 0,
           weight: item?.weight || null,
           weightLabel: item?.weightLabel || (item?.weight ? `${item.weight} кг` : null),
+          // Проверяем, есть ли isActive в ответе API
+          isActive: item?.isActive !== undefined ? item.isActive : item?.productIsActive !== undefined ? item.productIsActive : null,
         };
+      });
+      
+      // Фильтруем товары по isActive: показываем только активные (isActive !== false)
+      // Если isActive не указан в ответе, загружаем информацию о товарах
+      const cardsToFilter = cardsWithProductInfo.filter(card => {
+        // Если isActive уже есть в данных и он false, фильтруем
+        if (card.isActive === false) {
+          return false;
+        }
+        // Если isActive === true или null (не указан), оставляем для дальнейшей проверки
+        return true;
+      });
+      
+      // Если есть карточки без информации об isActive, загружаем информацию о товарах
+      const cardsNeedingCheck = cardsToFilter.filter(card => card.isActive === null && card.productId);
+      let activeProductIds = new Set();
+      
+      if (cardsNeedingCheck.length > 0) {
+        // Собираем уникальные productId
+        const uniqueProductIds = [...new Set(cardsNeedingCheck.map(card => card.productId).filter(Boolean))];
+        
+        // Загружаем информацию о товарах батчами (по 10 за раз)
+        const batchSize = 10;
+        for (let i = 0; i < uniqueProductIds.length; i += batchSize) {
+          const batch = uniqueProductIds.slice(i, i + batchSize);
+          try {
+            const productInfoPromises = batch.map(async (productId) => {
+              try {
+                const productRes = await fetch(`/api/products/${productId}/details`);
+                if (productRes.ok) {
+                  const productData = await productRes.json();
+                  return {
+                    productId,
+                    isActive: productData.isActive !== undefined ? productData.isActive : true,
+                  };
+                }
+                return { productId, isActive: true }; // По умолчанию считаем активным
+              } catch (e) {
+                safeWarn(`Failed to load product ${productId} info:`, e);
+                return { productId, isActive: true }; // По умолчанию считаем активным
+              }
+            });
+            
+            const productInfos = await Promise.all(productInfoPromises);
+            productInfos.forEach(({ productId, isActive }) => {
+              if (isActive !== false) {
+                activeProductIds.add(productId);
+              }
+            });
+          } catch (e) {
+            safeWarn("Error loading product info batch:", e);
+          }
+        }
+      }
+      
+      // Фильтруем карточки: оставляем только те, где isActive !== false
+      const cards = cardsToFilter.filter(card => {
+        // Если isActive уже указан в данных
+        if (card.isActive !== null) {
+          return card.isActive !== false;
+        }
+        // Если isActive не указан, проверяем загруженную информацию
+        if (card.productId && activeProductIds.size > 0) {
+          return activeProductIds.has(card.productId);
+        }
+        // Если не удалось загрузить информацию, по умолчанию показываем (для обратной совместимости)
+        return true;
       });
       
       // Сохраняем в кэш
@@ -545,8 +637,16 @@ export default function Catalog() {
       const hasFilters = filtersUrlValue && filtersUrlValue.length > 0;
       if (!hasFilters) {
         try {
+          // Фильтруем неактивные товары перед сохранением
+          const activeCardsForSearch = cards.filter(card => {
+            if (card.isActive !== undefined) {
+              return card.isActive !== false;
+            }
+            return true;
+          });
+          
           // Сохраняем полные данные для поиска с картинками, ценами и весом
-          const searchData = cards.map((card) => ({
+          const searchData = activeCardsForSearch.map((card) => ({
             id: card.id || card.variantId,
             variantId: card.variantId || card.id,
             productId: card.productId || card.parentId,
@@ -639,8 +739,21 @@ export default function Catalog() {
         return;
       }
 
+      // Фильтруем неактивные товары
+      const activeItems = data.filter(item => {
+        // Если в ответе есть isActive, используем его
+        if (item?.isActive !== undefined) {
+          return item.isActive !== false;
+        }
+        if (item?.productIsActive !== undefined) {
+          return item.productIsActive !== false;
+        }
+        // Если нет информации, оставляем (для обратной совместимости)
+        return true;
+      });
+
       // Формируем полные данные для поиска с картинками, ценами и весом
-      const searchData = data.map((item) => {
+      const searchData = activeItems.map((item) => {
         // Извлекаем productId из imageUrl, если он есть
         let productId = item?.productId;
         if (!productId && item?.imageUrl && item.imageUrl.startsWith("/api/products/")) {

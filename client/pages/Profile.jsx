@@ -321,18 +321,17 @@ export default function Profile() {
     
     const normalizedStatus = cleanStatus.toLowerCase().trim();
     const statusMap = {
-      pending: "Ожидает обработки",
       processing: "В обработке",
       shipped: "Отправлен",
       delivered: "Доставлен",
       cancelled: "Отменен",
-      canceled: "Отменен", // альтернативное написание
+      created: "Создан",
     };
     
     const translated = statusMap[normalizedStatus];
     if (!translated) {
       safeWarn("[Profile] Unknown order status:", status, "normalized:", normalizedStatus);
-      return status; // Возвращаем оригинальный статус, если не найден перевод
+      return cleanStatus || "-"; // Возвращаем очищенный статус или "-", если не найден перевод
     }
     
     return translated;
@@ -340,13 +339,26 @@ export default function Profile() {
 
   // Форматирование статуса оплаты
   const formatPaymentStatus = (status) => {
+    if (!status) return "-";
+    
+    // Убираем кавычки, если они есть
+    let cleanStatus = String(status).trim();
+    if (cleanStatus.startsWith('"') && cleanStatus.endsWith('"')) {
+      cleanStatus = cleanStatus.slice(1, -1);
+    }
+    if (cleanStatus.startsWith("'") && cleanStatus.endsWith("'")) {
+      cleanStatus = cleanStatus.slice(1, -1);
+    }
+    
+    const normalizedStatus = cleanStatus.toLowerCase().trim();
     const statusMap = {
-      pending: "Ожидает оплаты",
       paid: "Оплачен",
-      failed: "Ошибка оплаты",
       refunded: "Возвращен",
+      unpaid: "Не оплачен",
     };
-    return statusMap[status] || status;
+    
+    const translated = statusMap[normalizedStatus];
+    return translated || cleanStatus || "-";
   };
 
   // Изменение пароля
@@ -1001,7 +1013,13 @@ export default function Profile() {
                   <div>
                     <span className="text-[#6F6F6F]">Статус оплаты:</span>
                     <span className="ml-2 font-medium text-[#1E1E1E]">
-                      {formatPaymentStatus(orderDetails.paymentStatus)}
+{formatPaymentStatus(orderDetails.paymentStatus)}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-[#6F6F6F]">Метод оплаты:</span>
+                    <span className="ml-2 font-medium text-[#1E1E1E]">
+                      {orderDetails.paymentMethod || "-"}
                     </span>
                   </div>
                   <div>

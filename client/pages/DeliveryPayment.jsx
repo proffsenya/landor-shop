@@ -9,7 +9,7 @@ export default function DeliveryPayment() {
     <div className="flex flex-col min-h-screen bg-white">
       <Header />
       <PageFade>
-      <div className="flex-grow container px-4 py-8 mx-auto">
+      <div className="container flex-grow px-4 py-8 mx-auto">
         <BreadcrumbNav items={[
           { label: "Главная", to: "/" },
           { label: "Доставка и оплата" }
@@ -39,7 +39,7 @@ export default function DeliveryPayment() {
             <ul className="pl-6 text-gray-700 list-disc">
               <li><strong>Наличными курьеру</strong> при получении заказа - только для Москвы и Московской области.</li>
               <li><strong>Оплата по QR-коду через СБП</strong></li>
-              <li><strong>По реквизитам</strong> на р/с ИП <a href="mailto:example@example.com" className="text-blue-600">реквизиты</a> – сделать ссылку</li>
+              <li><strong>По реквизитам</strong> на р/с ИП реквизиты:</li>
             </ul>
           </section>
           </PageFade>
