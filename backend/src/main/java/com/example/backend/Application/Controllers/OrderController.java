@@ -8,6 +8,7 @@ import com.example.backend.Domain.Models.Order;
 import com.example.backend.Infrastructure.Configurations.CustomUserDetails;
 import com.example.backend.Infrastructure.Services.OrderService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.crossstore.ChangeSetPersister;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -66,6 +67,12 @@ class OrderController {
                                                 @AuthenticationPrincipal CustomUserDetails userPrincipal) throws AccessDeniedException {
         Long userId = userPrincipal.getId();
         Order order = orderService.updateOrderStatus(userId, orderId, status);
+        return ResponseEntity.ok(OrderDTO.from(order));
+    }
+
+    @GetMapping("/{orderId}/details")
+    public ResponseEntity<OrderDTO> getOrderDetailsByOrderId(@PathVariable Long orderId) throws ChangeSetPersister.NotFoundException {
+        Order order = orderService.getOrderById(orderId);
         return ResponseEntity.ok(OrderDTO.from(order));
     }
 
