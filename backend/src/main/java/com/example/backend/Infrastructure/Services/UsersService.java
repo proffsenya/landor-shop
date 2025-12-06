@@ -78,7 +78,8 @@ public class UsersService {
                 user.getPhone(),
                 user.getMiddleName(),
                 user.getIsActive(),
-                user.getIsStaff()
+                user.getIsStaff(),
+                user.getIsSuperuser()
         );
     }
 

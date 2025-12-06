@@ -12,5 +12,5 @@ import java.time.Instant;
 public record UserProfileDTO(@NotNull @Size(max = 100) String email, @Size(max = 100) String firstName,
                              @Size(max = 100) String lastName, Instant createdAt, Instant updatedAt,
                              @Size(max = 20) String phone, @Size(max = 100) String middleName,
-                             boolean isActive, Boolean isStaff) implements Serializable {
+                             boolean isActive, Boolean isStaff, Boolean isSuperuser) implements Serializable {
 }
