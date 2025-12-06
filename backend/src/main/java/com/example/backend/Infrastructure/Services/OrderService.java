@@ -73,6 +73,7 @@ public class OrderService {
         order.setOrderStatus("CREATED");
         order.setCreatedAt(Instant.now());
         order.setPaymentStatus("UNPAID");
+        order.setPaymentMethod(req.paymentMethod());
         order.setCustomerNotes(req.customerNotes());
         if (req.customerSnapshot() == null){
             Map<String, Object> customerSnapshot = new HashMap<>();

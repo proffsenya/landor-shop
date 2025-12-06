@@ -70,6 +70,7 @@ public class UsersService {
 
     private UserProfileDTO toUserProfileDTO(User user) {
         return new UserProfileDTO(
+                user.getId(),
                 user.getEmail(),
                 user.getFirstName(),
                 user.getLastName(),

@@ -77,6 +77,18 @@ public class Order {
     @JdbcTypeCode(SqlTypes.JSON)
     private Map<String, Object> customerSnapshot;
 
+    @Size(max = 250)
+    @Column(name = "payment_method", length = 250)
+    private String paymentMethod;
+
+    public String getPaymentMethod() {
+        return paymentMethod;
+    }
+
+    public void setPaymentMethod(String paymentMethod) {
+        this.paymentMethod = paymentMethod;
+    }
+
     public Map<String, Object> getCustomerSnapshot() {
         return customerSnapshot;
     }

@@ -70,10 +70,5 @@ class OrderController {
         return ResponseEntity.ok(OrderDTO.from(order));
     }
 
-    @GetMapping("/{orderId}/details")
-    public ResponseEntity<OrderDTO> getOrderDetailsByOrderId(@PathVariable Long orderId) throws ChangeSetPersister.NotFoundException {
-        Order order = orderService.getOrderById(orderId);
-        return ResponseEntity.ok(OrderDTO.from(order));
-    }
 
 }

@@ -13,5 +13,5 @@ import java.util.Map;
 public record CreateOrderRequestDTO(List<Long> cartItemIds, @NotNull Map<String, Object> billingAddress,
                                     @NotNull Map<String, Object> shippingAddress,
                                     Map<String, Object> customerSnapshot,
-                                    @Size(max = 255) String customerNotes) implements Serializable {
+                                    @Size(max = 255) String customerNotes, String paymentMethod) implements Serializable {
 }
