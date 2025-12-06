@@ -17,6 +17,6 @@ public record OrderResponseDTO(Long id, @NotNull @Size(max = 50) String orderSta
                                @NotNull @Size(max = 50) String paymentStatus,
                                @NotNull Map<String, Object> shippingAddress,
                                @NotNull Map<String, Object> billingAddress, @Size(max = 255) String customerNotes,
-                               Instant createdAt, Instant updatedAt) implements Serializable {
+                               Instant createdAt) implements Serializable {
 
 }

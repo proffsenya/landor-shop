@@ -94,6 +94,19 @@ public class ProductService {
             if (pv.getSku() != null) existingBySku.put(pv.getSku(), pv);
         }
 
+        currentproduct.setName(updatedproduct.name());
+        currentproduct.setDescription(updatedproduct.description());
+        currentproduct.setFeedingNote(updatedproduct.feedingNote());
+        currentproduct.setGuaranteedIndicators(updatedproduct.guaranteedIndicators());
+        currentproduct.setSlug(updatedproduct.slug());
+        currentproduct.setIsActive(updatedproduct.isActive());
+        currentproduct.setRating(updatedproduct.rating());
+        currentproduct.setIsFeatured(updatedproduct.isFeatured());
+        currentproduct.setBrand(brandRepository.findById(updatedproduct.brandId()).orElse(null));
+        currentproduct.setProductType(productTypeRepository.findById(updatedproduct.productTypeId()).orElse(null));
+
+        applyRelationshipsFromUpdateDto(currentproduct, updatedproduct);
+
         List<ProductVariant> updatedVariants = new ArrayList<>();
 
         if (updatedproduct.variants() != null) {
@@ -153,18 +166,6 @@ public class ProductService {
                 currentproduct.getProductVariants().remove(toRemove);
             }
         }
-
-        currentproduct.setName(updatedproduct.name());
-        currentproduct.setDescription(updatedproduct.description());
-        currentproduct.setFeedingNote(updatedproduct.feedingNote());
-        currentproduct.setGuaranteedIndicators(updatedproduct.guaranteedIndicators());
-        currentproduct.setSlug(updatedproduct.slug());
-        currentproduct.setIsActive(updatedproduct.isActive());
-        currentproduct.setRating(updatedproduct.rating());
-        currentproduct.setIsFeatured(updatedproduct.isFeatured());
-        currentproduct.setBrand(brandRepository.findById(updatedproduct.brandId()).orElse(null));
-        currentproduct.setProductType(productTypeRepository.findById(updatedproduct.productTypeId()).orElse(null));
-        applyRelationshipsFromUpdateDto(currentproduct, updatedproduct);
 
         return productRepository.save(currentproduct);
     }
