@@ -49,6 +49,17 @@ public class OrderItem {
     @JoinColumn(name = "product_variant_id")
     private ProductVariant productVariant;
 
+    @Column(name = "weight", precision = 10, scale = 2)
+    private BigDecimal weight;
+
+    public BigDecimal getWeight() {
+        return weight;
+    }
+
+    public void setWeight(BigDecimal weight) {
+        this.weight = weight;
+    }
+
     public ProductVariant getProductVariant() {
         return productVariant;
     }

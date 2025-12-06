@@ -10,7 +10,7 @@ import java.util.List;
 /**
  * DTO for {@link com.example.backend.Domain.Models.Product}
  */
-public record ProductCardDTO(Long id, @Size(max = 100) String productName,
+public record ProductCardDTO(Long id, @Size(max = 100) String productName, boolean isActive,
                              List<VariantCardDTO> variants
                              ) implements Serializable {
 }

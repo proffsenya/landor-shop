@@ -381,7 +381,7 @@ public class ProductService {
                 .sorted(Comparator.comparing(ProductVariant::getId))
                 .map(this::toVariantCardDTO).toList();
 
-        return new ProductCardDTO(product.getId(), product.getName(), variantCards);
+        return new ProductCardDTO(product.getId(), product.getName(), product.getIsActive(), variantCards);
     }
 
 //    private ProductCardDTO toProductCardDTO(Product product) {
