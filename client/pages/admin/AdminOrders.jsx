@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Eye } from "lucide-react";
 import { checkAdminAccess, getAdminToken } from "@/utils/adminAuth";
 import { initNotifications } from "@/utils/notifications";
-import { formatPhone } from "@/utils/formatting";
+import { formatPhone, formatWeight } from "@/utils/formatting";
 import { safeError, safeWarn } from "@/utils/logger";
 import { ToastMotion } from "@/utils/PageAnimations";
 
@@ -785,6 +785,11 @@ function OrderModal({ order, loading, onClose, onUpdateStatus, onConfirmPayment 
                         <div className="text-sm text-[#6F6F6F] mt-1">
                           Количество: {item.quantity || 0}
                         </div>
+                        {item.weight && (
+                          <div className="text-sm text-[#6F6F6F] mt-1">
+                            Вес: {formatWeight(item.weight)}
+                          </div>
+                        )}
                         {item.productId && (
                           <div className="text-sm text-[#6F6F6F] mt-1">
                             ID товара: {item.productId}

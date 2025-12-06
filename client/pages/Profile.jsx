@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { PageFade, ToastMotion } from "@/utils/PageAnimations";
 import { getAuthToken } from "@/utils/auth";
-import { formatName, formatPhone } from "@/utils/formatting";
+import { formatName, formatPhone, formatWeight } from "@/utils/formatting";
 import { validateName, validateEmail, validatePhone, validatePassword, validateConfirmPassword } from "@/utils/validation";
 import { checkAdminAccess } from "@/utils/adminAuth";
 import { safeError, safeWarn } from "@/utils/logger";
@@ -1072,6 +1072,11 @@ export default function Profile() {
                           <div className="text-sm text-[#6F6F6F] mt-1">
                             Количество: {item.quantity}
                           </div>
+                          {item.weight && (
+                            <div className="text-sm text-[#6F6F6F] mt-1">
+                              Вес: {formatWeight(item.weight)}
+                            </div>
+                          )}
                         </div>
                         <div className="text-right">
                           <div className="font-medium text-[#1E1E1E]">

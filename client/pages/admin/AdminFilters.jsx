@@ -375,13 +375,6 @@ export default function AdminFilters() {
                               <td className="px-3 py-4 text-sm sm:px-6 whitespace-nowrap">
                                 <div className="flex items-center justify-center gap-2 sm:gap-4">
                                   <button
-                                    onClick={() => handleEdit(item)}
-                                    className="text-blue-600 hover:text-blue-800"
-                                    title="Редактировать"
-                                  >
-                                    <Edit className="w-4 h-4" />
-                                  </button>
-                                  <button
                                     onClick={() => handleDelete(item.id)}
                                     className="text-red-600 hover:text-red-800"
                                     title="Удалить"
@@ -406,13 +399,6 @@ export default function AdminFilters() {
                               <p className="text-xs text-gray-500 mt-1">ID: {item.id}</p>
                             </div>
                             <div className="flex items-center gap-2">
-                              <button
-                                onClick={() => handleEdit(item)}
-                                className="p-2 text-blue-600 hover:bg-blue-50 rounded transition-colors"
-                                title="Редактировать"
-                              >
-                                <Edit className="w-5 h-5" />
-                              </button>
                               <button
                                 onClick={() => handleDelete(item.id)}
                                 className="p-2 text-red-600 hover:bg-red-50 rounded transition-colors"
