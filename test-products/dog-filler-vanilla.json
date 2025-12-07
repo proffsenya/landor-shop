@@ -1,0 +1,33 @@
+{
+  "name": "Наполнитель для собак, Ванильный",
+  "description": "Наполнитель для собак с ванильным ароматом. Приятный запах и отличная впитываемость.",
+  "feedingNote": "Рекомендуется менять наполнитель каждые 3-5 дней или по мере необходимости.",
+  "guaranteedIndicators": "Впитываемость: до 350%, Контроль запаха: до 5 дней",
+  "slug": "dog-filler-vanilla",
+  "brandId": 1,
+  "productTypeId": 2,
+  "categoryIds": [102],
+  "breedIds": [],
+  "countryIds": [2],
+  "typeoffoodIds": [],
+  "flavorIds": [],
+  "variants": [
+    {
+      "sku": "LANDOR-DOG-FILL-VAN-10KG",
+      "price": 980,
+      "stock": 48,
+      "weight": 10000,
+      "colorIds": [],
+      "scentIds": [2]
+    },
+    {
+      "sku": "CHISTYE-DOG-FILL-VAN-10KG",
+      "price": 900,
+      "stock": 60,
+      "weight": 10000,
+      "colorIds": [],
+      "scentIds": [2]
+    }
+  ]
+}
+

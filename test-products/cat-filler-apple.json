@@ -1,0 +1,33 @@
+{
+  "name": "Наполнитель для кошек, Яблоко",
+  "description": "Наполнитель для кошачьих туалетов с ароматом яблока. Свежий и фруктовый запах.",
+  "feedingNote": "Рекомендуется менять наполнитель каждые 5-7 дней или по мере необходимости.",
+  "guaranteedIndicators": "Впитываемость: до 300%, Контроль запаха: до 7 дней",
+  "slug": "cat-filler-apple",
+  "brandId": 1,
+  "productTypeId": 2,
+  "categoryIds": [101],
+  "breedIds": [],
+  "countryIds": [2],
+  "typeoffoodIds": [],
+  "flavorIds": [],
+  "variants": [
+    {
+      "sku": "LANDOR-FILL-APP-5KG",
+      "price": 465,
+      "stock": 73,
+      "weight": 5000,
+      "colorIds": [],
+      "scentIds": [7]
+    },
+    {
+      "sku": "LANDY-FILL-APP-5KG",
+      "price": 435,
+      "stock": 80,
+      "weight": 5000,
+      "colorIds": [],
+      "scentIds": [7]
+    }
+  ]
+}
+

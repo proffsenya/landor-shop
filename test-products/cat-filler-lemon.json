@@ -1,0 +1,33 @@
+{
+  "name": "Наполнитель для кошек, Лимон",
+  "description": "Наполнитель для кошачьих туалетов с ароматом лимона. Освежающий и цитрусовый запах.",
+  "feedingNote": "Рекомендуется менять наполнитель каждые 5-7 дней или по мере необходимости.",
+  "guaranteedIndicators": "Впитываемость: до 300%, Контроль запаха: до 7 дней",
+  "slug": "cat-filler-lemon",
+  "brandId": 1,
+  "productTypeId": 2,
+  "categoryIds": [101],
+  "breedIds": [],
+  "countryIds": [3],
+  "typeoffoodIds": [],
+  "flavorIds": [],
+  "variants": [
+    {
+      "sku": "LANDOR-FILL-LEM-5KG",
+      "price": 470,
+      "stock": 71,
+      "weight": 5000,
+      "colorIds": [],
+      "scentIds": [8]
+    },
+    {
+      "sku": "FRESH-PET-FILL-LEM-5KG",
+      "price": 495,
+      "stock": 65,
+      "weight": 5000,
+      "colorIds": [],
+      "scentIds": [8]
+    }
+  ]
+}
+

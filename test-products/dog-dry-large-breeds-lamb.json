@@ -1,0 +1,49 @@
+{
+  "name": "Корм для крупных пород собак, Ягнёнок, Сухой",
+  "description": "Сухой корм для крупных пород собак с ягнёнком. Поддержка суставов и костей.",
+  "feedingNote": "Рекомендуемая суточная доза: 200г на 15кг веса собаки.",
+  "guaranteedIndicators": "Белки: 24-27%, Жиры: 12-14%, Глюкозамин: 0.3%",
+  "slug": "dog-dry-large-breeds-lamb",
+  "brandId": 1,
+  "productTypeId": 1,
+  "categoryIds": [102],
+  "breedIds": [2303],
+  "countryIds": [5],
+  "typeoffoodIds": [1],
+  "flavorIds": [9],
+  "variants": [
+    {
+      "sku": "LANDOR-DOG-LG-LAM-3KG",
+      "price": 2400,
+      "stock": 35,
+      "weight": 3000,
+      "colorIds": [],
+      "scentIds": []
+    },
+    {
+      "sku": "LANDOR-DOG-LG-LAM-7KG",
+      "price": 5400,
+      "stock": 20,
+      "weight": 7000,
+      "colorIds": [],
+      "scentIds": []
+    },
+    {
+      "sku": "FRESH-PET-DOG-LG-LAM-3KG",
+      "price": 2600,
+      "stock": 30,
+      "weight": 3000,
+      "colorIds": [],
+      "scentIds": []
+    },
+    {
+      "sku": "CHISTYE-DOG-LG-LAM-3KG",
+      "price": 2200,
+      "stock": 40,
+      "weight": 3000,
+      "colorIds": [],
+      "scentIds": []
+    }
+  ]
+}
+

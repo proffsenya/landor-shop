@@ -1,0 +1,41 @@
+{
+  "name": "Корм для здоровья кожи и шерсти кошек, Лосось, Сухой",
+  "description": "Сухой корм для кошек с лососем, способствующий здоровью кожи и блеску шерсти.",
+  "feedingNote": "Рекомендуемая суточная доза: 50г на 5кг веса кошки.",
+  "guaranteedIndicators": "Белки: 32-35%, Жиры: 16-18%, Омега-3: 0.5%",
+  "slug": "cat-dry-skin-coat-salmon",
+  "brandId": 1,
+  "productTypeId": 1,
+  "categoryIds": [101],
+  "breedIds": [2102],
+  "countryIds": [2],
+  "typeoffoodIds": [1],
+  "flavorIds": [4],
+  "variants": [
+    {
+      "sku": "LANDOR-CAT-SC-SAL-1KG",
+      "price": 950,
+      "stock": 45,
+      "weight": 1000,
+      "colorIds": [],
+      "scentIds": []
+    },
+    {
+      "sku": "LANDOR-CAT-SC-SAL-3KG",
+      "price": 2700,
+      "stock": 25,
+      "weight": 3000,
+      "colorIds": [],
+      "scentIds": []
+    },
+    {
+      "sku": "CHISTYE-CAT-SC-SAL-1KG",
+      "price": 780,
+      "stock": 60,
+      "weight": 1000,
+      "colorIds": [],
+      "scentIds": []
+    }
+  ]
+}
+

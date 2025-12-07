@@ -1,0 +1,33 @@
+{
+  "name": "Наполнитель для кошек, Аромат розы",
+  "description": "Наполнитель для кошачьих туалетов с ароматом розы. Нежный и приятный запах.",
+  "feedingNote": "Рекомендуется менять наполнитель каждые 5-7 дней или по мере необходимости.",
+  "guaranteedIndicators": "Впитываемость: до 300%, Контроль запаха: до 7 дней",
+  "slug": "cat-filler-rose",
+  "brandId": 1,
+  "productTypeId": 2,
+  "categoryIds": [101],
+  "breedIds": [],
+  "countryIds": [1],
+  "typeoffoodIds": [],
+  "flavorIds": [],
+  "variants": [
+    {
+      "sku": "LANDOR-FILL-ROS-5KG",
+      "price": 485,
+      "stock": 68,
+      "weight": 5000,
+      "colorIds": [],
+      "scentIds": [6]
+    },
+    {
+      "sku": "CHISTYE-FILL-ROS-5KG",
+      "price": 455,
+      "stock": 75,
+      "weight": 5000,
+      "colorIds": [],
+      "scentIds": [6]
+    }
+  ]
+}
+

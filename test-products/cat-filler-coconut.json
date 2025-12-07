@@ -1,0 +1,41 @@
+{
+  "name": "Наполнитель для кошек, Кокосовый",
+  "description": "Наполнитель для кошачьих туалетов с кокосовым ароматом. Экзотический и свежий запах.",
+  "feedingNote": "Рекомендуется менять наполнитель каждые 5-7 дней или по мере необходимости.",
+  "guaranteedIndicators": "Впитываемость: до 300%, Контроль запаха: до 7 дней",
+  "slug": "cat-filler-coconut",
+  "brandId": 1,
+  "productTypeId": 2,
+  "categoryIds": [101],
+  "breedIds": [],
+  "countryIds": [4],
+  "typeoffoodIds": [],
+  "flavorIds": [],
+  "variants": [
+    {
+      "sku": "LANDOR-FILL-COC-5KG",
+      "price": 475,
+      "stock": 72,
+      "weight": 5000,
+      "colorIds": [],
+      "scentIds": [4]
+    },
+    {
+      "sku": "LANDOR-FILL-COC-10KG",
+      "price": 900,
+      "stock": 58,
+      "weight": 10000,
+      "colorIds": [],
+      "scentIds": [4]
+    },
+    {
+      "sku": "CHISTYE-FILL-COC-5KG",
+      "price": 445,
+      "stock": 78,
+      "weight": 5000,
+      "colorIds": [],
+      "scentIds": [4]
+    }
+  ]
+}
+

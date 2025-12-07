@@ -1,0 +1,49 @@
+{
+  "name": "Корм для кошек, Курица, Влажный",
+  "description": "Влажный корм для кошек с курицей. Высокое содержание влаги для здоровья мочевыводящих путей.",
+  "feedingNote": "Рекомендуемая суточная доза: 1 банка (400г) на 4кг веса кошки.",
+  "guaranteedIndicators": "Белки: 10-12%, Жиры: 4-6%, Влага: 78-82%",
+  "slug": "cat-wet-chicken",
+  "brandId": 1,
+  "productTypeId": 1,
+  "categoryIds": [101],
+  "breedIds": [2101],
+  "countryIds": [1],
+  "typeoffoodIds": [2],
+  "flavorIds": [2],
+  "variants": [
+    {
+      "sku": "LANDOR-CAT-WET-CH-400G",
+      "price": 120,
+      "stock": 100,
+      "weight": 400,
+      "colorIds": [],
+      "scentIds": []
+    },
+    {
+      "sku": "LANDOR-CAT-WET-CH-800G",
+      "price": 220,
+      "stock": 80,
+      "weight": 800,
+      "colorIds": [],
+      "scentIds": []
+    },
+    {
+      "sku": "LANDY-CAT-WET-CH-400G",
+      "price": 115,
+      "stock": 110,
+      "weight": 400,
+      "colorIds": [],
+      "scentIds": []
+    },
+    {
+      "sku": "FRESH-PET-CAT-WET-CH-400G",
+      "price": 130,
+      "stock": 90,
+      "weight": 400,
+      "colorIds": [],
+      "scentIds": []
+    }
+  ]
+}
+

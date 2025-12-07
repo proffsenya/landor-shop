@@ -1,0 +1,41 @@
+{
+  "name": "Наполнитель для собак, Классический",
+  "description": "Классический наполнитель для собак. Отличная впитываемость и контроль запаха.",
+  "feedingNote": "Рекомендуется менять наполнитель каждые 3-5 дней или по мере необходимости.",
+  "guaranteedIndicators": "Впитываемость: до 350%, Контроль запаха: до 5 дней",
+  "slug": "dog-filler-classic",
+  "brandId": 1,
+  "productTypeId": 2,
+  "categoryIds": [102],
+  "breedIds": [],
+  "countryIds": [1],
+  "typeoffoodIds": [],
+  "flavorIds": [],
+  "variants": [
+    {
+      "sku": "LANDOR-DOG-FILL-CL-10KG",
+      "price": 950,
+      "stock": 50,
+      "weight": 10000,
+      "colorIds": [],
+      "scentIds": [1]
+    },
+    {
+      "sku": "LANDOR-DOG-FILL-CL-20KG",
+      "price": 1800,
+      "stock": 35,
+      "weight": 20000,
+      "colorIds": [],
+      "scentIds": [1]
+    },
+    {
+      "sku": "LANDY-DOG-FILL-CL-10KG",
+      "price": 920,
+      "stock": 55,
+      "weight": 10000,
+      "colorIds": [],
+      "scentIds": [1]
+    }
+  ]
+}
+

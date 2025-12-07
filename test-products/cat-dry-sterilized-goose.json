@@ -1,0 +1,33 @@
+{
+  "name": "Корм для стерилизованных кошек, Гусь, Сухой",
+  "description": "Сухой корм для стерилизованных кошек с гусем. Богатое и питательное мясо.",
+  "feedingNote": "Рекомендуемая суточная доза: 50г на 5кг веса кошки.",
+  "guaranteedIndicators": "Белки: 32-35%, Жиры: 16-18%",
+  "slug": "cat-dry-sterilized-goose",
+  "brandId": 3,
+  "productTypeId": 1,
+  "categoryIds": [101],
+  "breedIds": [2101],
+  "countryIds": [1],
+  "typeoffoodIds": [1],
+  "flavorIds": [11],
+  "variants": [
+    {
+      "sku": "FRESH-PET-CAT-ST-GOO-1KG",
+      "price": 1000,
+      "stock": 35,
+      "weight": 1000,
+      "colorIds": [],
+      "scentIds": []
+    },
+    {
+      "sku": "CHISTYE-CAT-ST-GOO-1KG",
+      "price": 880,
+      "stock": 50,
+      "weight": 1000,
+      "colorIds": [],
+      "scentIds": []
+    }
+  ]
+}
+

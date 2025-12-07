@@ -1,0 +1,41 @@
+{
+  "name": "Корм для чувствительного пищеварения кошек, Кролик, Сухой",
+  "description": "Легкоусвояемый сухой корм для кошек с чувствительным пищеварением. С кроликом.",
+  "feedingNote": "Рекомендуемая суточная доза: 45г на 5кг веса кошки.",
+  "guaranteedIndicators": "Белки: 28-30%, Жиры: 12-14%",
+  "slug": "cat-dry-sensitive-rabbit",
+  "brandId": 1,
+  "productTypeId": 1,
+  "categoryIds": [101],
+  "breedIds": [2103],
+  "countryIds": [3],
+  "typeoffoodIds": [1],
+  "flavorIds": [1],
+  "variants": [
+    {
+      "sku": "LANDOR-CAT-SD-RAB-1KG",
+      "price": 920,
+      "stock": 40,
+      "weight": 1000,
+      "colorIds": [],
+      "scentIds": []
+    },
+    {
+      "sku": "LANDY-CAT-SD-RAB-1KG",
+      "price": 880,
+      "stock": 50,
+      "weight": 1000,
+      "colorIds": [],
+      "scentIds": []
+    },
+    {
+      "sku": "FRESH-PET-CAT-SD-RAB-2KG",
+      "price": 1750,
+      "stock": 35,
+      "weight": 2000,
+      "colorIds": [],
+      "scentIds": []
+    }
+  ]
+}
+

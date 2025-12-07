@@ -1,0 +1,41 @@
+{
+  "name": "Наполнитель для кошек, Ванильный",
+  "description": "Наполнитель для кошачьих туалетов с ванильным ароматом. Приятный запах и отличная впитываемость.",
+  "feedingNote": "Рекомендуется менять наполнитель каждые 5-7 дней или по мере необходимости.",
+  "guaranteedIndicators": "Впитываемость: до 300%, Контроль запаха: до 7 дней",
+  "slug": "cat-filler-vanilla",
+  "brandId": 1,
+  "productTypeId": 2,
+  "categoryIds": [101],
+  "breedIds": [],
+  "countryIds": [2],
+  "typeoffoodIds": [],
+  "flavorIds": [],
+  "variants": [
+    {
+      "sku": "LANDOR-FILL-VAN-5KG",
+      "price": 470,
+      "stock": 70,
+      "weight": 5000,
+      "colorIds": [],
+      "scentIds": [2]
+    },
+    {
+      "sku": "LANDOR-FILL-VAN-10KG",
+      "price": 880,
+      "stock": 55,
+      "weight": 10000,
+      "colorIds": [],
+      "scentIds": [2]
+    },
+    {
+      "sku": "CHISTYE-FILL-VAN-5KG",
+      "price": 440,
+      "stock": 80,
+      "weight": 5000,
+      "colorIds": [],
+      "scentIds": [2]
+    }
+  ]
+}
+

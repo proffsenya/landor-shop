@@ -1,0 +1,33 @@
+{
+  "name": "Корм для стерилизованных кошек, Телятина, Сухой",
+  "description": "Сухой корм для стерилизованных кошек с телятиной. Высокое качество белка.",
+  "feedingNote": "Рекомендуемая суточная доза: 50г на 5кг веса кошки.",
+  "guaranteedIndicators": "Белки: 31-34%, Жиры: 15-17%",
+  "slug": "cat-dry-sterilized-veal",
+  "brandId": 3,
+  "productTypeId": 1,
+  "categoryIds": [101],
+  "breedIds": [2101],
+  "countryIds": [3],
+  "typeoffoodIds": [1],
+  "flavorIds": [7],
+  "variants": [
+    {
+      "sku": "FRESH-PET-CAT-ST-VEA-1KG",
+      "price": 920,
+      "stock": 42,
+      "weight": 1000,
+      "colorIds": [],
+      "scentIds": []
+    },
+    {
+      "sku": "CHISTYE-CAT-ST-VEA-1KG",
+      "price": 800,
+      "stock": 58,
+      "weight": 1000,
+      "colorIds": [],
+      "scentIds": []
+    }
+  ]
+}
+

@@ -1,0 +1,41 @@
+{
+  "name": "Наполнитель для кошек, Зеленый чай",
+  "description": "Наполнитель для кошачьих туалетов с ароматом зеленого чая. Свежий и натуральный запах.",
+  "feedingNote": "Рекомендуется менять наполнитель каждые 5-7 дней или по мере необходимости.",
+  "guaranteedIndicators": "Впитываемость: до 300%, Контроль запаха: до 7 дней",
+  "slug": "cat-filler-green-tea",
+  "brandId": 1,
+  "productTypeId": 2,
+  "categoryIds": [101],
+  "breedIds": [],
+  "countryIds": [5],
+  "typeoffoodIds": [],
+  "flavorIds": [],
+  "variants": [
+    {
+      "sku": "LANDOR-FILL-GT-5KG",
+      "price": 480,
+      "stock": 65,
+      "weight": 5000,
+      "colorIds": [],
+      "scentIds": [5]
+    },
+    {
+      "sku": "LANDY-FILL-GT-5KG",
+      "price": 450,
+      "stock": 70,
+      "weight": 5000,
+      "colorIds": [],
+      "scentIds": [5]
+    },
+    {
+      "sku": "FRESH-PET-FILL-GT-5KG",
+      "price": 500,
+      "stock": 60,
+      "weight": 5000,
+      "colorIds": [],
+      "scentIds": [5]
+    }
+  ]
+}
+

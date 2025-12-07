@@ -1,0 +1,49 @@
+{
+  "name": "Корм для щенков средних пород, Говядина, Сухой",
+  "description": "Сухой корм для щенков средних пород с говядиной. Сбалансированное питание для активного роста.",
+  "feedingNote": "Рекомендуемая суточная доза: 180г на 5кг веса щенка.",
+  "guaranteedIndicators": "Белки: 30-33%, Жиры: 16-18%, Кальций: 1.3%",
+  "slug": "puppy-dry-medium-breeds-beef",
+  "brandId": 1,
+  "productTypeId": 1,
+  "categoryIds": [104],
+  "breedIds": [2402],
+  "countryIds": [2],
+  "typeoffoodIds": [1],
+  "flavorIds": [10],
+  "variants": [
+    {
+      "sku": "LANDOR-PUP-MD-BEE-2KG",
+      "price": 1700,
+      "stock": 38,
+      "weight": 2000,
+      "colorIds": [],
+      "scentIds": []
+    },
+    {
+      "sku": "LANDOR-PUP-MD-BEE-4KG",
+      "price": 3200,
+      "stock": 25,
+      "weight": 4000,
+      "colorIds": [],
+      "scentIds": []
+    },
+    {
+      "sku": "FRESH-PET-PUP-MD-BEE-2KG",
+      "price": 1800,
+      "stock": 35,
+      "weight": 2000,
+      "colorIds": [],
+      "scentIds": []
+    },
+    {
+      "sku": "CHISTYE-PUP-MD-BEE-2KG",
+      "price": 1600,
+      "stock": 42,
+      "weight": 2000,
+      "colorIds": [],
+      "scentIds": []
+    }
+  ]
+}
+

@@ -1,0 +1,49 @@
+{
+  "name": "Корм для мелких пород собак, Курица, Сухой",
+  "description": "Сухой корм для мелких пород собак с курицей. Специально разработан для маленьких челюстей.",
+  "feedingNote": "Рекомендуемая суточная доза: 100г на 5кг веса собаки.",
+  "guaranteedIndicators": "Белки: 28-31%, Жиры: 15-17%",
+  "slug": "dog-dry-small-breeds-chicken",
+  "brandId": 1,
+  "productTypeId": 1,
+  "categoryIds": [102],
+  "breedIds": [2301],
+  "countryIds": [3],
+  "typeoffoodIds": [1],
+  "flavorIds": [2],
+  "variants": [
+    {
+      "sku": "LANDOR-DOG-SM-CH-1KG",
+      "price": 800,
+      "stock": 50,
+      "weight": 1000,
+      "colorIds": [],
+      "scentIds": []
+    },
+    {
+      "sku": "LANDOR-DOG-SM-CH-3KG",
+      "price": 2300,
+      "stock": 30,
+      "weight": 3000,
+      "colorIds": [],
+      "scentIds": []
+    },
+    {
+      "sku": "LANDY-DOG-SM-CH-1KG",
+      "price": 780,
+      "stock": 55,
+      "weight": 1000,
+      "colorIds": [],
+      "scentIds": []
+    },
+    {
+      "sku": "FRESH-PET-DOG-SM-CH-1KG",
+      "price": 850,
+      "stock": 45,
+      "weight": 1000,
+      "colorIds": [],
+      "scentIds": []
+    }
+  ]
+}
+

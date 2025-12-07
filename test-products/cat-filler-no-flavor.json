@@ -1,0 +1,49 @@
+{
+  "name": "Наполнитель для кошек, Без аромата",
+  "description": "Наполнитель для кошачьих туалетов без аромата. Для чувствительных кошек и их владельцев.",
+  "feedingNote": "Рекомендуется менять наполнитель каждые 5-7 дней или по мере необходимости.",
+  "guaranteedIndicators": "Впитываемость: до 300%, Контроль запаха: до 7 дней",
+  "slug": "cat-filler-no-flavor",
+  "brandId": 1,
+  "productTypeId": 2,
+  "categoryIds": [101],
+  "breedIds": [],
+  "countryIds": [4],
+  "typeoffoodIds": [],
+  "flavorIds": [],
+  "variants": [
+    {
+      "sku": "LANDOR-FILL-NF-5KG",
+      "price": 440,
+      "stock": 85,
+      "weight": 5000,
+      "colorIds": [],
+      "scentIds": [9]
+    },
+    {
+      "sku": "LANDOR-FILL-NF-10KG",
+      "price": 830,
+      "stock": 65,
+      "weight": 10000,
+      "colorIds": [],
+      "scentIds": [9]
+    },
+    {
+      "sku": "LANDY-FILL-NF-5KG",
+      "price": 410,
+      "stock": 90,
+      "weight": 5000,
+      "colorIds": [],
+      "scentIds": [9]
+    },
+    {
+      "sku": "CHISTYE-FILL-NF-5KG",
+      "price": 400,
+      "stock": 95,
+      "weight": 5000,
+      "colorIds": [],
+      "scentIds": [9]
+    }
+  ]
+}
+

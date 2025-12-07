@@ -1,0 +1,49 @@
+{
+  "name": "Корм для стерилизованных кошек, Курица, Сухой",
+  "description": "Сбалансированный сухой корм для стерилизованных кошек с курицей. Поддерживает здоровье мочевыводящих путей.",
+  "feedingNote": "Рекомендуемая суточная доза: 50г на 5кг веса кошки.",
+  "guaranteedIndicators": "Белки: 30-33%, Жиры: 14-16%",
+  "slug": "cat-dry-sterilized-chicken",
+  "brandId": 1,
+  "productTypeId": 1,
+  "categoryIds": [101],
+  "breedIds": [2101],
+  "countryIds": [1],
+  "typeoffoodIds": [1],
+  "flavorIds": [2],
+  "variants": [
+    {
+      "sku": "LANDOR-CAT-ST-CH-1KG",
+      "price": 850,
+      "stock": 50,
+      "weight": 1000,
+      "colorIds": [],
+      "scentIds": []
+    },
+    {
+      "sku": "LANDOR-CAT-ST-CH-2KG",
+      "price": 1600,
+      "stock": 30,
+      "weight": 2000,
+      "colorIds": [],
+      "scentIds": []
+    },
+    {
+      "sku": "LANDY-CAT-ST-CH-1KG",
+      "price": 820,
+      "stock": 55,
+      "weight": 1000,
+      "colorIds": [],
+      "scentIds": []
+    },
+    {
+      "sku": "FRESH-PET-CAT-ST-CH-1KG",
+      "price": 900,
+      "stock": 40,
+      "weight": 1000,
+      "colorIds": [],
+      "scentIds": []
+    }
+  ]
+}
+

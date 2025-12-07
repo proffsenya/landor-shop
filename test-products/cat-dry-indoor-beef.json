@@ -1,0 +1,49 @@
+{
+  "name": "Корм для домашних кошек, Говядина, Сухой",
+  "description": "Сухой корм для домашних (indoor) кошек с говядиной. Контроль веса и здоровья.",
+  "feedingNote": "Рекомендуемая суточная доза: 45г на 5кг веса кошки.",
+  "guaranteedIndicators": "Белки: 29-32%, Жиры: 13-15%",
+  "slug": "cat-dry-indoor-beef",
+  "brandId": 1,
+  "productTypeId": 1,
+  "categoryIds": [101],
+  "breedIds": [2105],
+  "countryIds": [5],
+  "typeoffoodIds": [1],
+  "flavorIds": [10],
+  "variants": [
+    {
+      "sku": "LANDOR-CAT-IN-BEE-1KG",
+      "price": 870,
+      "stock": 48,
+      "weight": 1000,
+      "colorIds": [],
+      "scentIds": []
+    },
+    {
+      "sku": "LANDY-CAT-IN-BEE-1KG",
+      "price": 840,
+      "stock": 52,
+      "weight": 1000,
+      "colorIds": [],
+      "scentIds": []
+    },
+    {
+      "sku": "FRESH-PET-CAT-IN-BEE-2KG",
+      "price": 1650,
+      "stock": 38,
+      "weight": 2000,
+      "colorIds": [],
+      "scentIds": []
+    },
+    {
+      "sku": "CHISTYE-CAT-IN-BEE-1KG",
+      "price": 790,
+      "stock": 62,
+      "weight": 1000,
+      "colorIds": [],
+      "scentIds": []
+    }
+  ]
+}
+

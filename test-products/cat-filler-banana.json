@@ -1,0 +1,41 @@
+{
+  "name": "Наполнитель для кошек, Банановый",
+  "description": "Наполнитель для кошачьих туалетов с банановым ароматом. Свежий и приятный запах.",
+  "feedingNote": "Рекомендуется менять наполнитель каждые 5-7 дней или по мере необходимости.",
+  "guaranteedIndicators": "Впитываемость: до 300%, Контроль запаха: до 7 дней",
+  "slug": "cat-filler-banana",
+  "brandId": 1,
+  "productTypeId": 2,
+  "categoryIds": [101],
+  "breedIds": [],
+  "countryIds": [3],
+  "typeoffoodIds": [],
+  "flavorIds": [],
+  "variants": [
+    {
+      "sku": "LANDOR-FILL-BAN-5KG",
+      "price": 460,
+      "stock": 75,
+      "weight": 5000,
+      "colorIds": [],
+      "scentIds": [3]
+    },
+    {
+      "sku": "LANDY-FILL-BAN-5KG",
+      "price": 430,
+      "stock": 82,
+      "weight": 5000,
+      "colorIds": [],
+      "scentIds": [3]
+    },
+    {
+      "sku": "FRESH-PET-FILL-BAN-5KG",
+      "price": 490,
+      "stock": 68,
+      "weight": 5000,
+      "colorIds": [],
+      "scentIds": [3]
+    }
+  ]
+}
+

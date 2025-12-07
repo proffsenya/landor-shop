@@ -1,0 +1,41 @@
+{
+  "name": "Корм для щенков мелких пород, Курица, Сухой",
+  "description": "Сухой корм для щенков мелких пород с курицей. Высокое содержание белка для роста.",
+  "feedingNote": "Рекомендуемая суточная доза: 120г на 2кг веса щенка.",
+  "guaranteedIndicators": "Белки: 32-35%, Жиры: 18-20%, Кальций: 1.5%",
+  "slug": "puppy-dry-small-breeds-chicken",
+  "brandId": 1,
+  "productTypeId": 1,
+  "categoryIds": [104],
+  "breedIds": [2401],
+  "countryIds": [1],
+  "typeoffoodIds": [1],
+  "flavorIds": [2],
+  "variants": [
+    {
+      "sku": "LANDOR-PUP-SM-CH-1KG",
+      "price": 900,
+      "stock": 45,
+      "weight": 1000,
+      "colorIds": [],
+      "scentIds": []
+    },
+    {
+      "sku": "LANDOR-PUP-SM-CH-2KG",
+      "price": 1700,
+      "stock": 32,
+      "weight": 2000,
+      "colorIds": [],
+      "scentIds": []
+    },
+    {
+      "sku": "LANDY-PUP-SM-CH-1KG",
+      "price": 870,
+      "stock": 48,
+      "weight": 1000,
+      "colorIds": [],
+      "scentIds": []
+    }
+  ]
+}
+

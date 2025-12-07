@@ -1,0 +1,33 @@
+{
+  "name": "Корм для стерилизованных кошек, Куропатка, Сухой",
+  "description": "Сухой корм для стерилизованных кошек с куропаткой. Диетическое мясо птицы.",
+  "feedingNote": "Рекомендуемая суточная доза: 50г на 5кг веса кошки.",
+  "guaranteedIndicators": "Белки: 29-32%, Жиры: 13-15%",
+  "slug": "cat-dry-sterilized-partridge",
+  "brandId": 1,
+  "productTypeId": 1,
+  "categoryIds": [101],
+  "breedIds": [2101],
+  "countryIds": [4],
+  "typeoffoodIds": [1],
+  "flavorIds": [3],
+  "variants": [
+    {
+      "sku": "LANDOR-CAT-ST-PAR-1KG",
+      "price": 950,
+      "stock": 40,
+      "weight": 1000,
+      "colorIds": [],
+      "scentIds": []
+    },
+    {
+      "sku": "LANDOR-CAT-ST-PAR-2KG",
+      "price": 1800,
+      "stock": 28,
+      "weight": 2000,
+      "colorIds": [],
+      "scentIds": []
+    }
+  ]
+}
+

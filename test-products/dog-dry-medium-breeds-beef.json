@@ -1,0 +1,49 @@
+{
+  "name": "Корм для средних пород собак, Говядина, Сухой",
+  "description": "Сухой корм для средних пород собак с говядиной. Сбалансированное питание для активных собак.",
+  "feedingNote": "Рекомендуемая суточная доза: 150г на 10кг веса собаки.",
+  "guaranteedIndicators": "Белки: 26-29%, Жиры: 14-16%",
+  "slug": "dog-dry-medium-breeds-beef",
+  "brandId": 1,
+  "productTypeId": 1,
+  "categoryIds": [102],
+  "breedIds": [2302],
+  "countryIds": [4],
+  "typeoffoodIds": [1],
+  "flavorIds": [10],
+  "variants": [
+    {
+      "sku": "LANDOR-DOG-MD-BEE-2KG",
+      "price": 1600,
+      "stock": 40,
+      "weight": 2000,
+      "colorIds": [],
+      "scentIds": []
+    },
+    {
+      "sku": "LANDOR-DOG-MD-BEE-5KG",
+      "price": 3800,
+      "stock": 25,
+      "weight": 5000,
+      "colorIds": [],
+      "scentIds": []
+    },
+    {
+      "sku": "LANDY-DOG-MD-BEE-2KG",
+      "price": 1550,
+      "stock": 42,
+      "weight": 2000,
+      "colorIds": [],
+      "scentIds": []
+    },
+    {
+      "sku": "CHISTYE-DOG-MD-BEE-2KG",
+      "price": 1400,
+      "stock": 50,
+      "weight": 2000,
+      "colorIds": [],
+      "scentIds": []
+    }
+  ]
+}
+

@@ -1,0 +1,49 @@
+{
+  "name": "Наполнитель для кошек, Классический",
+  "description": "Классический наполнитель для кошачьих туалетов. Отличная впитываемость и контроль запаха.",
+  "feedingNote": "Рекомендуется менять наполнитель каждые 5-7 дней или по мере необходимости.",
+  "guaranteedIndicators": "Впитываемость: до 300%, Контроль запаха: до 7 дней",
+  "slug": "cat-filler-classic",
+  "brandId": 1,
+  "productTypeId": 2,
+  "categoryIds": [101],
+  "breedIds": [],
+  "countryIds": [1],
+  "typeoffoodIds": [],
+  "flavorIds": [],
+  "variants": [
+    {
+      "sku": "LANDOR-FILL-CL-5KG",
+      "price": 450,
+      "stock": 80,
+      "weight": 5000,
+      "colorIds": [],
+      "scentIds": [1]
+    },
+    {
+      "sku": "LANDOR-FILL-CL-10KG",
+      "price": 850,
+      "stock": 60,
+      "weight": 10000,
+      "colorIds": [],
+      "scentIds": [1]
+    },
+    {
+      "sku": "LANDY-FILL-CL-5KG",
+      "price": 420,
+      "stock": 85,
+      "weight": 5000,
+      "colorIds": [],
+      "scentIds": [1]
+    },
+    {
+      "sku": "FRESH-PET-FILL-CL-5KG",
+      "price": 480,
+      "stock": 75,
+      "weight": 5000,
+      "colorIds": [],
+      "scentIds": [1]
+    }
+  ]
+}
+

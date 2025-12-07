@@ -1,0 +1,33 @@
+{
+  "name": "Корм для стерилизованных кошек, Рыба, Сухой",
+  "description": "Сухой корм для стерилизованных кошек с рыбой. Поддерживает здоровье мочевыводящих путей.",
+  "feedingNote": "Рекомендуемая суточная доза: 50г на 5кг веса кошки.",
+  "guaranteedIndicators": "Белки: 30-33%, Жиры: 14-16%",
+  "slug": "cat-dry-sterilized-fish",
+  "brandId": 2,
+  "productTypeId": 1,
+  "categoryIds": [101],
+  "breedIds": [2101],
+  "countryIds": [2],
+  "typeoffoodIds": [1],
+  "flavorIds": [6],
+  "variants": [
+    {
+      "sku": "LANDOR-CAT-ST-FIS-1KG",
+      "price": 880,
+      "stock": 48,
+      "weight": 1000,
+      "colorIds": [],
+      "scentIds": []
+    },
+    {
+      "sku": "LANDY-CAT-ST-FIS-1KG",
+      "price": 850,
+      "stock": 52,
+      "weight": 1000,
+      "colorIds": [],
+      "scentIds": []
+    }
+  ]
+}
+
