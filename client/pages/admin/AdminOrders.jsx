@@ -795,6 +795,11 @@ function OrderModal({ order, loading, onClose, onUpdateStatus, onConfirmPayment 
                             ID товара: {item.productId}
                           </div>
                         )}
+                        {item.sku && (
+                          <div className="text-sm text-[#6F6F6F] mt-1">
+                            SKU: {item.sku}
+                          </div>
+                        )}
                       </div>
                       <div className="text-right">
                         <div className="font-medium text-[#1E1E1E]">

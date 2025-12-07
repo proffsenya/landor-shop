@@ -235,18 +235,16 @@ export default function AdminDashboard() {
                   </div>
                   <p className="text-xs sm:text-sm opacity-75 group-hover:text-white/90">Просмотр заявок от клиентов</p>
                 </button>
-                {isSuperUser && (
-                  <button
-                    onClick={() => navigate("/admin/users")}
-                    className="p-3 sm:p-4 border-2 border-gray-200 rounded-lg hover:border-[#6F2A2B] hover:bg-[#6F2A2B] hover:text-white transition-colors text-left group"
-                  >
-                    <div className="flex items-center gap-2 mb-2">
-                      <Users className="w-5 h-5 group-hover:text-white text-[#6F2A2B]" />
-                      <h3 className="text-sm sm:text-base font-semibold">Управление пользователями</h3>
-                    </div>
-                    <p className="text-xs sm:text-sm opacity-75 group-hover:text-white/90">Назначить права доступа</p>
-                  </button>
-                )}
+                <button
+                  onClick={() => navigate("/admin/users")}
+                  className="p-3 sm:p-4 border-2 border-gray-200 rounded-lg hover:border-[#6F2A2B] hover:bg-[#6F2A2B] hover:text-white transition-colors text-left group"
+                >
+                  <div className="flex items-center gap-2 mb-2">
+                    <Users className="w-5 h-5 group-hover:text-white text-[#6F2A2B]" />
+                    <h3 className="text-sm sm:text-base font-semibold">Управление пользователями</h3>
+                  </div>
+                  <p className="text-xs sm:text-sm opacity-75 group-hover:text-white/90">Назначить права доступа</p>
+                </button>
               </div>
             </div>
           </div>

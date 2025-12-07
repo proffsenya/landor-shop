@@ -24,7 +24,7 @@ export default function AdminUsers() {
   useEffect(() => {
     const { isSuperUser: superUser, isStaff: staff, hasAccess } = checkAdminAccess();
 
-    if (!hasAccess || !superUser) {
+    if (!hasAccess) {
       navigate("/admin/login");
       return;
     }
@@ -212,7 +212,8 @@ export default function AdminUsers() {
       />
       <div className="flex">
         <AdminSidebar 
-          isSuperUser={isSuperUser} 
+          isSuperUser={isSuperUser}
+          isStaff={isStaff}
           isOpen={sidebarOpen}
           onClose={() => setSidebarOpen(false)}
         />
@@ -223,7 +224,7 @@ export default function AdminUsers() {
                 <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Пользователи</h1>
                 <p className="text-sm sm:text-base text-gray-600 mt-2">Управление правами доступа пользователей</p>
               </div>
-              {isSuperUser && !isStaff && (
+              {isSuperUser && (
                 <Button
                   onClick={() => setShowCreateForm(true)}
                   className="bg-[#6F2A2B] text-white hover:bg-[#5a2223] w-full sm:w-auto"
@@ -235,7 +236,7 @@ export default function AdminUsers() {
             </div>
 
             {/* Форма создания пользователя */}
-            {showCreateForm && isSuperUser && !isStaff && (
+            {showCreateForm && isSuperUser && (
               <CreateUserForm
                 onClose={() => setShowCreateForm(false)}
                 onSubmit={handleCreateUser}
@@ -301,7 +302,7 @@ export default function AdminUsers() {
                         </td>
                           <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm">
                             <div className="flex items-center gap-2">
-                              {!user.isSuperUser && (
+                              {isSuperUser && !user.isSuperUser && (
                                 <button
                                   onClick={() => handleDeleteUser(user.userId)}
                                   className="px-3 py-1 rounded text-xs font-medium transition-colors bg-red-100 text-red-700 hover:bg-red-200 flex items-center justify-center gap-1"
@@ -339,7 +340,7 @@ export default function AdminUsers() {
                         </h3>
                         <p className="text-sm text-gray-600 mt-1 break-all">{user.email || "-"}</p>
                       </div>
-                      {!user.isSuperUser && (
+                      {isSuperUser && !user.isSuperUser && (
                         <button
                           onClick={() => handleDeleteUser(user.userId)}
                           className="p-2 rounded text-red-700 hover:bg-red-50 transition-colors"

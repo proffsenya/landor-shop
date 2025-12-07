@@ -11,7 +11,7 @@ import {
   Sliders
 } from "lucide-react";
 
-export default function AdminSidebar({ isSuperUser, isOpen, onClose }) {
+export default function AdminSidebar({ isSuperUser, isStaff = false, isOpen, onClose }) {
   const navigate = useNavigate();
 
   const handleGoToSite = () => {
@@ -125,22 +125,20 @@ export default function AdminSidebar({ isSuperUser, isOpen, onClose }) {
           <FileText className="w-4 h-4 lg:w-5 lg:h-5" />
           <span>Заявки</span>
         </NavLink>
-        {isSuperUser && (
-          <NavLink
-            to="/admin/users"
-            onClick={handleNavClick}
-            className={({ isActive }) =>
-              `flex items-center gap-3 px-3 lg:px-4 py-2 lg:py-3 rounded-lg transition-colors text-sm lg:text-base ${
-                isActive
-                  ? "bg-[#6F2A2B] text-white"
-                  : "text-gray-300 hover:bg-gray-800"
-              }`
-            }
-          >
-            <Users className="w-4 h-4 lg:w-5 lg:h-5" />
-            <span>Пользователи</span>
-          </NavLink>
-        )}
+        <NavLink
+          to="/admin/users"
+          onClick={handleNavClick}
+          className={({ isActive }) =>
+            `flex items-center gap-3 px-3 lg:px-4 py-2 lg:py-3 rounded-lg transition-colors text-sm lg:text-base ${
+              isActive
+                ? "bg-[#6F2A2B] text-white"
+                : "text-gray-300 hover:bg-gray-800"
+            }`
+          }
+        >
+          <Users className="w-4 h-4 lg:w-5 lg:h-5" />
+          <span>Пользователи</span>
+        </NavLink>
         <button
           onClick={handleGoToSite}
           className="w-full flex items-center gap-3 px-3 lg:px-4 py-2 lg:py-3 rounded-lg text-gray-300 hover:bg-gray-800 transition-colors text-sm lg:text-base"
