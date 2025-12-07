@@ -655,10 +655,12 @@ export default function Profile() {
   };
 
   const handleLogout = () => {
-    // Очищаем localStorage
-    localStorage.clear();
-    // Очищаем sessionStorage
-    sessionStorage.clear();
+    // Очищаем абсолютно все из localStorage
+    if (typeof window !== "undefined") {
+      localStorage.clear();
+      // Также очищаем sessionStorage
+      sessionStorage.clear();
+    }
     // Перенаправляем на главную страницу
     navigate("/");
     // Перезагружаем страницу для полной очистки состояния

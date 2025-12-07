@@ -32,7 +32,7 @@ export default function AdminDashboard() {
 
     setIsStaff(staff);
     setIsSuperUser(superUser);
-    loadStats(superUser);
+    loadStats(superUser, staff);
 
     // Инициализируем систему уведомлений
     const adminToken = getAdminToken();
@@ -53,11 +53,12 @@ export default function AdminDashboard() {
     };
   }, [navigate]);
 
-  const loadStats = async (isSuperUserFlag = false) => {
+  const loadStats = async (isSuperUserFlag = false, isStaffFlag = false) => {
     try {
       const adminToken = getAdminToken();
       
       // Загружаем статистику параллельно
+      // Пользователей загружаем для staff и superuser
       const [productsRes, ordersRes, categoriesRes, usersRes] = await Promise.all([
         fetch("/api/products/cards", {
           headers: { Authorization: `Bearer ${adminToken}` },
@@ -68,7 +69,7 @@ export default function AdminDashboard() {
         fetch("/api/catalog/categories", {
           headers: { Authorization: `Bearer ${adminToken}` },
         }),
-        isSuperUserFlag ? fetch("/api/users", {
+        (isSuperUserFlag || isStaffFlag) ? fetch("/api/users", {
           headers: { Authorization: `Bearer ${adminToken}` },
         }) : Promise.resolve({ ok: false }),
       ]);
@@ -99,7 +100,7 @@ export default function AdminDashboard() {
         setStats(prev => ({ ...prev, categories: Array.isArray(categories) ? categories.length : 0 }));
       }
 
-      if (usersRes.ok && isSuperUserFlag) {
+      if (usersRes.ok && (isSuperUserFlag || isStaffFlag)) {
         const users = await usersRes.json();
         setStats(prev => ({ ...prev, users: Array.isArray(users) ? users.length : 0 }));
       }
@@ -166,7 +167,7 @@ export default function AdminDashboard() {
                 <div className="flex items-center justify-between">
                   <div>
                 <h3 className="text-xs sm:text-sm font-medium text-gray-500 mb-2">Пользователи</h3>
-                    <p className="text-xl sm:text-2xl font-bold text-gray-900">{isSuperUser ? stats.users : "-"}</p>
+                    <p className="text-xl sm:text-2xl font-bold text-gray-900">{(isSuperUser || isStaff) ? stats.users : "-"}</p>
                   </div>
                   <Users className="w-8 h-8 sm:w-10 sm:h-10 text-[#6F2A2B] opacity-50" />
                 </div>

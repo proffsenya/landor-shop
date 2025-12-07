@@ -319,7 +319,7 @@ export default function AdminUsers() {
                         </td>
                           <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm">
                             <div className="flex items-center gap-2">
-                              {isSuperUser && !user.isSuperUser && (
+                              {isSuperUser === true && !user.isSuperUser && (
                                 <button
                                   onClick={() => handleDeleteUser(user.userId)}
                                   className="px-3 py-1 rounded text-xs font-medium transition-colors bg-red-100 text-red-700 hover:bg-red-200 flex items-center justify-center gap-1"
@@ -357,7 +357,7 @@ export default function AdminUsers() {
                         </h3>
                         <p className="text-sm text-gray-600 mt-1 break-all">{user.email || "-"}</p>
                       </div>
-                      {isSuperUser && !user.isSuperUser && (
+                      {isSuperUser === true && !user.isSuperUser && (
                         <button
                           onClick={() => handleDeleteUser(user.userId)}
                           className="p-2 rounded text-red-700 hover:bg-red-50 transition-colors"

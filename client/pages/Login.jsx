@@ -96,8 +96,19 @@ export default function Login() {
       // Сохраняем токен и базовую инфу о пользователе
       localStorage.setItem("authToken", data.token);
       localStorage.setItem("authEmail", data.email);
-      localStorage.setItem("isStaff", data.isStaff ? "true" : "true");
-      localStorage.setItem("isSuperUser", data.isSuperUser ? "true" : "true");
+      
+      // Сохраняем права доступа только для staff и superuser
+      // Для обычных пользователей эти поля не сохраняем
+      if (data.isStaff || data.isSuperUser) {
+        // Для staff: isStaff: "true", isSuperUser: "false"
+        // Для superuser: isStaff: "true", isSuperUser: "true"
+        localStorage.setItem("isStaff", "true");
+        localStorage.setItem("isSuperUser", data.isSuperUser ? "true" : "false");
+      } else {
+        // Для обычных пользователей удаляем эти поля, если они были
+        localStorage.removeItem("isStaff");
+        localStorage.removeItem("isSuperUser");
+      }
       
       // Сохраняем права доступа (если они есть в ответе)
       // if (data.isStaff !== undefined) {
