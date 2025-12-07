@@ -58,14 +58,14 @@ class OrderController {
 
     }
 
-    @PreAuthorize("hasAnyRole('STAFF', 'SUPERUSER')")
     @GetMapping
+    @PreAuthorize("hasRole('STAFF') or hasRole('SUPERUSER')")
     public ResponseEntity<List<OrderDTO>> getAllOrders() {
         return ResponseEntity.ok(orderService.getAllOrders());
     }
 
-    @PreAuthorize("hasAnyRole('STAFF', 'SUPERUSER')")
     @PutMapping("/{orderId}")
+    @PreAuthorize("hasRole('STAFF') or hasRole('SUPERUSER')")
     public ResponseEntity<OrderDTO> updateOrder(@PathVariable Long orderId, @RequestBody String status,
                                                 @AuthenticationPrincipal CustomUserDetails userPrincipal) throws AccessDeniedException {
         Long userId = userPrincipal.getId();
