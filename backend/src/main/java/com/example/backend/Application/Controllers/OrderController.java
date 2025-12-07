@@ -11,6 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.crossstore.ChangeSetPersister;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -21,6 +22,7 @@ import java.util.List;
 @RestController
 @Validated
 @RequestMapping("/api/orders")
+@PreAuthorize("isAuthenticated()")
 class OrderController {
     private final OrderService orderService;
     @Autowired
@@ -56,12 +58,13 @@ class OrderController {
 
     }
 
+    @PreAuthorize("hasAnyRole('STAFF', 'SUPERUSER')")
     @GetMapping
     public ResponseEntity<List<OrderDTO>> getAllOrders() {
         return ResponseEntity.ok(orderService.getAllOrders());
     }
 
-
+    @PreAuthorize("hasAnyRole('STAFF', 'SUPERUSER')")
     @PutMapping("/{orderId}")
     public ResponseEntity<OrderDTO> updateOrder(@PathVariable Long orderId, @RequestBody String status,
                                                 @AuthenticationPrincipal CustomUserDetails userPrincipal) throws AccessDeniedException {

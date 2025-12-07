@@ -110,6 +110,7 @@ public class OrderService {
             orderItem.setProductVariant(productVariant);
             orderItem.setQuantity(qty);
             orderItem.setWeight(productVariant.getWeight());
+            orderItem.setSku(productVariant.getSku());
             orderItem.setProductName(cartItem.getDisplayNameAtAdded());
             orderItem.setProductSku(productVariant.getSku());
             orderItem.setPrice(unitPrice);
