@@ -4,7 +4,7 @@ import AdminSidebar from "@/components/admin/AdminSidebar";
 import AdminHeader from "@/components/admin/AdminHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Trash2, Plus, X } from "lucide-react";
+import { Trash2, Plus, X, ChevronLeft, ChevronRight } from "lucide-react";
 import { checkAdminAccess, getAdminToken } from "@/utils/adminAuth";
 import { validateEmail, validateName, validatePassword, validatePhone } from "@/utils/validation";
 import { formatName, formatPhone } from "@/utils/formatting";
@@ -20,6 +20,10 @@ export default function AdminUsers() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [toast, setToast] = useState({ message: "", type: "success", show: false });
+  
+  // Пагинация
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 12;
 
   useEffect(() => {
     const { isSuperUser: superUser, isStaff: staff, hasAccess } = checkAdminAccess();
@@ -80,6 +84,19 @@ export default function AdminUsers() {
     setToast({ message, type, show: true });
     setTimeout(() => setToast({ message: "", type: "success", show: false }), 3000);
   };
+
+  // Вычисляем отображаемых пользователей для текущей страницы
+  const totalPages = Math.ceil(users.length / pageSize);
+  const startIndex = (currentPage - 1) * pageSize;
+  const endIndex = startIndex + pageSize;
+  const displayedUsers = users.slice(startIndex, endIndex);
+
+  // Сбрасываем страницу при изменении списка пользователей
+  useEffect(() => {
+    if (currentPage > totalPages && totalPages > 0) {
+      setCurrentPage(1);
+    }
+  }, [users.length, currentPage, totalPages]);
 
   const handleDeleteUser = async (userId) => {
     if (!userId) {
@@ -267,9 +284,9 @@ export default function AdminUsers() {
                       </td>
                     </tr>
                   ) : (
-                    users.map((user, index) => (
+                    displayedUsers.map((user, index) => (
                       <tr key={user.userId || user.email || index} className="hover:bg-gray-50 transition-colors">
-                          <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-900">{index + 1}</td>
+                          <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-900">{startIndex + index + 1}</td>
                           <td className="px-3 sm:px-6 py-4 text-sm text-gray-900">
                             <span className="truncate block max-w-[150px] sm:max-w-none" title={user.email || "-"}>
                               {user.email || "-"}
@@ -329,14 +346,14 @@ export default function AdminUsers() {
                   Нет пользователей
                 </div>
               ) : (
-                users.map((user, index) => (
+                displayedUsers.map((user, index) => (
                   <div key={user.userId || user.email || index} className="bg-white rounded-lg shadow p-4 space-y-3">
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
                         <h3 className="text-lg font-semibold text-gray-900">
                           {user.firstName && user.lastName
                             ? `${user.firstName} ${user.lastName}${user.middleName ? ` ${user.middleName}` : ""}`
-                            : user.email || `Пользователь #${index + 1}`}
+                            : user.email || `Пользователь #${startIndex + index + 1}`}
                         </h3>
                         <p className="text-sm text-gray-600 mt-1 break-all">{user.email || "-"}</p>
                       </div>

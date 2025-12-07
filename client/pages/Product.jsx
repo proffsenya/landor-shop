@@ -372,9 +372,9 @@ export default function Product() {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const meta = await res.json();
 
-        const ordered = [...meta].sort(
-          (a, b) => (b.isMain === true) - (a.isMain === true)
-        );
+        // Сохраняем исходный порядок картинок (они соответствуют вариантам по порядку)
+        // Сортируем по id, чтобы сохранить порядок: картинка 1 -> вариант 1, картинка 2 -> вариант 2 и т.д.
+        const ordered = [...meta].sort((a, b) => (a.id || 0) - (b.id || 0));
 
         const urls = await Promise.all(
           ordered.map((m) => fetchImageUrl(productId, m.id, token))
@@ -423,6 +423,26 @@ export default function Product() {
 
   const selectedVariant = variants[selectedIdx] || null;
 
+  // ---------- обновление главной картинки при смене варианта ----------
+  useEffect(() => {
+    if (!selectedVariant || !gallery.length || !product) return;
+    
+    // Картинки идут строго по порядку с вариантами: картинка 1 -> вариант 1, картинка 2 -> вариант 2 и т.д.
+    // Находим индекс варианта в исходном массиве variants продукта
+    const rawVariants = Array.isArray(product.variants) ? product.variants : [];
+    const variantIndexInProduct = rawVariants.findIndex(
+      (v) => String(v?.id) === String(selectedVariant.id)
+    );
+
+    if (variantIndexInProduct >= 0 && variantIndexInProduct < gallery.length) {
+      // Устанавливаем картинку с соответствующим индексом
+      setSelectedImageIdx(variantIndexInProduct);
+    } else {
+      // Если индекс не найден или выходит за пределы, показываем первую картинку
+      setSelectedImageIdx(0);
+    }
+  }, [selectedVariant?.id, gallery.length, product]);
+
   const title = useMemo(() => {
     if (!product) return "Товар";
     const v = variants[selectedIdx]?.raw;
@@ -455,6 +475,34 @@ export default function Product() {
       ? product.flavors
       : [];
     return fl.map((f) => pickName(f)).filter(Boolean).join(", ") || "—";
+  }, [product]);
+
+  // Запахи для наполнителей (из выбранного варианта)
+  const scentsText = useMemo(() => {
+    if (!selectedVariant?.raw) return "—";
+    
+    // Проверяем разные варианты структуры данных
+    const scentIds = selectedVariant.raw.scentIds || selectedVariant.raw.scentDTOs || [];
+    
+    if (!Array.isArray(scentIds) || scentIds.length === 0) {
+      return "—";
+    }
+    
+    // Если это объекты с name, используем их
+    const scents = scentIds.map((s) => {
+      if (typeof s === "object" && s !== null) {
+        return pickName(s);
+      }
+      // Если это просто ID, возвращаем null (нужно будет загружать названия отдельно)
+      return null;
+    }).filter(Boolean);
+    
+    return scents.length > 0 ? scents.join(", ") : "—";
+  }, [selectedVariant]);
+
+  // Проверяем, является ли товар наполнителем (productTypeId === 2)
+  const isFiller = useMemo(() => {
+    return product?.productTypeId === 2 || product?.productType?.id === 2;
   }, [product]);
 
   const countryText = useMemo(() => {
@@ -984,8 +1032,17 @@ export default function Product() {
                 <div className="text-[#6B6B6B]">Страна производства:</div>
                 <div>{countryText}</div>
 
-                <div className="text-[#6B6B6B]">Вкус:</div>
-                <div>{tastesText}</div>
+                {isFiller ? (
+                  <>
+                    <div className="text-[#6B6B6B]">Запах:</div>
+                    <div>{scentsText}</div>
+                  </>
+                ) : (
+                  <>
+                    <div className="text-[#6B6B6B]">Вкус:</div>
+                    <div>{tastesText}</div>
+                  </>
+                )}
 
                 <div className="text-[#6B6B6B]">Вес:</div>
                 <div>{weightLabel}</div>

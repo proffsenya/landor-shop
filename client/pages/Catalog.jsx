@@ -428,9 +428,14 @@ export default function Catalog() {
       // Формат: catalog?flavor_partridge=true&minPrice=800
       const filtersUrl = filtersUrlValue ? `catalog?${filtersUrlValue}` : "catalog?";
 
+      // Параметры пагинации: загружаем все товары сразу (большой размер страницы)
+      // Пагинация делается на клиенте, поэтому загружаем все товары сразу
+      const page = 0; // страница, начиная с 0
+      const size = 1000; // сколько товаров на странице (большое значение для загрузки всех)
+
       const url = `/api/products/cards/search-by-url?filtersUrl=${encodeURIComponent(
         filtersUrl
-      )}`;
+      )}&page=${page}&size=${size}`;
 
     // Проверяем кэш
     const cacheKey = url;

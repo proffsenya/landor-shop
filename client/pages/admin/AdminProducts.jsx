@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, Edit, Trash2, X } from "lucide-react";
+import { Plus, Edit, Trash2, X, ChevronLeft, ChevronRight } from "lucide-react";
 import { checkAdminAccess, getAdminToken } from "@/utils/adminAuth";
 import { handleApiError } from "@/utils/errorMessages";
 import { safeError } from "@/utils/logger";
@@ -28,6 +28,10 @@ export default function AdminProducts() {
   const [editingProduct, setEditingProduct] = useState(null);
   const [expandedProductId, setExpandedProductId] = useState(null);
   const [toast, setToast] = useState({ message: "", type: "success", show: false });
+  
+  // Пагинация
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 12;
 
   // Списки для выпадающих списков
   const [categories, setCategories] = useState([]);
@@ -155,6 +159,19 @@ export default function AdminProducts() {
     setTimeout(() => setToast({ message: "", type: "success", show: false }), 3000);
   };
 
+  // Вычисляем отображаемые товары для текущей страницы
+  const totalPages = Math.ceil(products.length / pageSize);
+  const startIndex = (currentPage - 1) * pageSize;
+  const endIndex = startIndex + pageSize;
+  const displayedProducts = products.slice(startIndex, endIndex);
+
+  // Сбрасываем страницу при изменении списка товаров
+  useEffect(() => {
+    if (currentPage > totalPages && totalPages > 0) {
+      setCurrentPage(1);
+    }
+  }, [products.length, currentPage, totalPages]);
+
   const handleDelete = async (productId) => {
     try {
       const adminToken = getAdminToken();
@@ -262,7 +279,7 @@ export default function AdminProducts() {
                       </td>
                     </tr>
                   ) : (
-                    products.map((product, index) => {
+                    displayedProducts.map((product, index) => {
                       // Вычисляем статистику по вариантам
                       const variants = product.variants || [];
                       const variantCount = variants.length;
@@ -459,7 +476,7 @@ export default function AdminProducts() {
                   </div>
                 ) : (
                   <div className="divide-y divide-gray-200">
-                    {products.map((product) => {
+                    {displayedProducts.map((product) => {
                       const variants = product.variants || [];
                       const variantCount = variants.length;
                       const prices = variants.map(v => v.price || 0).filter(p => p > 0);
@@ -647,6 +664,89 @@ export default function AdminProducts() {
                   </div>
                 )}
               </div>
+
+              {/* Пагинация */}
+              {products.length > pageSize && (
+                <div className="mt-6 flex items-center justify-between px-4 py-3 bg-white border-t border-gray-200 sm:px-6">
+                  <div className="flex flex-1 justify-between sm:hidden">
+                    <Button
+                      onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                      disabled={currentPage === 1}
+                      variant="outline"
+                      size="sm"
+                      className="px-3"
+                    >
+                      <ChevronLeft className="w-4 h-4" />
+                      Назад
+                    </Button>
+                    <div className="text-sm text-gray-700">
+                      Страница {currentPage} из {totalPages}
+                    </div>
+                    <Button
+                      onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                      disabled={currentPage === totalPages}
+                      variant="outline"
+                      size="sm"
+                      className="px-3"
+                    >
+                      Вперед
+                      <ChevronRight className="w-4 h-4" />
+                    </Button>
+                  </div>
+                  <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
+                    <div>
+                      <p className="text-sm text-gray-700">
+                        Показано <span className="font-medium">{startIndex + 1}</span> - <span className="font-medium">{Math.min(endIndex, products.length)}</span> из <span className="font-medium">{products.length}</span> товаров
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                        disabled={currentPage === 1}
+                        variant="outline"
+                        size="sm"
+                      >
+                        <ChevronLeft className="w-4 h-4 mr-1" />
+                        Предыдущая
+                      </Button>
+                      <div className="flex items-center gap-1">
+                        {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                          let pageNum;
+                          if (totalPages <= 5) {
+                            pageNum = i + 1;
+                          } else if (currentPage <= 3) {
+                            pageNum = i + 1;
+                          } else if (currentPage >= totalPages - 2) {
+                            pageNum = totalPages - 4 + i;
+                          } else {
+                            pageNum = currentPage - 2 + i;
+                          }
+                          return (
+                            <Button
+                              key={pageNum}
+                              onClick={() => setCurrentPage(pageNum)}
+                              variant={currentPage === pageNum ? "default" : "outline"}
+                              size="sm"
+                              className={currentPage === pageNum ? "bg-[#6F2A2B] text-white hover:bg-[#5a2223]" : ""}
+                            >
+                              {pageNum}
+                            </Button>
+                          );
+                        })}
+                      </div>
+                      <Button
+                        onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                        disabled={currentPage === totalPages}
+                        variant="outline"
+                        size="sm"
+                      >
+                        Следующая
+                        <ChevronRight className="w-4 h-4 ml-1" />
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </main>

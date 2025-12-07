@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import AdminSidebar from "@/components/admin/AdminSidebar";
 import AdminHeader from "@/components/admin/AdminHeader";
 import { Button } from "@/components/ui/button";
-import { Eye } from "lucide-react";
+import { Eye, ChevronLeft, ChevronRight } from "lucide-react";
 import { checkAdminAccess, getAdminToken } from "@/utils/adminAuth";
 import { initNotifications } from "@/utils/notifications";
 import { formatPhone, formatWeight } from "@/utils/formatting";
@@ -21,6 +21,10 @@ export default function AdminOrders() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [toast, setToast] = useState({ message: "", type: "success", show: false });
   const [showUnpaidOnly, setShowUnpaidOnly] = useState(false);
+  
+  // Пагинация
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 12;
 
   useEffect(() => {
     const { isStaff: staff, isSuperUser: superUser, hasAccess } = checkAdminAccess();
@@ -56,6 +60,27 @@ export default function AdminOrders() {
     setToast({ message, type, show: true });
     setTimeout(() => setToast({ message: "", type: "success", show: false }), 3000);
   };
+
+  // Вычисляем отображаемые заказы для текущей страницы
+  const filteredOrders = showUnpaidOnly 
+    ? orders.filter(order => {
+        const paymentStatus = order.paymentStatus || order.payment_status;
+        const cleanStatus = String(paymentStatus || "").toLowerCase().trim().replace(/^["']|["']$/g, '');
+        return cleanStatus === "unpaid" || cleanStatus === "не оплачен";
+      })
+    : orders;
+  
+  const totalPages = Math.ceil(filteredOrders.length / pageSize);
+  const startIndex = (currentPage - 1) * pageSize;
+  const endIndex = startIndex + pageSize;
+  const displayedOrders = filteredOrders.slice(startIndex, endIndex);
+
+  // Сбрасываем страницу при изменении списка заказов или фильтра
+  useEffect(() => {
+    if (currentPage > totalPages && totalPages > 0) {
+      setCurrentPage(1);
+    }
+  }, [filteredOrders.length, currentPage, totalPages]);
 
   const loadOrders = async () => {
     try {
@@ -423,14 +448,14 @@ export default function AdminOrders() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
-                  {orders.length === 0 ? (
+                  {filteredOrders.length === 0 ? (
                     <tr>
                         <td colSpan="7" className="px-3 sm:px-6 py-4 text-center text-gray-500">
                         Нет заказов
                       </td>
                     </tr>
                   ) : (
-                    orders.map((order) => (
+                    displayedOrders.map((order) => (
                       <tr key={order.id} className="hover:bg-gray-50 transition-colors">
                           <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-900">#{order.id}</td>
                           <td className="px-3 sm:px-6 py-4 text-sm text-gray-500">
@@ -514,7 +539,7 @@ export default function AdminOrders() {
                   Нет заказов
                 </div>
               ) : (
-                orders.map((order) => (
+                displayedOrders.map((order) => (
                   <div key={order.id} className="bg-white rounded-lg shadow p-4 space-y-3">
                     <div className="flex items-start justify-between">
                       <div>
@@ -600,6 +625,89 @@ export default function AdminOrders() {
                 ))
               )}
             </div>
+
+            {/* Пагинация */}
+            {filteredOrders.length > pageSize && (
+              <div className="mt-6 flex items-center justify-between px-4 py-3 bg-white border-t border-gray-200 sm:px-6">
+                <div className="flex flex-1 justify-between sm:hidden">
+                  <Button
+                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                    disabled={currentPage === 1}
+                    variant="outline"
+                    size="sm"
+                    className="px-3"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                    Назад
+                  </Button>
+                  <div className="text-sm text-gray-700">
+                    Страница {currentPage} из {totalPages}
+                  </div>
+                  <Button
+                    onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                    disabled={currentPage === totalPages}
+                    variant="outline"
+                    size="sm"
+                    className="px-3"
+                  >
+                    Вперед
+                    <ChevronRight className="w-4 h-4" />
+                  </Button>
+                </div>
+                <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
+                  <div>
+                    <p className="text-sm text-gray-700">
+                      Показано <span className="font-medium">{startIndex + 1}</span> - <span className="font-medium">{Math.min(endIndex, filteredOrders.length)}</span> из <span className="font-medium">{filteredOrders.length}</span> заказов
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                      disabled={currentPage === 1}
+                      variant="outline"
+                      size="sm"
+                    >
+                      <ChevronLeft className="w-4 h-4 mr-1" />
+                      Предыдущая
+                    </Button>
+                    <div className="flex items-center gap-1">
+                      {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                        let pageNum;
+                        if (totalPages <= 5) {
+                          pageNum = i + 1;
+                        } else if (currentPage <= 3) {
+                          pageNum = i + 1;
+                        } else if (currentPage >= totalPages - 2) {
+                          pageNum = totalPages - 4 + i;
+                        } else {
+                          pageNum = currentPage - 2 + i;
+                        }
+                        return (
+                          <Button
+                            key={pageNum}
+                            onClick={() => setCurrentPage(pageNum)}
+                            variant={currentPage === pageNum ? "default" : "outline"}
+                            size="sm"
+                            className={currentPage === pageNum ? "bg-[#6F2A2B] text-white hover:bg-[#5a2223]" : ""}
+                          >
+                            {pageNum}
+                          </Button>
+                        );
+                      })}
+                    </div>
+                    <Button
+                      onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                      disabled={currentPage === totalPages}
+                      variant="outline"
+                      size="sm"
+                    >
+                      Следующая
+                      <ChevronRight className="w-4 h-4 ml-1" />
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
             
             <ToastMotion show={toast.show} type={toast.type}>
               {toast.message}

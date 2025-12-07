@@ -28,7 +28,7 @@ export default function AdminForms() {
   const [feedbackPage, setFeedbackPage] = useState(1);
   const [nurseryPage, setNurseryPage] = useState(1);
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const itemsPerPage = 10;
+  const itemsPerPage = 12;
 
   useEffect(() => {
     const { isStaff: staff, isSuperUser: superUser, hasAccess } = checkAdminAccess();
