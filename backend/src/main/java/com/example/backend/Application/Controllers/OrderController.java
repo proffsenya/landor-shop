@@ -66,10 +66,9 @@ class OrderController {
 
     @PutMapping("/{orderId}")
     @PreAuthorize("hasRole('STAFF') or hasRole('SUPERUSER')")
-    public ResponseEntity<OrderDTO> updateOrder(@PathVariable Long orderId, @RequestBody String status,
-                                                @AuthenticationPrincipal CustomUserDetails userPrincipal) throws AccessDeniedException {
-        Long userId = userPrincipal.getId();
-        Order order = orderService.updateOrderStatus(userId, orderId, status);
+    public ResponseEntity<OrderDTO> updateOrder(@PathVariable Long orderId, @RequestBody String status
+                                                ) throws AccessDeniedException {
+        Order order = orderService.updateOrderStatus(orderId, status);
         return ResponseEntity.ok(OrderDTO.from(order));
     }
 
