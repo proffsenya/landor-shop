@@ -550,8 +550,31 @@ export default function Product() {
       `/product/${encodeURIComponent(productId)}?${sp.toString()}`,
       { replace: false }
     );
-    setSelectedImageIdx(0);
+    // Индекс картинки будет автоматически обновлен через useEffect при смене варианта
   }, [variants, location.search, navigate, productId]);
+
+  // Обратная логика: при клике на картинку меняем вариант товара
+  const handleSelectImage = useCallback((imageIdx) => {
+    if (!product || imageIdx < 0 || imageIdx >= gallery.length) return;
+    
+    // Картинки идут строго по порядку с вариантами: картинка 1 -> вариант 1, картинка 2 -> вариант 2 и т.д.
+    const rawVariants = Array.isArray(product.variants) ? product.variants : [];
+    if (imageIdx >= rawVariants.length) return;
+    
+    // Находим вариант в исходном массиве по индексу картинки
+    const rawVariant = rawVariants[imageIdx];
+    if (!rawVariant) return;
+    
+    const rawVariantId = String(rawVariant?.id ?? rawVariant?.sku ?? "");
+    if (!rawVariantId) return;
+    
+    // Находим индекс этого варианта в нормализованном массиве variants
+    const variantIdx = variants.findIndex((v) => String(v.id) === rawVariantId);
+    if (variantIdx >= 0) {
+      // Используем handleSelectWeight для установки варианта
+      handleSelectWeight(variantIdx);
+    }
+  }, [product, gallery.length, variants, handleSelectWeight]);
 
   // ---------- синхронизация с сессией (кнопки) ----------
   useEffect(() => {
@@ -880,7 +903,7 @@ export default function Product() {
                 {gallery.map((img, i) => (
                   <button
                     key={img.id ?? i}
-                    onClick={() => setSelectedImageIdx(i)}
+                    onClick={() => handleSelectImage(i)}
                     className={`overflow-hidden rounded-md ${
                       selectedImageIdx === i
                         ? "ring-2 ring-[#6F2A2B]"
