@@ -50,7 +50,7 @@ export default function AboutCompany() {
             {/* Контакты */}
             <PageFade>
               <section className="pt-8 mt-10 border-t border-gray-200">
-                <h2 className="text-[#6F2A2B] text-xl sm:text-2xl lg:text-[28px] font-semibold mb-4">
+                <h2 className="text-[#6F2A2B] text-xl sm:text-2xl lg:text-[28px] mb-4">
                   Контакты
                 </h2>
                 <p className="mb-4 text-base leading-relaxed text-gray-700 sm:text-lg">
@@ -65,6 +65,38 @@ export default function AboutCompany() {
                   </li>
                   <li className="text-base sm:text-lg">
                     <strong>Часы работы:</strong> ежедневно с 9:00 до 21:00
+                  </li>
+                </ul>
+              </section>
+            </PageFade>
+
+            {/* Платежные реквизиты*/}
+            <PageFade>
+              <section className="pt-8 mt-10 border-t border-gray-200">
+                <h2 className="text-[#6F2A2B] text-xl sm:text-2xl lg:text-[28px] mb-4">
+                  Платежные реквизиты
+                </h2>
+                <ul className="pl-6 space-y-2 text-gray-700">
+                  <li className="text-base sm:text-lg">
+                    <strong>Номер счёта:</strong> 40802810001890000813
+                  </li>
+                  <li className="text-base sm:text-lg">
+                    <strong>ИП:</strong> АБРАМОВ АЛЕКСЕЙ МИХАЙЛОВИЧ
+                  </li>
+                  <li className="text-base sm:text-lg">
+                    <strong>ИНН:</strong> 772878246214
+                  </li>
+                  <li className="text-base sm:text-lg">
+                    <strong>Банк:</strong> АО "АЛЬФА-БАНК"
+                  </li>
+                  <li className="text-base sm:text-lg">
+                    <strong>БИК:</strong> 044525593
+                  </li>
+                  <li className="text-base sm:text-lg">
+                    <strong>Кор. счёт:</strong> 30101810200000000593
+                  </li>
+                  <li>
+                    <img src = "/payments.jpg"></img>
                   </li>
                 </ul>
               </section>

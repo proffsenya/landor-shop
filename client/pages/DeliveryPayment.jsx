@@ -3,6 +3,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import BreadcrumbNav from "@/components/BreadcrumbNav";
 import { PageFade } from "@/utils/PageAnimations";
+import { Link } from "react-router-dom";
 
 export default function DeliveryPayment() {
   return (
@@ -39,7 +40,8 @@ export default function DeliveryPayment() {
             <ul className="pl-6 text-gray-700 list-disc">
               <li><strong>Наличными курьеру</strong> при получении заказа - только для Москвы и Московской области.</li>
               <li><strong>Оплата по QR-коду через СБП</strong></li>
-              <li><strong>По реквизитам</strong> на р/с ИП реквизиты:</li>
+              <li><strong>По реквизитам</strong> на р/с ИП
+              <Link to = "/about" className="font-semibold text-blue-500"> Подробнее </Link></li>
             </ul>
           </section>
           </PageFade>

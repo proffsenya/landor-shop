@@ -1038,7 +1038,7 @@ export default function Profile() {
                   <div>
                     <span className="text-[#6F6F6F]">Статус оплаты:</span>
                     <span className="ml-2 font-medium text-[#1E1E1E]">
-{formatPaymentStatus(orderDetails.paymentStatus)}
+                    {formatPaymentStatus(orderDetails.paymentStatus)}
                     </span>
                   </div>
                   <div>
@@ -1132,6 +1132,13 @@ export default function Profile() {
                   </div>
                 </div>
               )}
+              <div>
+                  <h3 className="text-lg font-semibold text-[#1E1E1E] mb-3">Оплата заказа</h3>
+                  <div className="text-sm text-[#1E1E1E] space-y-1">
+                    <li>Для оплаты заказа отсканируйте QR-код в вашем мобильном банке</li>
+                    <li>В комментарии </li>
+                  </div>
+                </div>
             </div>
           ) : (
             <div className="py-8 text-center text-gray-500">Не удалось загрузить детали заказа</div>
