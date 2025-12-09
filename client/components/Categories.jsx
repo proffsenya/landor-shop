@@ -26,6 +26,10 @@ const categoryConfig = {
     image: "/categories/napolnitel.svg",
     bgColor: "#E4EEF7",
   },
+  accessories: {
+    image: "/categories/cat1.svg", // Временное изображение, можно заменить на специальное
+    bgColor: "#F5E6D3",
+  },
 };
 
 // Значения по умолчанию для категорий без конфигурации
@@ -49,14 +53,15 @@ export default function Categories() {
       if (res.ok) {
         const data = await res.json();
         
-        // Определяем порядок категорий: cat, minicat, filler (посередине), dog, minidog
-        const allowedSlugs = ["cat", "minicat", "filler", "dog", "minidog"];
+        // Определяем порядок категорий: cat, minicat, filler, accessories, dog, minidog
+        const allowedSlugs = ["cat", "minicat", "filler", "accessories", "dog", "minidog"];
         
         // Маппинг названий категорий (на случай, если в API другие названия)
         const categoryNames = {
           cat: "Кошка",
           minicat: "Котенок",
           filler: "Наполнитель",
+          accessories: "Аксессуары",
           dog: "Собака",
           minidog: "Щенок",
         };
@@ -153,7 +158,7 @@ export default function Categories() {
             Нет категорий для отображения
           </div>
         ) : (
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5 sm:gap-6 justify-items-center">
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6 sm:gap-6 justify-items-center">
             {categories.map((category) => (
               <StaggerItem key={category.id}>
             <HoverLift>

@@ -1204,6 +1204,9 @@ export default function Catalog() {
           scents.forEach((scent) => {
             categoryQueryParams.append(`scent_${scent.slug}`, "true");
           });
+      } else if (categoryParam === "accessories") {
+          // Для аксессуаров - используем producttype_accessories
+          categoryQueryParams.append("producttype_accessories", "true");
       } else {
         // Для всех остальных категорий - динамически активируем категорию и все породы
         const categorySlug = categoryParam;
@@ -1242,6 +1245,12 @@ export default function Catalog() {
           newScentFilters[scent.slug] = true;
         });
         setScentFilters(newScentFilters);
+      } else if (categoryParam === "accessories") {
+        // Для аксессуаров устанавливаем фильтр типа продукта "Аксессуары"
+        setProductTypeFilters((prev) => ({
+          ...prev,
+          accessories: true,
+        }));
       } else {
         // Для всех остальных категорий - динамически активируем фильтры пород
         const categorySlug = categoryParam;

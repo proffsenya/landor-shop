@@ -1111,7 +1111,7 @@ export default function Profile() {
 
               {/* Информация о клиенте */}
               {orderDetails.customerSnapshot && Object.keys(orderDetails.customerSnapshot).length > 0 && (
-                <div>
+                <div className="border-b border-[#E8E8E8] pb-4">
                   <h3 className="text-lg font-semibold text-[#1E1E1E] mb-3">Информация о клиенте</h3>
                   <div className="text-sm text-[#1E1E1E] space-y-1">
                     {orderDetails.customerSnapshot.last_name && (
@@ -1132,13 +1132,43 @@ export default function Profile() {
                   </div>
                 </div>
               )}
-              <div>
-                  <h3 className="text-lg font-semibold text-[#1E1E1E] mb-3">Оплата заказа</h3>
-                  <div className="text-sm text-[#1E1E1E] space-y-1">
-                    <li>Для оплаты заказа отсканируйте QR-код в вашем мобильном банке</li>
-                    <li>В комментарии </li>
+              {/* Оплата заказа */}
+              <div className="border-b border-[#E8E8E8] pb-4">
+                <h3 className="text-lg font-semibold text-[#1E1E1E] mb-4">Оплата заказа</h3>
+                <div className="flex flex-col md:flex-row gap-6 items-center md:items-start">
+                  {/* Инструкция */}
+                  <div className="flex-1 max-w-md w-full md:w-auto">
+                    <h4 className="text-base font-medium text-[#1E1E1E] mb-3">Инструкция по оплате:</h4>
+                    <ol className="text-sm text-[#1E1E1E] space-y-2 list-decimal list-inside">
+                      <li>Откройте приложение вашего банка на смартфоне</li>
+                      <li>Найдите раздел "Переводы" или "Платежи"</li>
+                      <li>Выберите "Оплата по QR-коду" или "Сканировать QR"</li>
+                      <li>Отсканируйте QR-код, изображенный справа</li>
+                      <li>Проверьте сумму заказа и подтвердите оплату</li>
+                      <li>Ожидайте изменения статуса платежа.</li>
+                    </ol>
+                    <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                      <p className="text-xs text-blue-800">
+                        <strong>Важно:</strong> Администраторы скоро свяжутся с вами для подтверждения заказа и оплаты.
+                      </p>
+                    </div>
+                  </div>
+                  
+                  {/* QR код */}
+                  <div className="flex-1 flex items-center justify-center w-full md:w-auto">
+                    <div className="bg-white p-4 rounded-lg border border-[#E8E8E8]">
+                      <img 
+                        src="/payments-sbp.jpg" 
+                        alt="QR код для оплаты через СБП" 
+                        className="w-64 h-64 object-contain"
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none';
+                        }}
+                      />
+                    </div>
                   </div>
                 </div>
+              </div>
             </div>
           ) : (
             <div className="py-8 text-center text-gray-500">Не удалось загрузить детали заказа</div>

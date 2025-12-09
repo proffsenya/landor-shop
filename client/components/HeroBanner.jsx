@@ -64,21 +64,21 @@ export default function HeroBanner() {
                 <img
                   src={banner.image}
                   alt={`Landor Banner ${index + 1}`}
-                  className="object-cover w-full h-full"
+                  className="object-cover w-full h-full z-0"
                 />
 
                 {/* Текст и кнопка для первого баннера */}
                 {banner.showContent && currentSlide === index && (
                   <>
-                    <div className="absolute inset-0 flex flex-col justify-center px-8 xl:px-12 2xl:px-16">
-                      <div className="max-w-[560px] -translate-x-10 -translate-y-6">
-                        <h1 className="text-[#6F2A2B] font-bold leading-[1.15] text-[40px] xl:text-[40px] mb-4">
+                    <div className="absolute inset-0 flex flex-col justify-center px-8 xl:px-12 2xl:px-16 z-20">
+                      <div className="max-w-[560px] -translate-x-10 -translate-y-6 relative z-30">
+                        <h1 className="text-[#6F2A2B] font-bold leading-[1.15] text-[40px] xl:text-[40px] mb-4 relative z-30">
                           Ваш любимец — наш{" "}
                           <span className="block">главный дегустатор</span>
                         </h1>
                         <button 
                           onClick={() => navigate("/catalog")}
-                          className="bg-[#6F2A2B] text-white px-7 py-3 rounded-full translate-x-[80px] hover:bg-[#5a2223] transition-colors text-[16px] font-semibold shadow-md cursor-pointer z-10 relative"
+                          className="bg-[#6F2A2B] text-white px-7 py-3 rounded-full translate-x-[80px] hover:bg-[#5a2223] transition-colors text-[16px] font-semibold shadow-md cursor-pointer relative z-50 pointer-events-auto"
                         >
                           {banner.buttonText}
                         </button>
@@ -86,7 +86,7 @@ export default function HeroBanner() {
                     </div>
 
                     {/* Заголовок сверху */}
-                    <div className="absolute top-[30px] left-1/2 -translate-x-1/2 text-center">
+                    <div className="absolute top-[30px] left-1/2 -translate-x-1/2 text-center z-20">
                       <p className="text-[#6F2A2B] font-bold text-[30px] xl:text-[34px]">
                         {banner.title}
                       </p>

@@ -8,12 +8,20 @@
  * @param {number} [limit=15] - максимум результатов
  * @returns {Array<{id, title, subtitle, url, image, type}>}
  */
+// Функция нормализации е/ё для поиска
+const normalizeE = (str) => {
+  return str.replace(/ё/g, 'е').replace(/Ё/g, 'Е');
+};
+
 export function localSearch(query, dataset = [], limit = 15) {
   const q = String(query || "").trim().toLowerCase();
   if (!q) return [];
 
+  // Нормализуем е/ё в запросе
+  const normalizedQuery = normalizeE(q);
+
   // Очищаем запрос от знаков препинания и разбиваем на слова
-  const cleanQuery = q
+  const cleanQuery = normalizedQuery
     .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
@@ -50,8 +58,11 @@ export function localSearch(query, dataset = [], limit = 15) {
         
         const combined = `${title} ${desc} ${weightStr}`.toLowerCase().trim();
 
+        // Нормализуем е/ё в тексте для поиска
+        const normalizedCombined = normalizeE(combined);
+
         // Очищаем комбинированную строку так же как запрос
-        const cleanCombined = combined
+        const cleanCombined = normalizedCombined
           .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, ' ')
           .replace(/\s+/g, ' ')
           .trim();
@@ -109,8 +120,11 @@ export function localSearch(query, dataset = [], limit = 15) {
       
       const combined = `${title} ${desc} ${weightStr}`.toLowerCase().trim();
 
+      // Нормализуем е/ё в тексте для поиска
+      const normalizedCombined = normalizeE(combined);
+
       // Очищаем комбинированную строку так же как запрос
-      const cleanCombined = combined
+      const cleanCombined = normalizedCombined
         .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, ' ')
         .replace(/\s+/g, ' ')
         .trim();

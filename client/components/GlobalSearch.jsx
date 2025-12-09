@@ -16,12 +16,17 @@ const formatPrice = (price) => {
   }).format(price);
 };
 
+// Функция нормализации е/ё для поиска
+const normalizeE = (str) => {
+  return str.replace(/ё/g, 'е').replace(/Ё/g, 'Е');
+};
+
 // Улучшенная функция поиска на основе оригинальной
 const localSearch = (query, dataset, maxResults = 10) => {
   if (!query || !dataset || dataset.length === 0) return [];
 
-  // Очищаем запрос от знаков препинания и лишних пробелов
-  const cleanQuery = query
+  // Нормализуем е/ё и очищаем запрос от знаков препинания и лишних пробелов
+  const cleanQuery = normalizeE(query)
     .toLowerCase()
     .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, ' ') // заменяем знаки препинания на пробелы
     .replace(/\s+/g, ' ') // заменяем множественные пробелы на один
@@ -31,8 +36,8 @@ const localSearch = (query, dataset, maxResults = 10) => {
 
   // Создаем очищенный dataset для поиска
   const cleanedDataset = dataset.map(item => {
-    // Формируем строку для поиска: название + вес
-    let searchText = item.title
+    // Формируем строку для поиска: название + вес (с нормализацией е/ё)
+    let searchText = normalizeE(item.title || '')
       ?.toLowerCase()
       .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, ' ')
       .replace(/\s+/g, ' ')
@@ -70,12 +75,12 @@ const localSearch = (query, dataset, maxResults = 10) => {
 const localSearchSimple = (query, dataset, maxResults = 5) => {
   if (!query || !dataset || dataset.length === 0) return [];
 
-  const cleanQuery = query.toLowerCase().replace(/[^a-zA-Zа-яА-Я0-9\s]/g, ' ').replace(/\s+/g, ' ').trim();
+  const cleanQuery = normalizeE(query).toLowerCase().replace(/[^a-zA-Zа-яА-Я0-9\s]/g, ' ').replace(/\s+/g, ' ').trim();
   
   if (!cleanQuery) return [];
 
   const results = dataset.filter(item => {
-    const cleanTitle = item.title?.toLowerCase().replace(/[^a-zA-Zа-яА-Я0-9\s]/g, ' ').replace(/\s+/g, ' ').trim() || '';
+    const cleanTitle = normalizeE(item.title || '').toLowerCase().replace(/[^a-zA-Zа-яА-Я0-9\s]/g, ' ').replace(/\s+/g, ' ').trim() || '';
     
     // Добавляем вес в поиск
     let searchText = cleanTitle;
