@@ -27,8 +27,8 @@ const categoryConfig = {
     bgColor: "#E4EEF7",
   },
   accessories: {
-    image: "/categories/cat1.svg", // Временное изображение, можно заменить на специальное
-    bgColor: "#F5E6D3",
+    image: "/categories/acs.svg",
+    bgColor: "#f5e3cdff",//f8d5abff
   },
 };
 
@@ -150,25 +150,25 @@ export default function Categories() {
 
         
         {loading ? (
-          <div className="flex justify-center items-center py-12">
+          <div className="flex items-center justify-center py-12">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#6F2A2B]"></div>
           </div>
         ) : categories.length === 0 ? (
-          <div className="text-center py-12 text-gray-500">
+          <div className="py-12 text-center text-gray-500">
             Нет категорий для отображения
           </div>
         ) : (
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6 sm:gap-6 justify-items-center">
+        <div className="grid grid-cols-2 gap-6 sm:grid-cols-3 lg:grid-cols-6 sm:gap-8 lg:gap-10 justify-items-center">
             {categories.map((category) => (
               <StaggerItem key={category.id}>
             <HoverLift>
             <Link
                     to={`/catalog?category=${category.slug}`}
-              className="relative w-[160px] sm:w-[200px] lg:w-[220px] flex flex-col items-center cursor-pointer"
+              className="relative w-[140px] sm:w-[160px] lg:w-[180px] flex flex-col items-center cursor-pointer"
             >
               {/* Фото */}
               <div
-                className="z-10 w-[100px] h-[100px] sm:w-[120px] sm:h-[120px] rounded-full flex items-center justify-center overflow-hidden"
+                className="z-10 w-[80px] h-[80px] sm:w-[90px] sm:h-[90px] lg:w-[100px] lg:h-[100px] rounded-full flex items-center justify-center overflow-hidden"
                 style={{ backgroundColor: category.bgColor }}
               >
                 <img
@@ -180,10 +180,10 @@ export default function Categories() {
 
               {/* Нижний блок */}
               <div
-                className="w-full sm:w-[200px] lg:w-[220px] h-[110px] sm:h-[130px] rounded-[16px] -mt-[28px] flex flex-col items-center justify-center text-center"
+                className="w-full sm:w-[160px] lg:w-[180px] h-[90px] sm:h-[100px] lg:h-[110px] rounded-[16px] -mt-[24px] flex flex-col items-center justify-center text-center"
                 style={{ backgroundColor: category.bgColor }}
               >
-                <h3 className="text-[15px] sm:text-[17px] font-medium text-[#6F2A2B] leading-tight">
+                <h3 className="text-[13px] sm:text-[15px] lg:text-[16px] font-medium text-[#6F2A2B] leading-tight">
                   {category.name}
                 </h3>
               </div>
