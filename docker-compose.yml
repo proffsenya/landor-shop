@@ -11,11 +11,11 @@ services:
       - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/${DB_NAME}
       - SPRING_DATASOURCE_USERNAME=${DB_USER}
       - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD}
-      - SPRING_JPA_HIBERNATE_DDL_AUTO=${DDL_AUTO:validate}
-      - ADMIN_EMAIL=${ADMIN_EMAIL:admin@landorshop.ru}
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=${DDL_AUTO}
+      - ADMIN_EMAIL=${ADMIN_EMAIL}
       - ADMIN_PASSWORD=${ADMIN_PASSWORD}
-      - ADMIN_FIRST_NAME=${ADMIN_FIRST_NAME:admin}
-      - ADMIN_LAST_NAME=${ADMIN_LAST_NAME:admin}
+      - ADMIN_FIRST_NAME=${ADMIN_FIRST_NAME}
+      - ADMIN_LAST_NAME=${ADMIN_LAST_NAME}
       - ADMIN_PHONE=${ADMIN_PHONE}
       - SPRING_SQL_INIT_MODE=always
       - SPRING_SQL_INIT_SCHEMA_LOCATIONS=classpath:db/migration/V1__create_tables.sql,classpath:db/migration/V2__add_constraints.sql
