@@ -29,6 +29,7 @@ const AdminOrders = lazy(() => import("./pages/admin/AdminOrders"));
 const AdminUsers = lazy(() => import("./pages/admin/AdminUsers"));
 const AdminForms = lazy(() => import("./pages/admin/AdminForms"));
 const AdminFilters = lazy(() => import("./pages/admin/AdminFilters"));
+const AdminBanners = lazy(() => import("./pages/admin/AdminBanners"));
 
 // Компонент загрузки
 const PageLoader = () => (
@@ -69,6 +70,7 @@ const App = () => (
                   <Route path="/admin/orders" element={<AdminOrders />} />
                   <Route path="/admin/forms" element={<AdminForms />} />
                   <Route path="/admin/filters" element={<AdminFilters />} />
+                  <Route path="/admin/banners" element={<AdminBanners />} />
                   <Route path="/admin/users" element={<AdminUsers />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>

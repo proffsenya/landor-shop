@@ -8,7 +8,8 @@ import {
   Home,
   FileText,
   X,
-  Sliders
+  Sliders,
+  Image
 } from "lucide-react";
 
 export default function AdminSidebar({ isSuperUser, isStaff = false, isOpen, onClose }) {
@@ -124,6 +125,20 @@ export default function AdminSidebar({ isSuperUser, isStaff = false, isOpen, onC
         >
           <FileText className="w-4 h-4 lg:w-5 lg:h-5" />
           <span>Заявки</span>
+        </NavLink>
+        <NavLink
+          to="/admin/banners"
+          onClick={handleNavClick}
+          className={({ isActive }) =>
+            `flex items-center gap-3 px-3 lg:px-4 py-2 lg:py-3 rounded-lg transition-colors text-sm lg:text-base ${
+              isActive
+                ? "bg-[#6F2A2B] text-white"
+                : "text-gray-300 hover:bg-gray-800"
+            }`
+          }
+        >
+          <Image className="w-4 h-4 lg:w-5 lg:h-5" />
+          <span>Баннеры</span>
         </NavLink>
         <NavLink
           to="/admin/users"
