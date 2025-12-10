@@ -27,7 +27,7 @@ public class UsersService {
     }
 
     public User findByEmail(String email) {
-        return userRepository.findByEmail(email);
+        return userRepository.findByEmail(email).orElse(null);
     }
 
     public List<User> findByIsActive(Boolean isActive) {

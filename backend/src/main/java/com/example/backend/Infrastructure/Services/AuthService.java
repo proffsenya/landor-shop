@@ -4,10 +4,7 @@ import com.example.backend.Domain.DTOs.AuthResponseDTO;
 import com.example.backend.Domain.DTOs.LoginRequestDTO;
 import com.example.backend.Domain.DTOs.RegisterRequestDTO;
 import com.example.backend.Domain.Models.User;
-import com.example.backend.Infrastructure.Exceptions.AccountNotActiveException;
-import com.example.backend.Infrastructure.Exceptions.InvalidRequestException;
-import com.example.backend.Infrastructure.Exceptions.InvalidResourseException;
-import com.example.backend.Infrastructure.Exceptions.ResourseNotFoundException;
+import com.example.backend.Infrastructure.Exceptions.*;
 import com.example.backend.Infrastructure.Repos.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -31,7 +28,7 @@ public class AuthService {
     public AuthResponseDTO Login(LoginRequestDTO loginRequestDTO)
     {
         if (loginRequestDTO.email().isEmpty() || loginRequestDTO.passwordHash().isEmpty()) { throw new InvalidRequestException("Email or password hash is required"); }
-        User user = userRepository.findByEmail(loginRequestDTO.email());
+        User user = userRepository.findByEmail(loginRequestDTO.email()).get();
         if (user == null || !passwordEncoder.matches(loginRequestDTO.passwordHash(), user.getPasswordHash())) {throw new InvalidResourseException("Email or password hash is empty");}
         if (user.getIsActive().equals(false)) {throw new AccountNotActiveException("Account is deactivated. Please contact support.");}
 
