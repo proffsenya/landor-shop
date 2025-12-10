@@ -102,7 +102,27 @@ export default function AdminBanners() {
       const adminToken = getAdminToken();
       
       const formData = new FormData();
-      formData.append("file", selectedFile);
+      
+      // Добавляем файл с явным указанием Content-Type
+      // Если у файла нет типа, определяем по расширению или используем image/jpeg по умолчанию
+      let fileToUpload = selectedFile;
+      if (!selectedFile.type) {
+        const fileExtension = selectedFile.name.split('.').pop()?.toLowerCase();
+        const mimeTypes = {
+          'jpg': 'image/jpeg',
+          'jpeg': 'image/jpeg',
+          'png': 'image/png',
+          'gif': 'image/gif',
+          'webp': 'image/webp'
+        };
+        const mimeType = mimeTypes[fileExtension] || 'image/jpeg';
+        fileToUpload = new File([selectedFile], selectedFile.name, { type: mimeType });
+      }
+      formData.append("file", fileToUpload);
+      
+      // Добавляем JSON с явным указанием Content-Type
+      const bannerDtoBlob = new Blob([JSON.stringify({ isActive: true })], { type: 'application/json' });
+      formData.append("bannerDto", bannerDtoBlob);
 
       const res = await fetch("/api/banners", {
         method: "POST",
@@ -192,7 +212,7 @@ export default function AdminBanners() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+      <div className="flex items-center justify-center min-h-screen bg-gray-100">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#6F2A2B]"></div>
       </div>
     );
@@ -226,10 +246,10 @@ export default function AdminBanners() {
             </div>
 
             {/* Информация о баннерах на главной странице */}
-            <div className="bg-white rounded-lg shadow p-4 sm:p-6 mb-6">
-              <h2 className="text-lg font-semibold mb-4">Баннеры на главной странице</h2>
+            <div className="p-4 mb-6 bg-white rounded-lg shadow sm:p-6">
+              <h2 className="mb-4 text-lg font-semibold">Баннеры на главной странице</h2>
               
-              <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded">
+              <div className="p-3 mb-4 border border-blue-200 rounded bg-blue-50">
                 <p className="text-sm text-blue-800">
                   <strong>Примечание:</strong> Первый баннер (banner2.svg) всегда отображается на главной странице. 
                   Все баннеры из API автоматически отображаются на главной (максимум 2 баннера).
@@ -238,12 +258,12 @@ export default function AdminBanners() {
               
               <div className="space-y-2">
                 {/* Статический первый баннер */}
-                <div className="flex items-center gap-3 p-2 bg-gray-50 rounded">
-                  <span className="text-xs font-medium text-gray-600 w-8">#1</span>
+                <div className="flex items-center gap-3 p-2 rounded bg-gray-50">
+                  <span className="w-8 text-xs font-medium text-gray-600">#1</span>
                   <img
                     src="/banner2.svg"
                     alt="banner2"
-                    className="w-12 h-12 object-cover rounded"
+                    className="object-cover w-12 h-12 rounded"
                   />
                   <span className="flex-1 text-sm text-gray-900">banner2.svg (статический)</span>
                   <span className="text-xs text-gray-500">Нельзя удалить</span>
@@ -254,13 +274,13 @@ export default function AdminBanners() {
                   const imageUrl = getImageUrl(banner);
                   const displayIndex = index + 2; // +2 потому что первый статический
                   return (
-                    <div key={banner.id} className="flex items-center gap-3 p-2 bg-gray-50 rounded">
-                      <span className="text-xs font-medium text-gray-600 w-8">#{displayIndex}</span>
+                    <div key={banner.id} className="flex items-center gap-3 p-2 rounded bg-gray-50">
+                      <span className="w-8 text-xs font-medium text-gray-600">#{displayIndex}</span>
                       {imageUrl && (
                         <img
                           src={imageUrl}
                           alt={banner.fileName}
-                          className="w-12 h-12 object-cover rounded"
+                          className="object-cover w-12 h-12 rounded"
                           onError={(e) => {
                             e.currentTarget.src = '/placeholder.svg';
                           }}
@@ -272,12 +292,12 @@ export default function AdminBanners() {
                 })}
                 
                 {homeBanners.length === 0 && (
-                  <p className="text-sm text-gray-500 italic">Нет баннеров из API. Загрузите баннеры выше (максимум 2).</p>
+                  <p className="text-sm italic text-gray-500">Нет баннеров из API. Загрузите баннеры выше (максимум 2).</p>
                 )}
                 
                 {banners.length >= 2 && (
-                  <p className="text-sm text-yellow-600 italic mt-2">
-                    ⚠️ У вас уже загружено {banners.length} баннера(ов). Максимум 2 баннера будут отображаться на главной странице.
+                  <p className="mt-2 text-sm italic text-yellow-600">
+                    ⚠️ У вас уже загружено {banners.length} баннера(ов). Максимум 2 баннера будут отображаться на главной странице. Размер баннера: 1920x600
                   </p>
                 )}
               </div>
@@ -285,7 +305,7 @@ export default function AdminBanners() {
 
             {/* Форма загрузки */}
             {showUploadForm && (
-              <div className="bg-white rounded-lg shadow p-4 sm:p-6 mb-6">
+              <div className="p-4 mb-6 bg-white rounded-lg shadow sm:p-6">
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="text-lg font-semibold sm:text-xl">Загрузить новый баннер</h2>
                   <button
@@ -349,11 +369,11 @@ export default function AdminBanners() {
             )}
 
             {/* Список баннеров */}
-            <div className="bg-white rounded-lg shadow overflow-hidden">
+            <div className="overflow-hidden bg-white rounded-lg shadow">
               {banners.length === 0 ? (
                 <div className="p-8 text-center text-gray-500">
                   <ImageIcon className="w-16 h-16 mx-auto mb-4 text-gray-400" />
-                  <p className="text-lg font-medium mb-2">Нет загруженных баннеров</p>
+                  <p className="mb-2 text-lg font-medium">Нет загруженных баннеров</p>
                   <p className="text-sm">Загрузите первый баннер, используя кнопку выше</p>
                 </div>
               ) : (
@@ -382,13 +402,13 @@ export default function AdminBanners() {
                                 <img
                                   src={imageUrl}
                                   alt={banner.fileName || `Banner ${banner.id}`}
-                                  className="w-20 h-20 object-cover rounded"
+                                  className="object-cover w-20 h-20 rounded"
                                   onError={(e) => {
                                     e.currentTarget.src = '/placeholder.svg';
                                   }}
                                 />
                               ) : (
-                                <div className="w-20 h-20 bg-gray-200 rounded flex items-center justify-center">
+                                <div className="flex items-center justify-center w-20 h-20 bg-gray-200 rounded">
                                   <ImageIcon className="w-8 h-8 text-gray-400" />
                                 </div>
                               )}
@@ -397,10 +417,10 @@ export default function AdminBanners() {
                             <td className="px-6 py-4 text-sm text-gray-500">{banner.contentType || "-"}</td>
                             <td className="px-6 py-4 text-sm text-gray-500">{formatFileSize(banner.size)}</td>
                             <td className="px-6 py-4 text-sm text-gray-500">{formatDate(banner.createdAt)}</td>
-                            <td className="px-6 py-4 text-sm whitespace-nowrap text-center">
+                            <td className="px-6 py-4 text-sm text-center whitespace-nowrap">
                               <button
                                 onClick={() => handleDelete(banner.id)}
-                                className="text-red-600 hover:text-red-800 inline-flex items-center justify-center"
+                                className="inline-flex items-center justify-center text-red-600 hover:text-red-800"
                                 title="Удалить"
                               >
                                 <Trash2 className="w-5 h-5" />
@@ -413,7 +433,7 @@ export default function AdminBanners() {
                   </table>
 
                   {/* Мобильные карточки */}
-                  <div className="md:hidden divide-y divide-gray-200">
+                  <div className="divide-y divide-gray-200 md:hidden">
                     {banners.map((banner) => {
                       const imageUrl = getImageUrl(banner);
                       return (
@@ -423,13 +443,13 @@ export default function AdminBanners() {
                               <img
                                 src={imageUrl}
                                 alt={banner.fileName || `Banner ${banner.id}`}
-                                className="w-20 h-20 object-cover rounded flex-shrink-0"
+                                className="flex-shrink-0 object-cover w-20 h-20 rounded"
                                 onError={(e) => {
                                   e.currentTarget.src = '/placeholder.svg';
                                 }}
                               />
                             ) : (
-                              <div className="w-20 h-20 bg-gray-200 rounded flex items-center justify-center flex-shrink-0">
+                              <div className="flex items-center justify-center flex-shrink-0 w-20 h-20 bg-gray-200 rounded">
                                 <ImageIcon className="w-8 h-8 text-gray-400" />
                               </div>
                             )}
@@ -439,11 +459,11 @@ export default function AdminBanners() {
                                   <p className="text-sm font-medium text-gray-900 truncate">
                                     {banner.fileName || `Баннер #${banner.id}`}
                                   </p>
-                                  <p className="text-xs text-gray-500 mt-1">ID: {banner.id}</p>
+                                  <p className="mt-1 text-xs text-gray-500">ID: {banner.id}</p>
                                 </div>
                                 <button
                                   onClick={() => handleDelete(banner.id)}
-                                  className="text-red-600 hover:text-red-800 flex-shrink-0 p-1"
+                                  className="flex-shrink-0 p-1 text-red-600 hover:text-red-800"
                                   title="Удалить"
                                 >
                                   <Trash2 className="w-5 h-5" />
