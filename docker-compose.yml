@@ -19,7 +19,7 @@ services:
       - ADMIN_PHONE=${ADMIN_PHONE}
       - SPRING_SQL_INIT_MODE=always
       - SPRING_SQL_INIT_SCHEMA_LOCATIONS=classpath:db/migration/V1__create_tables.sql,classpath:db/migration/V2__add_constraints.sql
-      - SPRING_SQL_INIT_DATA_LOCATIONS=classpath:db/seed/V100__seed_base_data.sql,classpath:db/seed/V101__seed_products.sql
+      - SPRING_SQL_INIT_DATA_LOCATIONS=classpath:db/seed/V100__seed_base_data.sql
     depends_on:
       db:
         condition: service_healthy
