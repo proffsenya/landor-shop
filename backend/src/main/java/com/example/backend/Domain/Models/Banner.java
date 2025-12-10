@@ -43,6 +43,10 @@ public class Banner {
     @Column(name = "updated_at")
     private Instant updatedAt;
 
+    @ColumnDefault("true")
+    @Column(name = "isactive")
+    private Boolean isActive;
+
     @PrePersist
     protected void onCreate() {
         createdAt = Instant.now();

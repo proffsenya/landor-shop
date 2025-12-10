@@ -1,5 +1,6 @@
 package com.example.backend.Infrastructure.Services;
 
+import com.example.backend.Domain.DTOs.BannerCreateDTO;
 import com.example.backend.Domain.Models.Banner;
 import com.example.backend.Infrastructure.Exceptions.InvalidRequestException;
 import com.example.backend.Infrastructure.Exceptions.ResourseNotFoundException;
@@ -23,7 +24,7 @@ public class BannerService {
     }
 
     @Transactional
-    public Banner createBanner(MultipartFile file) throws IOException {
+    public Banner createBanner(MultipartFile file, BannerCreateDTO dto) throws IOException {
         validateImageFile(file);
 
         Banner banner = new Banner();
@@ -31,6 +32,7 @@ public class BannerService {
         banner.setContentType(file.getContentType());
         banner.setFileName(file.getOriginalFilename());
         banner.setSize(file.getSize());
+        banner.setIsActive(dto.isActive());
 
         return bannerRepository.save(banner);
     }

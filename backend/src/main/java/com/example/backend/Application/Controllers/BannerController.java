@@ -1,8 +1,10 @@
 package com.example.backend.Application.Controllers;
 
+import com.example.backend.Domain.DTOs.BannerCreateDTO;
 import com.example.backend.Domain.DTOs.BannerDTO;
 import com.example.backend.Domain.Models.Banner;
 import com.example.backend.Infrastructure.Services.BannerService;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -26,8 +28,9 @@ public class BannerController {
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasRole('STAFF') or hasRole('SUPERUSER')")
-    public ResponseEntity<BannerDTO> uploadBanner(@RequestParam("file") MultipartFile file) throws IOException {
-        Banner banner = bannerService.createBanner(file);
+    public ResponseEntity<BannerDTO> uploadBanner(@RequestPart("file") MultipartFile file,
+                                                  @RequestPart("bannerDto") @Valid BannerCreateDTO dto) throws IOException {
+        Banner banner = bannerService.createBanner(file, dto);
         return ResponseEntity.status(HttpStatus.CREATED).body(BannerDTO.from(banner));
     }
 

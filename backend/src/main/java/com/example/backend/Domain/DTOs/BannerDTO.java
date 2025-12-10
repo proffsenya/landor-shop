@@ -10,8 +10,8 @@ public record BannerDTO(
         String fileName,
         Long size,
         Instant createdAt,
-        String imageUrl
-) {
+        String imageUrl,
+        Boolean isActive) {
     public static BannerDTO from(Banner banner) {
         String imageUrl = "/api/banners/" + banner.getId() + "/image";
         return new BannerDTO(
@@ -20,7 +20,8 @@ public record BannerDTO(
                 banner.getFileName(),
                 banner.getSize(),
                 banner.getCreatedAt(),
-                imageUrl
+                imageUrl,
+                banner.getIsActive()
         );
     }
 }
