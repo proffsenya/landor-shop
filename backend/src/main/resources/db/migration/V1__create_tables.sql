@@ -6,7 +6,8 @@ CREATE TABLE IF NOT EXISTS banners (
     file_name VARCHAR(255),
     size BIGINT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    isactive BOOLEAN
     );
 
 -- Создание таблицы brands
