@@ -3,12 +3,14 @@ import { useNavigate } from "react-router-dom";
 import AdminSidebar from "@/components/admin/AdminSidebar";
 import AdminHeader from "@/components/admin/AdminHeader";
 import { Button } from "@/components/ui/button";
-import { Eye, ChevronLeft, ChevronRight } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Eye, ChevronLeft, ChevronRight, Edit2, Save, X } from "lucide-react";
 import { checkAdminAccess, getAdminToken } from "@/utils/adminAuth";
 import { initNotifications } from "@/utils/notifications";
 import { formatPhone, formatWeight } from "@/utils/formatting";
 import { safeError, safeWarn } from "@/utils/logger";
 import { ToastMotion } from "@/utils/PageAnimations";
+import { handleApiError } from "@/utils/errorMessages";
 
 export default function AdminOrders() {
   const navigate = useNavigate();
@@ -726,13 +728,154 @@ export default function AdminOrders() {
           }}
           onUpdateStatus={updateOrderStatus}
           onConfirmPayment={confirmPayment}
+          onOrderUpdate={async () => {
+            if (selectedOrder) {
+              // Перезагружаем детали заказа
+              await loadOrderDetails(selectedOrder.id);
+              // Перезагружаем список заказов для обновления суммы
+              if (showUnpaidOnly) {
+                await loadUnpaidOrders();
+              } else {
+                await loadOrders();
+              }
+              // Обновляем selectedOrder с новыми данными
+              const adminToken = getAdminToken();
+              try {
+                const res = await fetch(`/api/admin/payments/${selectedOrder.id}/details`, {
+                  headers: { Authorization: `Bearer ${adminToken}` },
+                });
+                if (res.ok) {
+                  const updatedOrder = await res.json();
+                  setSelectedOrder(updatedOrder);
+                  setOrderDetails(updatedOrder);
+                }
+              } catch (e) {
+                safeError("Error refreshing order:", e);
+              }
+            }
+          }}
         />
       )}
     </div>
   );
 }
 
-function OrderModal({ order, loading, onClose, onUpdateStatus, onConfirmPayment }) {
+function OrderModal({ order, loading, onClose, onUpdateStatus, onConfirmPayment, onOrderUpdate }) {
+  const [editingPrices, setEditingPrices] = useState(false);
+  const [orderItems, setOrderItems] = useState([]);
+  const [saving, setSaving] = useState(false);
+  const [toast, setToast] = useState({ message: "", type: "success", show: false });
+
+  useEffect(() => {
+    // Инициализируем товары заказа
+    if (order?.items || order?.orderItems) {
+      const items = (order.items || order.orderItems || []).map(item => {
+        // Определяем цену за единицу
+        // Если есть price - это цена за единицу
+        // Если есть totalPrice - это итоговая сумма, нужно разделить на quantity
+        let pricePerUnit = 0;
+        if (item.price) {
+          pricePerUnit = item.price;
+        } else if (item.totalPrice && item.quantity) {
+          pricePerUnit = item.totalPrice / item.quantity;
+        }
+        
+        return {
+          id: item.id,
+          productVariantId: item.productVariantId || item.productVariant?.id || item.productId,
+          quantity: item.quantity || 0,
+          price: pricePerUnit,
+          productName: item.productName || item.product?.name || "-",
+        };
+      });
+      setOrderItems(items);
+    }
+  }, [order]);
+
+  const showToast = (message, type = "success") => {
+    setToast({ message, type, show: true });
+    setTimeout(() => setToast({ message: "", type: "success", show: false }), 3000);
+  };
+
+  const handlePriceChange = (itemId, newPrice) => {
+    setOrderItems(items =>
+      items.map(item =>
+        item.id === itemId
+          ? { ...item, price: parseFloat(newPrice) || 0 }
+          : item
+      )
+    );
+  };
+
+  const handleSavePrices = async () => {
+    try {
+      setSaving(true);
+      const adminToken = getAdminToken();
+
+      // Вычисляем новую общую сумму
+      const newTotalAmount = orderItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+
+      // Формируем запрос согласно API
+      const requestBody = {
+        orderStatus: order.orderStatus || "created",
+        totalAmount: newTotalAmount,
+        paymentStatus: order.paymentStatus || "unpaid",
+        shippingAddress: order.shippingAddress || {},
+        billingAddress: order.billingAddress || {},
+        customerNotes: order.customerNotes || "",
+        orderItems: orderItems.map(item => ({
+          id: item.id,
+          productVariantId: item.productVariantId,
+          quantity: item.quantity,
+          price: item.price,
+        })),
+        customerSnapshot: order.customerSnapshot || {},
+        paymentMethod: order.paymentMethod || "",
+      };
+
+      const res = await fetch(`/api/orders/${order.id}/changedetails`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${adminToken}`,
+        },
+        body: JSON.stringify(requestBody),
+      });
+
+      if (res.ok) {
+        setEditingPrices(false);
+        showToast("Стоимость товаров успешно обновлена");
+        // Обновляем заказ и список заказов
+        if (onOrderUpdate) {
+          await onOrderUpdate();
+        }
+      } else {
+        const errorMessage = await handleApiError(res, "обновление", "стоимость товаров");
+        showToast(errorMessage, "error");
+      }
+    } catch (e) {
+      safeError("Error saving order prices:", e);
+      const errorMessage = await handleApiError(e, "обновление", "стоимость товаров");
+      showToast(errorMessage, "error");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleCancelEdit = () => {
+    // Восстанавливаем исходные значения
+    if (order?.items || order?.orderItems) {
+      const items = (order.items || order.orderItems || []).map(item => ({
+        id: item.id,
+        productVariantId: item.productVariantId || item.productVariant?.id || item.productId,
+        quantity: item.quantity || 0,
+        price: item.price || item.totalPrice || 0,
+        productName: item.productName || item.product?.name || "-",
+      }));
+      setOrderItems(items);
+    }
+    setEditingPrices(false);
+  };
   // Форматирование статуса заказа
   const formatOrderStatus = (status) => {
     if (!status) return "-";
@@ -882,40 +1025,119 @@ function OrderModal({ order, loading, onClose, onUpdateStatus, onConfirmPayment 
             )}
 
             {/* Товары в заказе */}
-            {order.items && order.items.length > 0 && (
+            {(order.items || order.orderItems || orderItems.length > 0) && (
               <div className="border-b border-[#E8E8E8] pb-4">
-                <h3 className="text-base sm:text-lg font-semibold text-[#1E1E1E] mb-3">Товары</h3>
-                <div className="space-y-3">
-                  {order.items.map((item) => (
-                    <div key={item.id || item.productId} className="flex justify-between items-start p-3 bg-gray-50 rounded-lg">
-                      <div className="flex-1">
-                        <div className="font-medium text-[#1E1E1E]">{item.productName || "-"}</div>
-                        <div className="text-sm text-[#6F6F6F] mt-1">
-                          Количество: {item.quantity || 0}
-                        </div>
-                        {item.weight && (
-                          <div className="text-sm text-[#6F6F6F] mt-1">
-                            Вес: {formatWeight(item.weight)}
-                          </div>
-                        )}
-                        {item.productId && (
-                          <div className="text-sm text-[#6F6F6F] mt-1">
-                            ID товара: {item.productId}
-                          </div>
-                        )}
-                        {item.sku && (
-                          <div className="text-sm text-[#6F6F6F] mt-1">
-                            SKU: {item.sku}
-                          </div>
-                        )}
-                      </div>
-                      <div className="text-right">
-                        <div className="font-medium text-[#1E1E1E]">
-                          {item.totalPrice ? `${item.totalPrice.toLocaleString("ru-RU")} ₽` : "-"}
-                        </div>
-                      </div>
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-base sm:text-lg font-semibold text-[#1E1E1E]">Товары</h3>
+                  {!editingPrices ? (
+                    <Button
+                      onClick={() => setEditingPrices(true)}
+                      variant="outline"
+                      size="sm"
+                      className="text-[#6F2A2B] border-[#6F2A2B] hover:bg-[#6F2A2B] hover:text-white"
+                    >
+                      <Edit2 className="w-4 h-4 mr-1" />
+                      Редактировать цены
+                    </Button>
+                  ) : (
+                    <div className="flex gap-2">
+                      <Button
+                        onClick={handleSavePrices}
+                        disabled={saving}
+                        size="sm"
+                        className="bg-green-600 hover:bg-green-700 text-white"
+                      >
+                        <Save className="w-4 h-4 mr-1" />
+                        {saving ? "Сохранение..." : "Сохранить"}
+                      </Button>
+                      <Button
+                        onClick={handleCancelEdit}
+                        disabled={saving}
+                        variant="outline"
+                        size="sm"
+                      >
+                        <X className="w-4 h-4 mr-1" />
+                        Отмена
+                      </Button>
                     </div>
-                  ))}
+                  )}
+                </div>
+                <div className="space-y-3">
+                  {orderItems.map((item) => {
+                    const originalItem = (order.items || order.orderItems || []).find(i => i.id === item.id);
+                    return (
+                      <div key={item.id} className="flex justify-between items-start p-3 bg-gray-50 rounded-lg">
+                        <div className="flex-1">
+                          <div className="font-medium text-[#1E1E1E]">{item.productName || "-"}</div>
+                          <div className="text-sm text-[#6F6F6F] mt-1">
+                            Количество: {item.quantity || 0}
+                          </div>
+                          {originalItem?.weight && (
+                            <div className="text-sm text-[#6F6F6F] mt-1">
+                              Вес: {formatWeight(originalItem.weight)}
+                            </div>
+                          )}
+                          {item.productVariantId && (
+                            <div className="text-sm text-[#6F6F6F] mt-1">
+                              ID варианта: {item.productVariantId}
+                            </div>
+                          )}
+                          {originalItem?.sku && (
+                            <div className="text-sm text-[#6F6F6F] mt-1">
+                              SKU: {originalItem.sku}
+                            </div>
+                          )}
+                        </div>
+                        <div className="text-right ml-4">
+                          {editingPrices ? (
+                            <div className="space-y-2">
+                              <div>
+                                <label className="block text-xs text-gray-600 mb-1">Цена за единицу:</label>
+                                <Input
+                                  type="number"
+                                  step="0.01"
+                                  min="0"
+                                  value={item.price || 0}
+                                  onChange={(e) => handlePriceChange(item.id, e.target.value)}
+                                  className="w-24 text-sm"
+                                />
+                              </div>
+                              <div className="text-sm font-medium text-[#1E1E1E]">
+                                Итого: {(item.price * item.quantity).toLocaleString("ru-RU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ₽
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="font-medium text-[#1E1E1E]">
+                              {item.price ? `${(item.price * item.quantity).toLocaleString("ru-RU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ₽` : "-"}
+                              {item.quantity > 1 && (
+                                <div className="text-xs text-gray-500 mt-1">
+                                  {item.price.toLocaleString("ru-RU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ₽ × {item.quantity}
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                  {editingPrices && (
+                    <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded">
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm font-medium text-blue-900">Новая общая сумма:</span>
+                        <span className="text-lg font-bold text-blue-900">
+                          {orderItems.reduce((sum, item) => sum + (item.price * item.quantity), 0).toLocaleString("ru-RU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ₽
+                        </span>
+                      </div>
+                      {order.totalAmount && (
+                        <div className="flex justify-between items-center mt-1">
+                          <span className="text-xs text-blue-700">Текущая сумма:</span>
+                          <span className="text-xs text-blue-700">
+                            {order.totalAmount.toLocaleString("ru-RU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ₽
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
             )}
@@ -989,6 +1211,9 @@ function OrderModal({ order, loading, onClose, onUpdateStatus, onConfirmPayment 
           </div>
           )}
         </div>
+        <ToastMotion show={toast.show} type={toast.type}>
+          {toast.message}
+        </ToastMotion>
       </div>
     </div>
   );
