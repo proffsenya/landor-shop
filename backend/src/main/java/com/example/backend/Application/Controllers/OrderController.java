@@ -4,6 +4,7 @@ package com.example.backend.Application.Controllers;
 import com.example.backend.Domain.DTOs.CreateOrderRequestDTO;
 import com.example.backend.Domain.DTOs.OrderDTO;
 import com.example.backend.Domain.DTOs.OrderResponseDTO;
+import com.example.backend.Domain.DTOs.OrderUpdateDTO;
 import com.example.backend.Domain.Models.Order;
 import com.example.backend.Infrastructure.Configurations.CustomUserDetails;
 import com.example.backend.Infrastructure.Services.OrderService;
@@ -66,11 +67,17 @@ class OrderController {
 
     @PutMapping("/{orderId}")
     @PreAuthorize("hasRole('STAFF') or hasRole('SUPERUSER')")
-    public ResponseEntity<OrderDTO> updateOrder(@PathVariable Long orderId, @RequestBody String status
+    public ResponseEntity<OrderDTO> updateOrderStatus(@PathVariable Long orderId, @RequestBody String status
                                                 ) throws AccessDeniedException {
         Order order = orderService.updateOrderStatus(orderId, status);
         return ResponseEntity.ok(OrderDTO.from(order));
     }
 
+    @PutMapping("/{orderId}/changedetails")
+    @PreAuthorize("hasRole('STAFF') or hasRole('SUPERUSER')")
+    public ResponseEntity<OrderDTO> updateOrderByOrderId(@PathVariable Long orderId, @RequestBody OrderUpdateDTO dto) {
+        Order newOrder = orderService.updateOrder(orderId, dto);
+        return ResponseEntity.ok(OrderDTO.from(newOrder));
+    }
 
 }

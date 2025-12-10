@@ -1,7 +1,6 @@
 package com.example.backend.Infrastructure.Services;
 
-import com.example.backend.Domain.DTOs.CreateOrderRequestDTO;
-import com.example.backend.Domain.DTOs.OrderDTO;
+import com.example.backend.Domain.DTOs.*;
 import com.example.backend.Domain.Models.*;
 import com.example.backend.Infrastructure.Exceptions.InvalidRequestException;
 import com.example.backend.Infrastructure.Exceptions.ResourseNotFoundException;
@@ -166,4 +165,144 @@ public class OrderService {
         order.setUpdatedAt(Instant.now());
         return orderRepository.save(order);
     }
+
+    @Transactional
+    public Order updateOrder(Long orderId, OrderUpdateDTO updateRequest) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new ResourseNotFoundException("Order not found with id: " + orderId));
+
+        if (!canBeModified(order)) {
+            throw new InvalidRequestException("Order cannot be modified in current status: " + order.getOrderStatus());
+        }
+
+        if (updateRequest.orderStatus() != null) {
+            order.setOrderStatus(updateRequest.orderStatus());
+        }
+        if (updateRequest.paymentStatus() != null) {
+            order.setPaymentStatus(updateRequest.paymentStatus());
+        }
+        if (updateRequest.paymentMethod() != null) {
+            order.setPaymentMethod(updateRequest.paymentMethod());
+        }
+        if (updateRequest.customerNotes() != null) {
+            order.setCustomerNotes(updateRequest.customerNotes());
+        }
+        if (updateRequest.customerSnapshot() != null) {
+            order.setCustomerSnapshot(updateRequest.customerSnapshot());
+        }
+        if (updateRequest.billingAddress() != null) {
+            order.setBillingAddress(updateRequest.billingAddress());
+        }
+        if (updateRequest.shippingAddress() != null) {
+            order.setShippingAddress(updateRequest.shippingAddress());
+        }
+
+        if (updateRequest.orderItems() != null) {
+            updateOrderItems(order, updateRequest.orderItems());
+        }
+
+        order.setUpdatedAt(Instant.now());
+        return orderRepository.save(order);
+    }
+
+    private boolean canBeModified(Order order) {
+        String status = order.getOrderStatus();
+        return !status.equals("CANCELLED") &&
+                !status.equals("DELIVERED") &&
+                !status.equals("SHIPPED");
+    }
+
+    private void updateOrderItems(Order order, List<OrderItemUpdateDTO> updateItems) {
+        BigDecimal newTotalAmount = BigDecimal.ZERO;
+        Map<Long, OrderItem> existingItems = order.getOrderItems().stream()
+                .collect(Collectors.toMap(OrderItem::getId, item -> item));
+
+        for (OrderItemUpdateDTO updateItem : updateItems) {
+            if (updateItem.id() != null) {
+                OrderItem existingItem = existingItems.get(updateItem.id());
+                if (existingItem != null) {
+                    updateExistingOrderItem(existingItem, updateItem);
+                    existingItems.remove(updateItem.id());
+                    newTotalAmount = newTotalAmount.add(existingItem.getTotalPrice());
+                }
+            } else {
+                OrderItem newItem = createNewOrderItem(order, updateItem);
+                order.getOrderItems().add(newItem);
+                newTotalAmount = newTotalAmount.add(newItem.getTotalPrice());
+            }
+        }
+
+        for (OrderItem itemToRemove : existingItems.values()) {
+            returnStock(itemToRemove);
+            order.getOrderItems().remove(itemToRemove);
+            orderItemRepository.delete(itemToRemove);
+        }
+
+        order.setTotalAmount(newTotalAmount);
+    }
+
+    private void updateExistingOrderItem(OrderItem existingItem, OrderItemUpdateDTO updateItem) {
+        int oldQuantity = existingItem.getQuantity();
+        int newQuantity = updateItem.quantity() != null ? updateItem.quantity() : oldQuantity;
+
+        if (newQuantity != oldQuantity) {
+            ProductVariant pv = existingItem.getProductVariant();
+            if (pv.getStock() != null) {
+                int stockDiff = oldQuantity - newQuantity;
+                if (pv.getStock() + stockDiff < 0) {
+                    throw new InvalidRequestException("Not enough stock for variant " + pv.getId());
+                }
+                pv.setStock(pv.getStock() + stockDiff);
+                productVariantRepository.save(pv);
+            }
+            existingItem.setQuantity(newQuantity);
+        }
+
+        if (updateItem.price() != null) {
+            existingItem.setPrice(updateItem.price());
+        }
+
+        BigDecimal price = updateItem.price() != null ? updateItem.price() : existingItem.getPrice();
+        existingItem.setTotalPrice(price.multiply(BigDecimal.valueOf(existingItem.getQuantity())));
+    }
+
+    private OrderItem createNewOrderItem(Order order, OrderItemUpdateDTO newItem) {
+        ProductVariant pv = productVariantRepository.findById(newItem.productVariantId())
+                .orElseThrow(() -> new InvalidRequestException("Product variant not found"));
+
+        int quantity = newItem.quantity() != null ? newItem.quantity() : 1;
+
+        if (pv.getStock() != null && pv.getStock() < quantity) {
+            throw new InvalidRequestException("Not enough stock for variant " + pv.getId());
+        }
+
+        if (pv.getStock() != null) {
+            pv.setStock(pv.getStock() - quantity);
+            productVariantRepository.save(pv);
+        }
+
+        OrderItem orderItem = new OrderItem();
+        orderItem.setOrder(order);
+        orderItem.setProductVariant(pv);
+        orderItem.setQuantity(quantity);
+        orderItem.setWeight(pv.getWeight());
+        orderItem.setSku(pv.getSku());
+        orderItem.setProductName(pv.getProduct().getName());
+        orderItem.setProductSku(pv.getSku());
+
+        BigDecimal price = newItem.price() != null ? newItem.price() : pv.getPrice();
+        orderItem.setPrice(price);
+        orderItem.setTotalPrice(price.multiply(BigDecimal.valueOf(quantity)));
+
+        return orderItem;
+    }
+
+    private void returnStock(OrderItem item) {
+        ProductVariant pv = item.getProductVariant();
+        if (pv.getStock() != null) {
+            pv.setStock(pv.getStock() + item.getQuantity());
+            productVariantRepository.save(pv);
+        }
+    }
+
 }
