@@ -5,7 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { lazy, Suspense } from "react";
 import Index from "./pages/Index";
-import ScrollToTop from "./lib/Scrolltotop";
+import ScrollToTop from "./lib/ScrollToTop";
 
 // Lazy load страниц для оптимизации
 const Login = lazy(() => import("./pages/Login"));
