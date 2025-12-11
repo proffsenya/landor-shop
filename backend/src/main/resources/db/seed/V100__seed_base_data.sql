@@ -94,7 +94,3 @@ INSERT INTO colors (name, slug) VALUES
     ('Синий', 'blue'),
     ('Зеленый', 'green');
 
-
-INSERT INTO users (email, first_name, last_name, password_hash, is_staff, is_active, phone) VALUES
-    ('admin@petstore.ru', 'Админ', 'Админович', '$2a$10$YourHashedPasswordHere123', TRUE, TRUE, '+79991234567'),
-    ('user@petstore.ru', 'Иван', 'Иванов', '$2a$10$YourHashedPasswordHere456', FALSE, TRUE, '+79997654321');
