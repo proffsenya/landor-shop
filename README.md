@@ -1,49 +1,58 @@
 # Landor Shop
 
-## Технологии
-
-- **Frontend**: React 18 + React Router 6 + JavaScript + Vite + TailwindCSS 3
-- **UI**: Radix UI + TailwindCSS 3 + Lucide React icons
-- **Сборка**: Vite
-- **Пакетный менеджер**: npm
+Интернет-магазин кормов для животных.
 
 ## Структура проекта
 
 ```
-client/                   # React SPA frontend
-├── pages/                # Route components (Index.jsx = home)
-├── components/ui/        # Pre-built UI component library
-├── App.jsx               # App entry point with SPA routing setup
-└── global.css            # TailwindCSS 3 theming and global styles
-```
-
-## Команды разработки
-
-```bash
-npm install              # Установка зависимостей
-npm run dev              # Запуск dev сервера (http://localhost:8080)
-npm run build            # Сборка для продакшена
-npm run preview          # Предварительный просмотр продакшен сборки
+landor-shop/
+├── frontend/          # React фронтенд на Vite
+│   ├── client/        # Исходный код React приложения
+│   ├── public/        # Статические файлы
+│   ├── dist/          # Собранные файлы (не коммитится)
+│   ├── Dockerfile     # Docker конфигурация для фронтенда
+│   ├── docker-compose.yml  # Docker Compose для фронтенда
+│   ├── nginx.conf     # Конфигурация Nginx
+│   ├── package.json   # Зависимости фронтенда
+│   └── vite.config.js # Конфигурация Vite
+├── backend/           # Java бэкенд (в отдельной ветке)
+├── docker-compose.yml # Docker Compose для запуска из корня
+└── README.md          # Этот файл
 ```
 
 ## Запуск проекта
 
-1. Установите зависимости:
-   ```bash
-   npm install
-   ```
+### Локальная разработка (фронтенд)
 
-2. Запустите dev сервер:
-   ```bash
-   npm run dev
-   ```
+```bash
+cd frontend
+pnpm install
+pnpm dev
+```
 
-3. Откройте браузер по адресу: http://localhost:8080
+### Docker (фронтенд)
 
-## Особенности
+Из корня проекта:
+```bash
+docker-compose up -d --build
+```
 
-- ✅ Простой запуск через `npm run dev`
-- ✅ Современный UI с TailwindCSS
-- ✅ Адаптивный дизайн
-- ✅ Готовые UI компоненты
-- ✅ React Router для навигации
+Или из папки frontend:
+```bash
+cd frontend
+docker-compose up -d --build
+```
+
+Фронтенд будет доступен на `http://localhost:3000`
+
+## Технологии
+
+- **Frontend**: React, Vite, Tailwind CSS
+- **Backend**: Java (Spring Boot)
+- **Docker**: Multi-stage build с Nginx
+
+## Ветки
+
+- `main` - основная ветка
+- `frontend` - ветка фронтенда
+- `backend` - ветка бэкенда
