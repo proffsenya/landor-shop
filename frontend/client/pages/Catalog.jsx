@@ -1519,13 +1519,13 @@ export default function Catalog() {
                   placeholder="от"
                   value={priceFrom}
                   onChange={(e) => setPriceFrom(e.target.value)}
-                  className="flex-1"
+                  className="flex-1 focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-2 focus-visible:border-[#6F2A2B]"
                 />
                 <Input
                   placeholder="до"
                   value={priceTo}
                   onChange={(e) => setPriceTo(e.target.value)}
-                  className="flex-1"
+                  className="flex-1 focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-2 focus-visible:border-[#6F2A2B]"
                 />
               </div>
             </FilterSection>
@@ -1769,13 +1769,13 @@ export default function Catalog() {
                     placeholder="от"
                     value={priceFrom}
                     onChange={(e) => setPriceFrom(e.target.value)}
-                    className="flex-1"
+                    className="flex-1 focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-2 focus-visible:border-[#6F2A2B]"
                   />
                   <Input
                     placeholder="до"
                     value={priceTo}
                     onChange={(e) => setPriceTo(e.target.value)}
-                    className="flex-1"
+                    className="flex-1 focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-2 focus-visible:border-[#6F2A2B]"
                   />
                 </div>
               </FilterSection>
