@@ -144,7 +144,7 @@ export default function Header() {
             <div>{city}</div>
             <div className="flex items-center">
               <div>Звоните нам с 9:00 до 21:00 мск</div>
-              <div className="ml-[71px]">+7(903)167-18-50</div>
+              <div className="ml-[71px]">+7(980)157-60-27</div>
               <img className="ml-[5px]" src="/socialmedia-icons/ws.svg" alt="ws" />
               <img className="ml-[5px]" src="/socialmedia-icons/tg.svg" alt="tg" />
               <img className="ml-[5px]" src="/socialmedia-icons/call.svg" alt="call" />
@@ -179,7 +179,7 @@ export default function Header() {
 
             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center text-[13px] border-t border-white/20 pt-2">
               <div>Звоните нам с 9:00 до 21:00 мск</div>
-              <div className="mt-1 sm:mt-0">+7(903)167-18-50</div>
+              <div className="mt-1 sm:mt-0">+7(980)157-60-27</div>
             </div>
           </div>
         </div>

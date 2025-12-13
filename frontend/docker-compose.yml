@@ -1,9 +1,9 @@
 # Docker Compose для фронтенда
-# Запускать из корня проекта: docker-compose up -d --build
+# Запускать из директории frontend: docker-compose up --build
 services:
   frontend:
     build:
-      context: ./frontend
+      context: .
       dockerfile: Dockerfile
     container_name: landor-frontend
     ports:

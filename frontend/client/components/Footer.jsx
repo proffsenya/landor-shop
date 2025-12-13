@@ -27,7 +27,7 @@ export default function Footer() {
                 <img src="/socialmedia-icons/tg.svg" className="w-3 h-3" viewBox="0 0 14 15" fill="white" />
                 <img src="/socialmedia-icons/ws.svg" className="w-3 h-3" viewBox="0 0 14 15" fill="white" />
                 <img src="/socialmedia-icons/call.svg" className="w-3 h-3" viewBox="0 0 14 15" fill="white" />
-                <p>+7(903)167-18-50</p>
+                <p>+7(980)157-60-27</p>
               </div>
               <div className="flex items-center justify-start gap-1">
                 <img src="/socialmedia-icons/mail.svg" className="w-3 h-3" viewBox="0 0 14 15" fill="white" />
@@ -41,7 +41,7 @@ export default function Footer() {
             <h3 className="mb-2 text-md sm:mb-4 sm:text-lg">Магазин</h3>
             <ul className="space-y-1 text-xs sm:space-y-2 sm:text-sm">
               <li><Link to="/licenses" className="hover:opacity-70">Лицензии</Link></li>
-              <li><a href="#" className="hover:opacity-70">Политика конфиденциальности</a></li>
+              <li><Link to="/privacy-policy" className="hover:opacity-70">Политика конфиденциальности</Link></li>
             </ul>
           </div>
 

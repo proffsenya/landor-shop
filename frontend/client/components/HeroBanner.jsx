@@ -15,7 +15,7 @@ export default function HeroBanner() {
         // Статический первый баннер (всегда присутствует)
         const staticBanner = {
           image: "/banner2.svg",
-          title: "Добро пожаловать на Landor Shop!",
+          title: "Добро пожаловать на Landor-shop!",
           heading: "Ваш любимец — наш главный дегустатор",
           buttonText: "Заказать сейчас",
           showContent: true,

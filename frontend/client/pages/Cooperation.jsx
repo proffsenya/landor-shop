@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link } from "react-router-dom";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import BreadcrumbNav from "@/components/BreadcrumbNav";
@@ -374,7 +375,7 @@ export default function Cooperation() {
                     </div>
 
                     {/* Согласие */}
-                    <div className="flex items-start gap-3">
+                    <div className="flex items-center gap-3">
                       <Checkbox
                         id="consent"
                         checked={formData.consent}
@@ -384,10 +385,13 @@ export default function Cooperation() {
                             setErrors((prev) => ({ ...prev, consent: "" }));
                           }
                         }}
-                        className="mt-1"
                       />
                       <Label htmlFor="consent" className="flex-1 text-sm text-gray-700 cursor-pointer">
-                        Нажимая на кнопку, вы даете согласие на обработку персональных данных и соглашаетесь с политикой конфиденциальности. <span className="text-red-500">*</span>
+                        Нажимая на кнопку, вы даете согласие на обработку персональных данных и соглашаетесь с{" "}
+                        <Link to="/privacy-policy" className="text-[#6F2A2B] underline hover:text-[#5a2223]" target="_blank" rel="noopener noreferrer">
+                          политикой конфиденциальности
+                        </Link>
+                        . <span className="text-red-500">*</span>
                       </Label>
                     </div>
                     {errors.consent && (

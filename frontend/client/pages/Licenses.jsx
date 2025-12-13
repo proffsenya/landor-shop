@@ -8,11 +8,19 @@ export default function Licenses() {
   const licenses = [
     {
       name: "Декларация Landor Бадис",
-      image: "/documents/Декларация_Landor_Бадис.jpg"
+      pdf: "/documents/Декларация_Landor_Бадис.pdf"
     },
     {
       name: "ДС влажный Landor от 23.05.2025",
-      image: "/documents/ДС влажный Landor от 23.05.2025.jpg"
+      pdf: "/documents/ДС влажный Landor от 23.05.2025.pdf"
+    },
+    {
+      name: "Декларация до 21.07.2026",
+      pdf: "/documents/Декларация до 21.07.2026.pdf"
+    },
+    {
+      name: "Декларация до 27.06.2026",
+      pdf: "/documents/Декларация до 27.06.2026.pdf"
     }
   ];
 
@@ -50,11 +58,19 @@ export default function Licenses() {
                 {licenses.map((license, index) => (
                   <div key={index} className="flex flex-col items-center">
                     <div className="w-full mb-4 bg-gray-50 rounded-lg overflow-hidden border border-gray-200">
-                      <img 
-                        src={license.image} 
-                        alt={license.name}
-                        className="w-full h-auto object-contain"
-                      />
+                      <iframe
+                        src={license.pdf}
+                        title={license.name}
+                        className="w-full h-[600px] sm:h-[700px]"
+                        style={{ border: 'none' }}
+                      >
+                        <p>
+                          Ваш браузер не поддерживает отображение PDF файлов. 
+                          <a href={license.pdf} target="_blank" rel="noopener noreferrer" className="text-[#6F2A2B] underline ml-1">
+                            Скачайте документ
+                          </a>
+                        </p>
+                      </iframe>
                     </div>
                     <h3 className="text-center text-[#6F2A2B] text-base sm:text-lg font-medium">
                       {license.name}

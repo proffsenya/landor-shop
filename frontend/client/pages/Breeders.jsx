@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link } from "react-router-dom";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import BreadcrumbNav from "@/components/BreadcrumbNav";
@@ -465,7 +466,7 @@ export default function Breeders() {
             </div>
 
             {/* Согласие */}
-            <div className="flex items-start gap-3">
+            <div className="flex items-center gap-3">
               <Checkbox
                 id="consent"
                 checked={formData.consent}
@@ -475,10 +476,13 @@ export default function Breeders() {
                     setErrors((prev) => ({ ...prev, consent: "" }));
                   }
                 }}
-                className="mt-1"
               />
               <Label htmlFor="consent" className="text-sm text-gray-600 cursor-pointer">
-                Я согласен на обработку персональных данных <span className="text-red-500">*</span>
+                Я согласен на обработку персональных данных и соглашаюсь с{" "}
+                <Link to="/privacy-policy" className="text-[#6F2A2B] underline hover:text-[#5a2223]" target="_blank" rel="noopener noreferrer">
+                  политикой конфиденциальности
+                </Link>
+                . <span className="text-red-500">*</span>
               </Label>
             </div>
             {errors.consent && (

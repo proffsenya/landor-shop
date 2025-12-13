@@ -13,6 +13,7 @@ import { formatName, formatPhone } from "@/utils/formatting";
 import { validateReceiver, validatePhone, validateAddress } from "@/utils/validation";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { handleApiError } from "@/utils/errorMessages";
 import { safeError, safeWarn } from "@/utils/logger";
 
@@ -83,6 +84,7 @@ export default function Cart() {
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
   const [customerNotes, setCustomerNotes] = useState("");
+  const [consent, setConsent] = useState(false);
   const [toast, setToast] = useState("");
   const [toastType, setToastType] = useState("success"); // "success" или "error"
   const [showAuthToast, setShowAuthToast] = useState(false);
@@ -91,6 +93,7 @@ export default function Cart() {
     receiver: "",
     phone: "",
     address: "",
+    consent: "",
   });
 
   const allSelected = selected.size === items.length && items.length > 0;
@@ -405,9 +408,10 @@ export default function Cart() {
       receiver: validateReceiver(receiver),
       phone: validatePhone(phone),
       address: validateAddress(address),
+      consent: consent ? "" : "Необходимо согласие",
     };
     setErrors(newErrors);
-    return !newErrors.receiver && !newErrors.phone && !newErrors.address;
+    return !newErrors.receiver && !newErrors.phone && !newErrors.address && !newErrors.consent;
   };
 
   const onPay = async () => {
@@ -965,6 +969,33 @@ export default function Cart() {
                         <p className="mt-1 text-xs text-gray-500">
                           {customerNotes.length}/500 символов
                         </p>
+                      )}
+                    </div>
+
+                    {/* Согласие на обработку персональных данных */}
+                    <div className="mb-4">
+                      <div className="flex items-start gap-3">
+                        <Checkbox
+                          id="consent"
+                          checked={consent}
+                          onCheckedChange={(checked) => {
+                            setConsent(checked);
+                            if (errors.consent) {
+                              setErrors((prev) => ({ ...prev, consent: "" }));
+                            }
+                          }}
+                          className="mt-1"
+                        />
+                        <Label htmlFor="consent" className="flex-1 text-sm text-gray-700 cursor-pointer">
+                          Нажимая на кнопку, вы даете согласие на обработку персональных данных и соглашаетесь с{" "}
+                          <Link to="/privacy-policy" className="text-[#6F2A2B] underline hover:text-[#5a2223]" target="_blank" rel="noopener noreferrer">
+                            политикой конфиденциальности
+                          </Link>
+                          . <span className="text-red-500">*</span>
+                        </Label>
+                      </div>
+                      {errors.consent && (
+                        <p className="mt-1 text-xs text-red-500">{errors.consent}</p>
                       )}
                     </div>
                     

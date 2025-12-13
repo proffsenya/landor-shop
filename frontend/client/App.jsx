@@ -23,6 +23,7 @@ const Breeders = lazy(() => import("./pages/Breeders"));
 const Cooperation = lazy(() => import("./pages/Cooperation"));
 const AboutCompany = lazy(() => import("./pages/AboutCompany"));
 const Licenses = lazy(() => import("./pages/Licenses"));
+const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
 const AdminLogin = lazy(() => import("./pages/admin/AdminLogin"));
 const AdminDashboard = lazy(() => import("./pages/admin/AdminDashboard"));
 const AdminProducts = lazy(() => import("./pages/admin/AdminProducts"));
@@ -65,6 +66,7 @@ const App = () => (
             <Route path="/cooperation" element={<Cooperation />} />
             <Route path="/about" element={<AboutCompany />} />
             <Route path="/licenses" element={<Licenses />} />
+            <Route path="/privacy-policy" element={<PrivacyPolicy />} />
                   <Route path="/profile" element={<Profile />} />
                   <Route path="/admin/login" element={<AdminLogin />} />
                   <Route path="/admin" element={<AdminDashboard />} />
