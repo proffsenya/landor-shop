@@ -1,0 +1,12 @@
+package com.example.backend.Domain.DTOs;
+
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
+
+import java.io.Serializable;
+
+/**
+ * DTO for {@link com.example.backend.Domain.Models.Scent}
+ */
+public record ScentDTO(Long id, @NotNull @Size(max = 200) String name, String slug) implements Serializable {
+}
