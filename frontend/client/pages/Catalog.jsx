@@ -1691,7 +1691,7 @@ export default function Catalog() {
   return (
     <div className="flex flex-col min-h-screen bg-white">
       <Header />
-      <div className="flex-grow flex flex-col container px-4 py-8 mx-auto">
+      <div className="container flex flex-col flex-grow px-4 py-8 mx-auto">
         <BreadcrumbNav items={[
           { label: "Главная", to: "/" },
           { label: "Каталог" }

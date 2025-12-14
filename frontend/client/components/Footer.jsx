@@ -21,7 +21,7 @@ export default function Footer() {
             <div className="space-y-1 text-xs sm:space-y-2 sm:text-sm">
               <div className="flex items-center justify-start gap-1">
                 <img src="/socialmedia-icons/clock.svg" className="w-3 h-3" viewBox="0 0 14 15" fill="white" />
-                <p>9:00 - 21:00</p>
+                <p>9:00 - 21:00 ежедневно</p>
               </div>
               <div className="flex items-center justify-start gap-1">
                 <img src="/socialmedia-icons/tg.svg" className="w-3 h-3" viewBox="0 0 14 15" fill="white" />

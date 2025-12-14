@@ -948,9 +948,9 @@ export default function Profile() {
               </h2>
 
               {ordersLoading ? (
-                <div className="mt-3 py-8 text-center text-gray-500">Загрузка заказов…</div>
+                <div className="py-8 mt-3 text-center text-gray-500">Загрузка заказов…</div>
               ) : orders.length === 0 ? (
-                <div className="mt-3 py-8 text-center text-gray-500">У вас пока нет заказов</div>
+                <div className="py-8 mt-3 text-center text-gray-500">У вас пока нет заказов</div>
               ) : (
                 <div className="mt-3 overflow-x-auto">
                   <table className="w-full min-w-[550px]">
@@ -1028,7 +1028,7 @@ export default function Profile() {
               {/* Общая информация */}
               <div className="border-b border-[#E8E8E8] pb-4">
                 <h3 className="text-lg font-semibold text-[#1E1E1E] mb-3">Общая информация</h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+                <div className="grid grid-cols-1 gap-4 text-sm sm:grid-cols-2">
                   <div>
                     <span className="text-[#6F6F6F]">Статус заказа:</span>
                     <span className="ml-2 font-medium text-[#1E1E1E]">
@@ -1068,7 +1068,7 @@ export default function Profile() {
                   <h3 className="text-lg font-semibold text-[#1E1E1E] mb-3">Товары</h3>
                   <div className="space-y-3">
                     {orderDetails.items.map((item) => (
-                      <div key={item.id} className="flex justify-between items-start p-3 bg-gray-50 rounded-lg">
+                      <div key={item.id} className="flex items-start justify-between p-3 rounded-lg bg-gray-50">
                         <div className="flex-1">
                           <div className="font-medium text-[#1E1E1E]">{item.productName}</div>
                           <div className="text-sm text-[#6F6F6F] mt-1">
@@ -1134,33 +1134,34 @@ export default function Profile() {
               )}
               {/* Оплата заказа */}
               <div className="border-b border-[#E8E8E8] pb-4">
+                <div className="p-3 mt-4 mb-4 border border-blue-200 rounded-lg bg-blue-50">
+                      <p className="text-xs text-blue-800">
+                        <strong>Важно:</strong> Оплата производится только после подтверждения заказа администратором. 
+                        Ожидайте, скоро с вами свяжутся.
+                      </p>
+                  </div>
                 <h3 className="text-lg font-semibold text-[#1E1E1E] mb-4">Оплата заказа</h3>
-                <div className="flex flex-col md:flex-row gap-6 items-center md:items-start">
+                <div className="flex flex-col items-center gap-6 md:flex-row md:items-start">
                   {/* Инструкция */}
-                  <div className="flex-1 max-w-md w-full md:w-auto">
+                  <div className="flex-1 w-full max-w-md md:w-auto">
                     <h4 className="text-base font-medium text-[#1E1E1E] mb-3">Инструкция по оплате:</h4>
                     <ol className="text-sm text-[#1E1E1E] space-y-2 list-decimal list-inside">
                       <li>Откройте приложение вашего банка на смартфоне</li>
                       <li>Найдите раздел "Переводы" или "Платежи"</li>
                       <li>Выберите "Оплата по QR-коду" или "Сканировать QR"</li>
                       <li>Отсканируйте QR-код, изображенный справа</li>
-                      <li>Проверьте сумму заказа и подтвердите оплату</li>
+                      <li>Введите сумму заказа и подтвердите оплату</li>
                       <li>Ожидайте изменения статуса платежа.</li>
                     </ol>
-                    <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
-                      <p className="text-xs text-blue-800">
-                        <strong>Важно:</strong> Администраторы скоро свяжутся с вами для подтверждения заказа и оплаты.
-                      </p>
-                    </div>
                   </div>
                   
                   {/* QR код */}
-                  <div className="flex-1 flex items-center justify-center w-full md:w-auto">
-                    <div className="bg-white p-4 rounded-lg border border-[#E8E8E8]">
+                  <div className="flex items-center justify-center flex-1 w-full md:w-auto">
+                    <div className="bg-white p-1 rounded-lg border border-[#E8E8E8]">
                       <img 
                         src="/payments-sbp.jpg" 
                         alt="QR код для оплаты через СБП" 
-                        className="w-64 h-64 object-contain"
+                        className="object-contain w-64 h-64"
                         onError={(e) => {
                           e.currentTarget.style.display = 'none';
                         }}
