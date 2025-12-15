@@ -1,7 +1,7 @@
 services:
   backend:
     build:
-      context: ./backend
+      context: .
       dockerfile: Dockerfile
     ports:
       - "8080:8080"
@@ -23,10 +23,12 @@ services:
       db:
         condition: service_healthy
     volumes:
-      - ./logs:/app/logs
+      - ../logs:/app/logs
 
   db:
     image: postgres:13-alpine
+    env_file:
+      - .env
     environment:
       - POSTGRES_DB=${DB_NAME}
       - POSTGRES_USER=${DB_USER}
@@ -43,3 +45,4 @@ services:
 
 volumes:
   postgres_data:
+
