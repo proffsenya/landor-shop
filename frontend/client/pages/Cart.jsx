@@ -80,6 +80,7 @@ export default function Cart() {
 
   const [selected, setSelected] = useState(new Set());
   const [payMethod, setPayMethod] = useState("cash");
+  const [deliveryMethod, setDeliveryMethod] = useState("courier");
   const [receiver, setReceiver] = useState("");
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
@@ -488,6 +489,14 @@ export default function Cart() {
       
       const apiPaymentMethod = paymentMethodMap[payMethod] || "Наличными";
 
+      // Маппинг способа доставки для API
+      const deliveryMethodMap = {
+        courier: "Доставка курьером для Москвы и МО",
+        transport: "Доставка транспортной компанией"
+      };
+      
+      const apiDeliveryMethod = deliveryMethodMap[deliveryMethod] || "Доставка курьером для Москвы и МО";
+
       const requestBody = {
         cartItemIds: cartItemIds,
         billingAddress: billingAddress,
@@ -495,6 +504,7 @@ export default function Cart() {
         customerSnapshot: customerSnapshot,
         customerNotes: customerNotes.trim() || "",
         paymentMethod: apiPaymentMethod,
+        deliveryMethod: apiDeliveryMethod,
       };
 
       const headers = {
@@ -876,7 +886,35 @@ export default function Cart() {
                   </div>
 
                   <div className="mt-5 sm:mt-6">
-                    <p className="text-[#6F2A2B] mb-3">Доставка</p>
+                    <p className="text-[#6F2A2B] mb-3">Способ доставки</p>
+                    <div className="space-y-2">
+                      <label className="flex items-center gap-2 text-[15px] cursor-pointer hover:opacity-80">
+                        <input
+                          type="radio"
+                          name="delivery"
+                          value="courier"
+                          checked={deliveryMethod === "courier"}
+                          onChange={() => setDeliveryMethod("courier")}
+                          className="accent-[#6F2A2B]"
+                        />
+                        Доставка курьером для Москвы и МО
+                      </label>
+                      <label className="flex items-center gap-2 text-[15px] cursor-pointer hover:opacity-80">
+                        <input
+                          type="radio"
+                          name="delivery"
+                          value="transport"
+                          checked={deliveryMethod === "transport"}
+                          onChange={() => setDeliveryMethod("transport")}
+                          className="accent-[#6F2A2B]"
+                        />
+                        Доставка транспортной компанией
+                      </label>
+                    </div>
+                  </div>
+
+                  <div className="mt-5 sm:mt-6">
+                    <p className="text-[#6F2A2B] mb-3">Данные для доставки</p>
                     <div className="mb-3">
                       <input
                         value={receiver}

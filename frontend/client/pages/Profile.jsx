@@ -1048,6 +1048,12 @@ export default function Profile() {
                     </span>
                   </div>
                   <div>
+                    <span className="text-[#6F6F6F]">Способ доставки:</span>
+                    <span className="ml-2 font-medium text-[#1E1E1E]">
+                      {orderDetails.deliveryMethod || "-"}
+                    </span>
+                  </div>
+                  <div>
                     <span className="text-[#6F6F6F]">Дата создания:</span>
                     <span className="ml-2 font-medium text-[#1E1E1E]">
                       {formatDate(orderDetails.createdAt)}

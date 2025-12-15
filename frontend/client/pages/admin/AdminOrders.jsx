@@ -980,6 +980,12 @@ function OrderModal({ order, loading, onClose, onUpdateStatus, onConfirmPayment,
                   </span>
                 </div>
                 <div>
+                  <span className="text-[#6F6F6F]">Способ доставки:</span>
+                  <span className="ml-2 font-medium text-[#1E1E1E]">
+                    {order.deliveryMethod || "-"}
+                  </span>
+                </div>
+                <div>
                   <span className="text-[#6F6F6F]">Дата создания:</span>
                   <span className="ml-2 font-medium text-[#1E1E1E]">
                     {order.createdAt ? new Date(order.createdAt).toLocaleDateString("ru-RU", {

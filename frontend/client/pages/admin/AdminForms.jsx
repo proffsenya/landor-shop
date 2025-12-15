@@ -322,13 +322,8 @@ function FeedbackFormsTable({ forms, currentPage, itemsPerPage, onPageChange }) 
                     {form.city || "-"}
                   </div>
                 </td>
-<<<<<<< HEAD
                     <td className="px-3 sm:px-6 py-4 text-sm text-gray-500 max-w-md">
                   {renderComment(form.comment, form.id)}
-=======
-                    <td className="max-w-xs px-3 py-4 text-sm text-gray-500 truncate sm:px-6" title={form.comment}>
-                  {form.comment || "-"}
->>>>>>> d69111e226d4e5f3e5839f77a317e73308f18ff8
                 </td>
                     <td className="px-3 py-4 text-sm text-gray-500 sm:px-6 whitespace-nowrap">
                   {form.createdAt
@@ -425,7 +420,6 @@ function FeedbackFormsTable({ forms, currentPage, itemsPerPage, onPageChange }) 
                   <div className="flex items-start gap-2">
                     <FileText className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
                     <div className="flex-1 min-w-0">
-<<<<<<< HEAD
                       <span className="text-xs text-gray-600 block">Комментарий:</span>
                       <div className="text-sm text-gray-900 break-words whitespace-pre-wrap">
                         {expandedComments.has(form.id) 
@@ -452,10 +446,6 @@ function FeedbackFormsTable({ forms, currentPage, itemsPerPage, onPageChange }) 
                           )}
                         </button>
                       )}
-=======
-                      <span className="block text-xs text-gray-600">Комментарий:</span>
-                      <span className="text-sm text-gray-900 break-words">{form.comment}</span>
->>>>>>> d69111e226d4e5f3e5839f77a317e73308f18ff8
                     </div>
                   </div>
                 )}
@@ -776,12 +766,8 @@ function NurseryFormsTable({ forms, currentPage, itemsPerPage, onPageChange }) {
           </div>
         </div>
       )}
-<<<<<<< HEAD
       {/* Десктопная таблица */}
       <div className="hidden lg:block bg-white rounded-lg shadow overflow-hidden">
-=======
-    <div className="overflow-hidden bg-white rounded-lg shadow">
->>>>>>> d69111e226d4e5f3e5839f77a317e73308f18ff8
         <div className="overflow-x-auto">
           <table className="w-full min-w-[900px]">
         <thead className="bg-gray-50">
@@ -824,17 +810,10 @@ function NurseryFormsTable({ forms, currentPage, itemsPerPage, onPageChange }) {
                         </span>
                   </div>
                 </td>
-<<<<<<< HEAD
                     <td className="px-3 sm:px-6 py-4 text-sm text-gray-500 hidden lg:table-cell">
                   <div className="flex items-center gap-1 whitespace-nowrap">
                     <Phone className="w-3 h-3 flex-shrink-0" />
                     <span>{form.phone || "-"}</span>
-=======
-                    <td className="hidden px-3 py-4 text-sm text-gray-500 sm:px-6 lg:table-cell">
-                  <div className="flex items-center gap-1">
-                    <Phone className="w-3 h-3" />
-                    {form.phone || "-"}
->>>>>>> d69111e226d4e5f3e5839f77a317e73308f18ff8
                   </div>
                 </td>
                     <td className="hidden px-3 py-4 text-sm text-gray-500 sm:px-6 xl:table-cell">
@@ -868,15 +847,10 @@ function NurseryFormsTable({ forms, currentPage, itemsPerPage, onPageChange }) {
                         className="text-[#6F2A2B] hover:text-[#5a2223] flex items-center gap-1"
                         title={form.fileName || "Скачать файл"}
                       >
-<<<<<<< HEAD
                         <Download className="w-4 h-4 flex-shrink-0" />
                         <span className="hidden sm:inline truncate max-w-[150px]" title={form.fileName || "Файл"}>
                           {form.fileName || "Файл"}
                         </span>
-=======
-                        <Download className="w-4 h-4" />
-                        <span className="hidden sm:inline">{"Файл"}</span>
->>>>>>> d69111e226d4e5f3e5839f77a317e73308f18ff8
                       </button>
                     </div>
                   ) : (
