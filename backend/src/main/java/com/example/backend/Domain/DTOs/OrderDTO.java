@@ -19,7 +19,7 @@ public record OrderDTO(Long id, @NotNull @Size(max = 50) String orderStatus, @No
                        Map<String, Object> billingAddress,
                        Map<String, Object> shippingAddress,
                        @NotNull @Size(max = 50) String paymentStatus, Instant createdAt, List<OrderItemDTO> items,
-                       String customerNotes, String paymentMethod) implements Serializable {
+                       String customerNotes, String paymentMethod, String deliveryMethod) implements Serializable {
 
     public static OrderDTO from(Order order) {
         var items = order.getOrderItems().stream()
@@ -28,6 +28,6 @@ public record OrderDTO(Long id, @NotNull @Size(max = 50) String orderStatus, @No
         return new OrderDTO(order.getId(), order.getOrderStatus(), order.getTotalAmount(),
                 order.getCustomerSnapshot(), order.getBillingAddress(), order.getShippingAddress(),
                 order.getPaymentStatus(),
-                order.getCreatedAt(), items, order.getCustomerNotes(), order.getPaymentMethod());
+                order.getCreatedAt(), items, order.getCustomerNotes(), order.getPaymentMethod(), order.getDeliveryMethod());
     }
 }

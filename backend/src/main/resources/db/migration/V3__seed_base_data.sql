@@ -77,7 +77,8 @@ INSERT INTO scents (name, slug) VALUES
 
 INSERT INTO product_types (name, slug) VALUES
    ('Корм', 'feed'),
-   ('Наполнитель', 'filler')
+   ('Наполнитель', 'filler'),
+   ('Аксессуары', 'accessories')
     ON CONFLICT (id) DO NOTHING;
 
 
@@ -92,7 +93,8 @@ INSERT INTO flavors (name, canonical_name) VALUES
    ('Утка', 'duck'),
    ('Ягнёнок', 'lamb'),
    ('Говядина', 'beef'),
-   ('Гусь', 'goose')
+   ('Гусь', 'goose'),
+   ('Индейка', 'turkey')
     ON CONFLICT (id) DO NOTHING;
 
 
