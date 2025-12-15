@@ -191,6 +191,7 @@ CREATE TABLE IF NOT EXISTS orders (
     customer_notes VARCHAR(255),
     customer_snapshot JSONB,
     payment_method VARCHAR(250),
+    delivery_method VARCHAR(250),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_order_user

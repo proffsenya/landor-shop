@@ -17,5 +17,5 @@ public record OrderUpdateDTO(@NotNull @Size(max = 50) String orderStatus, @NotNu
                              @NotNull Map<String, Object> shippingAddress,
                              @NotNull Map<String, Object> billingAddress, @Size(max = 255) String customerNotes,
                              List<OrderItemUpdateDTO> orderItems, Map<String, Object> customerSnapshot,
-                             @Size(max = 250) String paymentMethod) implements Serializable {
+                             @Size(max = 250) String paymentMethod, @Size(max = 250) String deliveryMethod) implements Serializable {
 }

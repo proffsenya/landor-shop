@@ -73,6 +73,7 @@ public class OrderService {
         order.setCreatedAt(Instant.now());
         order.setPaymentStatus("UNPAID");
         order.setPaymentMethod(req.paymentMethod());
+        order.setDeliveryMethod(req.deliveryMethod());
         order.setCustomerNotes(req.customerNotes());
         if (req.customerSnapshot() == null){
             Map<String, Object> customerSnapshot = new HashMap<>();
@@ -183,6 +184,9 @@ public class OrderService {
         }
         if (updateRequest.paymentMethod() != null) {
             order.setPaymentMethod(updateRequest.paymentMethod());
+        }
+        if (updateRequest.deliveryMethod() != null) {
+            order.setDeliveryMethod(updateRequest.deliveryMethod());
         }
         if (updateRequest.customerNotes() != null) {
             order.setCustomerNotes(updateRequest.customerNotes());

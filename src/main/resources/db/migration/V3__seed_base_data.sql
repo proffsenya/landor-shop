@@ -78,7 +78,7 @@ INSERT INTO scents (name, slug) VALUES
 INSERT INTO product_types (name, slug) VALUES
    ('Корм', 'feed'),
    ('Наполнитель', 'filler'),
-    ('Акссесуары', 'accessories')
+   ('Аксессуары', 'accessories')
     ON CONFLICT (id) DO NOTHING;
 
 
