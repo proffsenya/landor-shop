@@ -6,13 +6,13 @@ import { PageFade } from "@/utils/PageAnimations";
 
 export default function PrivacyPolicy() {
   // Path to the PDF file - update this when you have the actual privacy policy PDF
-  const pdfPath = "/documents/privacy-policy.pdf";
+  const pdfPath = "/documents/privacy-policy-landor.pdf";
 
   return (
     <div className="flex flex-col min-h-screen bg-white">
       <Header />
       <PageFade>
-        <div className="flex-grow container max-w-6xl px-4 py-8 mx-auto">
+        <div className="container flex-grow max-w-6xl px-4 py-8 mx-auto">
           <BreadcrumbNav items={[
             { label: "Главная", to: "/" },
             { label: "Политика конфиденциальности" }
@@ -29,16 +29,12 @@ export default function PrivacyPolicy() {
             {/* Описание */}
             <PageFade>
               <div className="mb-8 space-y-6 text-gray-700">
-                <p className="text-base leading-relaxed sm:text-lg">
-                  Настоящая Политика конфиденциальности определяет порядок обработки и защиты персональных данных пользователей 
-                  интернет-магазина. Ознакомьтесь с документом ниже.
-                </p>
               </div>
             </PageFade>
 
             {/* PDF Viewer */}
             <PageFade>
-              <div className="w-full border border-gray-200 rounded-lg overflow-hidden bg-gray-50">
+              <div className="w-full overflow-hidden border border-gray-200 rounded-lg bg-gray-50">
                 <iframe
                   src={pdfPath}
                   title="Политика конфиденциальности"

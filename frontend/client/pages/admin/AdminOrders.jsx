@@ -393,7 +393,7 @@ export default function AdminOrders() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+      <div className="flex items-center justify-center min-h-screen bg-gray-100">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#6F2A2B]"></div>
       </div>
     );
@@ -411,10 +411,10 @@ export default function AdminOrders() {
           isOpen={sidebarOpen}
           onClose={() => setSidebarOpen(false)}
         />
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 w-full lg:w-auto">
+        <main className="flex-1 w-full p-4 sm:p-6 lg:p-8 lg:w-auto">
           <div className="max-w-[1600px] mx-auto">
             <div className="flex items-center justify-between mb-4 sm:mb-6">
-              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Заказы</h1>
+              <h1 className="text-2xl font-bold text-gray-900 sm:text-3xl">Заказы</h1>
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
                   type="checkbox"
@@ -430,58 +430,58 @@ export default function AdminOrders() {
                   }}
                   className="w-4 h-4 accent-[#6F2A2B]"
                 />
-                <span className="text-sm sm:text-base text-gray-700">Только неоплаченные</span>
+                <span className="text-sm text-gray-700 sm:text-base">Только неоплаченные</span>
               </label>
             </div>
 
             {/* Десктопная таблица */}
-            <div className="hidden lg:block bg-white rounded-lg shadow overflow-hidden">
+            <div className="hidden overflow-hidden bg-white rounded-lg shadow lg:block">
               <div className="overflow-x-auto">
                 <table className="w-full">
                 <thead className="bg-gray-50">
                   <tr>
-                      <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">ID</th>
-                      <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Дата</th>
-                      <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Клиент</th>
-                      <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Сумма</th>
-                      <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Статус оплаты</th>
-                      <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Статус</th>
-                      <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Действия</th>
+                      <th className="px-3 py-3 text-xs font-medium text-left text-gray-500 uppercase sm:px-6">ID</th>
+                      <th className="px-3 py-3 text-xs font-medium text-left text-gray-500 uppercase sm:px-6">Дата</th>
+                      <th className="px-3 py-3 text-xs font-medium text-left text-gray-500 uppercase sm:px-6">Клиент</th>
+                      <th className="px-3 py-3 text-xs font-medium text-left text-gray-500 uppercase sm:px-6">Сумма</th>
+                      <th className="px-3 py-3 text-xs font-medium text-left text-gray-500 uppercase sm:px-6">Статус оплаты</th>
+                      <th className="px-3 py-3 text-xs font-medium text-left text-gray-500 uppercase sm:px-6">Статус</th>
+                      <th className="px-3 py-3 text-xs font-medium text-left text-gray-500 uppercase sm:px-6">Действия</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
                   {filteredOrders.length === 0 ? (
                     <tr>
-                        <td colSpan="7" className="px-3 sm:px-6 py-4 text-center text-gray-500">
+                        <td colSpan="7" className="px-3 py-4 text-center text-gray-500 sm:px-6">
                         Нет заказов
                       </td>
                     </tr>
                   ) : (
                     displayedOrders.map((order) => (
-                      <tr key={order.id} className="hover:bg-gray-50 transition-colors">
-                          <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-900">#{order.id}</td>
-                          <td className="px-3 sm:px-6 py-4 text-sm text-gray-500">
+                      <tr key={order.id} className="transition-colors hover:bg-gray-50">
+                          <td className="px-3 py-4 text-sm text-gray-900 sm:px-6 whitespace-nowrap">#{order.id}</td>
+                          <td className="px-3 py-4 text-sm text-gray-500 sm:px-6">
                           {new Date(order.createdAt).toLocaleDateString("ru-RU")}
                         </td>
-                          <td className="px-3 sm:px-6 py-4 text-sm text-gray-900">
+                          <td className="px-3 py-4 text-sm text-gray-900 sm:px-6">
                             <div className="max-w-[250px]">
                               <div className="font-medium truncate" title={formatCustomerName(order.customerSnapshot)}>
                                 {formatCustomerName(order.customerSnapshot)}
                               </div>
                               {order.customerSnapshot?.phone && (
-                                <div className="text-xs text-gray-500 mt-1">
+                                <div className="mt-1 text-xs text-gray-500">
                                   {formatPhone(order.customerSnapshot.phone)}
                                 </div>
                               )}
                             </div>
                         </td>
-                          <td className="px-3 sm:px-6 py-4 text-sm text-gray-900">
+                          <td className="px-3 py-4 text-sm text-gray-900 sm:px-6">
                           {new Intl.NumberFormat("ru-RU", {
                             style: "currency",
                             currency: "RUB",
                           }).format(order.totalAmount || 0)}
                         </td>
-                          <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
+                          <td className="px-3 py-4 sm:px-6 whitespace-nowrap">
                             <span className={`px-2 py-1 text-xs rounded-full font-medium ${
                               order.paymentStatus?.toLowerCase() === "paid" 
                                 ? "bg-green-100 text-green-800" 
@@ -492,7 +492,7 @@ export default function AdminOrders() {
                               {formatPaymentStatus(order.paymentStatus)}
                             </span>
                           </td>
-                          <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
+                          <td className="px-3 py-4 sm:px-6 whitespace-nowrap">
                           <div className="flex items-center gap-2">
                             <span className="text-xs sm:text-sm text-gray-700 min-w-[100px] font-medium">
                               {formatOrderStatus(order.orderStatus)}
@@ -517,7 +517,7 @@ export default function AdminOrders() {
                           </select>
                           </div>
                         </td>
-                          <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm">
+                          <td className="px-3 py-4 text-sm sm:px-6 whitespace-nowrap">
                           <button
                             onClick={() => handleOrderClick(order)}
                               className="text-[#6F2A2B] hover:text-[#5a2223] p-1"
@@ -535,18 +535,18 @@ export default function AdminOrders() {
             </div>
 
             {/* Мобильные/планшетные карточки */}
-            <div className="lg:hidden space-y-4">
+            <div className="space-y-4 lg:hidden">
               {orders.length === 0 ? (
-                <div className="bg-white rounded-lg shadow p-6 text-center text-gray-500">
+                <div className="p-6 text-center text-gray-500 bg-white rounded-lg shadow">
                   Нет заказов
                 </div>
               ) : (
                 displayedOrders.map((order) => (
-                  <div key={order.id} className="bg-white rounded-lg shadow p-4 space-y-3">
+                  <div key={order.id} className="p-4 space-y-3 bg-white rounded-lg shadow">
                     <div className="flex items-start justify-between">
                       <div>
                         <h3 className="text-lg font-semibold text-gray-900">Заказ #{order.id}</h3>
-                        <p className="text-sm text-gray-500 mt-1">
+                        <p className="mt-1 text-sm text-gray-500">
                           {new Date(order.createdAt).toLocaleDateString("ru-RU")}
                         </p>
                       </div>
@@ -567,7 +567,7 @@ export default function AdminOrders() {
                             {formatCustomerName(order.customerSnapshot)}
                           </div>
                           {order.customerSnapshot?.phone && (
-                            <div className="text-xs text-gray-500 mt-1">
+                            <div className="mt-1 text-xs text-gray-500">
                               {formatPhone(order.customerSnapshot.phone)}
                             </div>
                           )}
@@ -630,8 +630,8 @@ export default function AdminOrders() {
 
             {/* Пагинация */}
             {filteredOrders.length > pageSize && (
-              <div className="mt-6 flex items-center justify-between px-4 py-3 bg-white border-t border-gray-200 sm:px-6">
-                <div className="flex flex-1 justify-between sm:hidden">
+              <div className="flex items-center justify-between px-4 py-3 mt-6 bg-white border-t border-gray-200 sm:px-6">
+                <div className="flex justify-between flex-1 sm:hidden">
                   <Button
                     onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
                     disabled={currentPage === 1}
@@ -934,7 +934,7 @@ function OrderModal({ order, loading, onClose, onUpdateStatus, onConfirmPayment,
   return (
     <div 
       onClick={onClose}
-      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center p-2 bg-black bg-opacity-50 sm:p-4"
     >
       <div 
         onClick={(e) => e.stopPropagation()}
@@ -942,10 +942,10 @@ function OrderModal({ order, loading, onClose, onUpdateStatus, onConfirmPayment,
       >
         <div className="p-3 sm:p-4 md:p-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Заказ #{order?.id || "-"}</h2>
+            <h2 className="text-xl font-bold text-gray-900 sm:text-2xl">Заказ #{order?.id || "-"}</h2>
             <button
               onClick={onClose}
-              className="text-gray-400 hover:text-gray-600 text-2xl leading-none"
+              className="text-2xl leading-none text-gray-400 hover:text-gray-600"
             >
               ✕
             </button>
@@ -960,7 +960,7 @@ function OrderModal({ order, loading, onClose, onUpdateStatus, onConfirmPayment,
             {/* Общая информация */}
             <div className="border-b border-[#E8E8E8] pb-4">
               <h3 className="text-base sm:text-lg font-semibold text-[#1E1E1E] mb-3">Общая информация</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 text-sm">
+              <div className="grid grid-cols-1 gap-3 text-sm sm:grid-cols-2 sm:gap-4">
                 <div>
                   <span className="text-[#6F6F6F]">Статус заказа:</span>
                   <span className="ml-2 font-medium text-[#1E1E1E]">
@@ -1045,7 +1045,7 @@ function OrderModal({ order, loading, onClose, onUpdateStatus, onConfirmPayment,
                         onClick={handleSavePrices}
                         disabled={saving}
                         size="sm"
-                        className="bg-green-600 hover:bg-green-700 text-white"
+                        className="text-white bg-green-600 hover:bg-green-700"
                       >
                         <Save className="w-4 h-4 mr-1" />
                         {saving ? "Сохранение..." : "Сохранить"}
@@ -1066,12 +1066,17 @@ function OrderModal({ order, loading, onClose, onUpdateStatus, onConfirmPayment,
                   {orderItems.map((item) => {
                     const originalItem = (order.items || order.orderItems || []).find(i => i.id === item.id);
                     return (
-                      <div key={item.id} className="flex justify-between items-start p-3 bg-gray-50 rounded-lg">
+                      <div key={item.id} className="flex items-start justify-between p-3 rounded-lg bg-gray-50">
                         <div className="flex-1">
                           <div className="font-medium text-[#1E1E1E]">{item.productName || "-"}</div>
                           <div className="text-sm text-[#6F6F6F] mt-1">
                             Количество: {item.quantity || 0}
                           </div>
+                          {originalItem?.sku && (
+                            <div className="text-sm text-[#6F6F6F] mt-1">
+                              Артикул: {originalItem.sku}
+                            </div>
+                          )}
                           {originalItem?.weight && (
                             <div className="text-sm text-[#6F6F6F] mt-1">
                               Вес: {formatWeight(originalItem.weight)}
@@ -1082,17 +1087,12 @@ function OrderModal({ order, loading, onClose, onUpdateStatus, onConfirmPayment,
                               ID варианта: {item.productVariantId}
                             </div>
                           )}
-                          {originalItem?.sku && (
-                            <div className="text-sm text-[#6F6F6F] mt-1">
-                              SKU: {originalItem.sku}
-                            </div>
-                          )}
                         </div>
-                        <div className="text-right ml-4">
+                        <div className="ml-4 text-right">
                           {editingPrices ? (
                             <div className="space-y-2">
                               <div>
-                                <label className="block text-xs text-gray-600 mb-1">Цена за единицу:</label>
+                                <label className="block mb-1 text-xs text-gray-600">Цена за единицу:</label>
                                 <Input
                                   type="number"
                                   step="0.01"
@@ -1110,7 +1110,7 @@ function OrderModal({ order, loading, onClose, onUpdateStatus, onConfirmPayment,
                             <div className="font-medium text-[#1E1E1E]">
                               {item.price ? `${(item.price * item.quantity).toLocaleString("ru-RU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ₽` : "-"}
                               {item.quantity > 1 && (
-                                <div className="text-xs text-gray-500 mt-1">
+                                <div className="mt-1 text-xs text-gray-500">
                                   {item.price.toLocaleString("ru-RU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ₽ × {item.quantity}
                                 </div>
                               )}
@@ -1121,15 +1121,15 @@ function OrderModal({ order, loading, onClose, onUpdateStatus, onConfirmPayment,
                     );
                   })}
                   {editingPrices && (
-                    <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded">
-                      <div className="flex justify-between items-center">
+                    <div className="p-3 mt-4 border border-blue-200 rounded bg-blue-50">
+                      <div className="flex items-center justify-between">
                         <span className="text-sm font-medium text-blue-900">Новая общая сумма:</span>
                         <span className="text-lg font-bold text-blue-900">
                           {orderItems.reduce((sum, item) => sum + (item.price * item.quantity), 0).toLocaleString("ru-RU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ₽
                         </span>
                       </div>
                       {order.totalAmount && (
-                        <div className="flex justify-between items-center mt-1">
+                        <div className="flex items-center justify-between mt-1">
                           <span className="text-xs text-blue-700">Текущая сумма:</span>
                           <span className="text-xs text-blue-700">
                             {order.totalAmount.toLocaleString("ru-RU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ₽
@@ -1175,7 +1175,7 @@ function OrderModal({ order, loading, onClose, onUpdateStatus, onConfirmPayment,
               <h3 className="text-lg font-semibold text-[#1E1E1E] mb-3">Управление заказом</h3>
               <div className="space-y-3">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block mb-2 text-sm font-medium text-gray-700">
                     Изменить статус заказа:
                   </label>
                   <select
@@ -1200,7 +1200,7 @@ function OrderModal({ order, loading, onClose, onUpdateStatus, onConfirmPayment,
                         const amount = order.totalAmount || 0;
                         onConfirmPayment(order.id, amount, paymentMethod);
                       }}
-                      className="bg-green-600 hover:bg-green-700 text-white"
+                      className="text-white bg-green-600 hover:bg-green-700"
                     >
                       Подтвердить оплату
                     </Button>

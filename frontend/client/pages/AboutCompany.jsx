@@ -10,7 +10,7 @@ export default function AboutCompany() {
     <div className="flex flex-col min-h-screen bg-white">
       <Header />
       <PageFade>
-        <div className="flex-grow container max-w-6xl px-4 py-8 mx-auto">
+        <div className="container flex-grow max-w-6xl px-4 py-8 mx-auto">
           <BreadcrumbNav items={[
             { label: "Главная", to: "/" },
             { label: "О компании" }
@@ -28,7 +28,7 @@ export default function AboutCompany() {
             <PageFade>
               <div className="mb-8 space-y-6 text-gray-700">
                 <p className="text-base leading-relaxed sm:text-lg">
-                  Добро пожаловать в <strong>Landor-shop.ru</strong> — интернет-магазин кормов суперпремиум класса и класса холистик для кошеки собак. 
+                  Добро пожаловать в <strong>Landor-shop.ru</strong> — интернет-магазин кормов суперпремиум класса и класса холистик для кошек и собак. 
                   Мы являемся официальными дистрибьютерами марки Landor c момента появления корма на российском и международном рынке.
                 </p>
                 
@@ -40,7 +40,7 @@ export default function AboutCompany() {
                 </p>
 
                 <p className="text-base leading-relaxed sm:text-lg">
-                  Мы работаем напрямую с производителями,что гарантирует подлинность продукции и выгодные цены для клиентов. 
+                  Мы работаем напрямую с производителями, что гарантирует подлинность продукции и выгодные цены для клиентов. 
                   Наш ассортимент включает корма для кошек и собак различных пород, возрастов, особенностей здоровья и образа жизни, 
                   наполнители для кошачьих туалетов разных видов, игрушки и аксессуары для животных.
                 </p>
@@ -87,6 +87,9 @@ export default function AboutCompany() {
                     <strong>ИНН:</strong> 772878246214
                   </li>
                   <li className="text-base sm:text-lg">
+                    <strong>ОГРНИП:</strong> 319774600530668
+                  </li>
+                  <li className="text-base sm:text-lg">
                     <strong>Банк:</strong> АО "АЛЬФА-БАНК"
                   </li>
                   <li className="text-base sm:text-lg">
@@ -94,6 +97,9 @@ export default function AboutCompany() {
                   </li>
                   <li className="text-base sm:text-lg">
                     <strong>Кор. счёт:</strong> 30101810200000000593
+                  </li>
+                  <li className="text-base sm:text-lg">
+                    <strong>Юридический адрес:</strong> г. Москва, ул. Айвазовского 5 к1
                   </li>
                   <li>
                     <img src = "/payments.jpg"></img>

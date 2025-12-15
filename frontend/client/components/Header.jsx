@@ -143,7 +143,7 @@ export default function Header() {
           <div className="items-center justify-between hidden lg:flex">
             <div>{city}</div>
             <div className="flex items-center">
-              <div>Звоните нам с 9:00 до 21:00 мск</div>
+              <div>Звоните нам с 9:00 до 21:00 Мск</div>
               <div className="ml-[71px]">+7(980)157-60-27</div>
               <img className="ml-[5px]" src="/socialmedia-icons/ws.svg" alt="ws" />
               <img className="ml-[5px]" src="/socialmedia-icons/tg.svg" alt="tg" />

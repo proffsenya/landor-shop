@@ -38,7 +38,7 @@ export default function DeliveryPayment() {
           <section className="mb-6">
             <h3 className="mb-2 text-xl font-semibold text-gray-900">Способы оплаты:</h3>
             <ul className="pl-6 text-gray-700 list-disc">
-              <li><strong>Наличными курьеру</strong> при получении заказа - только для Москвы и Московской области.</li>
+              <li><strong>Наличными курьеру (скидка 3%)</strong> при получении заказа - только для Москвы и Московской области.</li>
               <li><strong>Оплата по QR-коду через СБП</strong></li>
               <li><strong>По реквизитам</strong> на р/с ИП
               <Link to = "/about" className="font-semibold text-blue-500"> Подробнее </Link></li>
