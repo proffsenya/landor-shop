@@ -12,38 +12,23 @@ export default function HeroBanner() {
     // Загружаем баннеры для главной страницы
     const loadBanners = async () => {
       try {
-        // Статический первый баннер (всегда присутствует)
-        const staticBanner = {
-          image: "/banner2.svg",
-          title: "Добро пожаловать на Landor-shop!",
-          heading: "Ваш любимец — наш главный дегустатор",
-          buttonText: "Заказать сейчас",
-          showContent: true,
-        };
-
         // Загружаем все баннеры из API
         const res = await fetch("/api/banners");
         if (res.ok) {
           const data = await res.json();
           const allBanners = Array.isArray(data) ? data : [];
-          // Берем первые 2 баннера из API
-          const apiBanners = allBanners.slice(0, 2);
+          // Берем первые 3 баннера из API (первый + еще 2)
+          const apiBanners = allBanners.slice(0, 3);
           
-          // Объединяем: статический первый + баннеры из API
-          setBanners([staticBanner, ...apiBanners]);
+          // Используем баннеры из API (первый баннер теперь тоже из API)
+          setBanners(apiBanners);
         } else {
-          // Если API недоступен, показываем только статический баннер
-          setBanners([staticBanner]);
+          // Если API недоступен, показываем пустой массив
+          setBanners([]);
         }
       } catch (error) {
-        // При ошибке показываем только статический баннер
-        setBanners([{
-          image: "/banner2.svg",
-          title: "Добро пожаловать на Landor Shop!",
-          heading: "Ваш любимец — наш главный дегустатор",
-          buttonText: "Заказать сейчас",
-          showContent: true,
-        }]);
+        // При ошибке показываем пустой массив
+        setBanners([]);
       } finally {
         setLoading(false);
       }
@@ -116,7 +101,14 @@ export default function HeroBanner() {
           <div className="relative h-[500px] xl:h-[500px] 2xl:h-[750px]">
             {banners.map((banner, index) => {
               const imageUrl = getBannerImageUrl(banner);
-              const showContent = banner.showContent !== false && (banner.title || banner.heading || banner.buttonText);
+              const isFirstBanner = index === 0;
+              
+              // Для первого баннера всегда показываем контент с дефолтными значениями
+              const title = banner.title || (isFirstBanner ? "Добро пожаловать на Landor-shop!" : null);
+              const heading = banner.heading || (isFirstBanner ? "Ваш любимец — наш главный дегустатор" : null);
+              const buttonText = banner.buttonText || (isFirstBanner ? "Заказать сейчас" : null);
+              
+              const showContent = isFirstBanner || (banner.showContent !== false && (title || heading || buttonText));
               
               return (
                 <div
@@ -127,7 +119,7 @@ export default function HeroBanner() {
                 >
                   <img
                     src={imageUrl}
-                    alt={banner.title || banner.heading || `Landor Banner ${index + 1}`}
+                    alt={title || heading || `Landor Banner ${index + 1}`}
                     className="object-cover w-full h-full z-0 pointer-events-none"
                     onError={(e) => {
                       e.currentTarget.src = "/banner2.svg";
@@ -137,18 +129,18 @@ export default function HeroBanner() {
                   {/* Текст и кнопка для баннера */}
                   {showContent && currentSlide === index && (
                     <>
-                      {banner.heading && (
+                      {heading && (
                         <div className="absolute inset-0 flex flex-col justify-center px-8 xl:px-12 2xl:px-16 z-20">
                           <div className="max-w-[560px] -translate-x-10 -translate-y-6 relative z-30">
                             <h1 className="text-[#6F2A2B] font-bold leading-[1.15] text-[40px] xl:text-[40px] mb-4 relative z-30">
-                              {banner.heading}
+                              {heading}
                             </h1>
-                            {banner.buttonText && (
+                            {buttonText && (
                               <button 
                                 onClick={() => navigate("/catalog")}
                                 className="bg-[#6F2A2B] text-white px-7 py-3 rounded-full translate-x-[80px] hover:bg-[#5a2223] transition-colors text-[16px] font-semibold shadow-md cursor-pointer relative z-50 pointer-events-auto"
                               >
-                                {banner.buttonText}
+                                {buttonText}
                               </button>
                             )}
                           </div>
@@ -156,10 +148,10 @@ export default function HeroBanner() {
                       )}
 
                       {/* Заголовок сверху */}
-                      {banner.title && (
+                      {title && (
                         <div className="absolute top-[30px] left-1/2 -translate-x-1/2 text-center z-20">
                           <p className="text-[#6F2A2B] font-bold text-[30px] xl:text-[34px]">
-                            {banner.title}
+                            {title}
                           </p>
                         </div>
                       )}
