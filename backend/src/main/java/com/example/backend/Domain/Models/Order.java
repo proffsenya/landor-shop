@@ -81,12 +81,24 @@ public class Order {
     @Column(name = "payment_method", length = 250)
     private String paymentMethod;
 
+    @Size(max = 250)
+    @Column(name = "delivery_method", length = 250)
+    private String deliveryMethod;
+
     public String getPaymentMethod() {
         return paymentMethod;
     }
 
     public void setPaymentMethod(String paymentMethod) {
         this.paymentMethod = paymentMethod;
+    }
+
+    public String getDeliveryMethod() {
+        return deliveryMethod;
+    }
+
+    public void setDeliveryMethod(String deliveryMethod) {
+        this.deliveryMethod = deliveryMethod;
     }
 
     public Map<String, Object> getCustomerSnapshot() {
