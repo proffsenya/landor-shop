@@ -1,0 +1,93 @@
+/** @import must precede all other statements */
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Aoboshi+One&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  /**
+   * Tailwind CSS theme - Landor Shop
+   * tailwind.config.ts expects the following color variables to be expressed as HSL values.
+  */
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 0 0% 11.76%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 11.76%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 11.76%;
+
+    --primary: 0 60% 30%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 39 100% 57%;
+    --secondary-foreground: 0 0% 11.76%;
+
+    --muted: 0 0% 66.27%;
+    --muted-foreground: 0 0% 46.27%;
+
+    --accent: 39 100% 94.12%;
+    --accent-foreground: 0 60% 30%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 0 0% 66.27%;
+    --input: 0 0% 66.27%;
+    --ring: 0 60% 30%;
+
+    --radius: 0.5rem;
+
+    /* Landor Shop specific colors */
+    --landor-primary: 0 60% 30%;
+    --landor-cream: 39 100% 94.12%;
+    --landor-orange: 39 100% 57%;
+    --landor-gray: 0 0% 66.27%;
+  }
+
+  .dark {
+    --background: 0 60% 10%;
+    --foreground: 0 0% 98%;
+
+    --card: 0 60% 10%;
+    --card-foreground: 0 0% 98%;
+
+    --popover: 0 60% 10%;
+    --popover-foreground: 0 0% 98%;
+
+    --primary: 0 0% 98%;
+    --primary-foreground: 0 60% 30%;
+
+    --secondary: 39 100% 57%;
+    --secondary-foreground: 0 0% 11.76%;
+
+    --muted: 0 0% 46.27%;
+    --muted-foreground: 0 0% 66.27%;
+
+    --accent: 0 60% 30%;
+    --accent-foreground: 0 0% 98%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 0 0% 46.27%;
+    --input: 0 0% 46.27%;
+    --ring: 0 0% 83.9%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'Roboto', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+}
