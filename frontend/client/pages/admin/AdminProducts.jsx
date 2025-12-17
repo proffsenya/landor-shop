@@ -837,6 +837,38 @@ function ProductForm({
 
   const [saving, setSaving] = useState(false);
 
+  // --- Зависимые фильтры от выбранной категории ---
+  const selectedCategoryIds = Array.isArray(formData.categoryIds)
+    ? formData.categoryIds.map((id) => Number(id))
+    : [];
+
+  const allowedBreeds =
+    selectedCategoryIds.length > 0
+      ? (Array.isArray(breeds) ? breeds : []).filter((b) => {
+          const breedCategoryId = b?.categoryId != null ? Number(b.categoryId) : null;
+          return breedCategoryId != null && selectedCategoryIds.includes(breedCategoryId);
+        })
+      : breeds;
+
+  // Если категории выбраны — автоматически убираем из выбранных "фильтров" те, которые не относятся к этим категориям
+  useEffect(() => {
+    if (selectedCategoryIds.length === 0) return;
+
+    const allowedBreedIds = new Set(
+      (Array.isArray(allowedBreeds) ? allowedBreeds : [])
+        .map((b) => b?.id)
+        .filter((id) => id != null)
+        .map((id) => Number(id))
+    );
+
+    const currentBreedIds = Array.isArray(formData.breedIds) ? formData.breedIds : [];
+    const nextBreedIds = currentBreedIds.filter((id) => allowedBreedIds.has(Number(id)));
+
+    if (nextBreedIds.length !== currentBreedIds.length) {
+      setFormData((prev) => ({ ...prev, breedIds: nextBreedIds }));
+    }
+  }, [selectedCategoryIds.join(","), (Array.isArray(allowedBreeds) ? allowedBreeds.length : 0)]);
+
   // Сброс imageFiles при открытии формы создания
   useEffect(() => {
     if (!product) {
@@ -1170,9 +1202,9 @@ function ProductForm({
             <li><strong>Описание</strong> - Подробное описание товара.</li>
             <li><strong>Бренд</strong> - Выберите бренд из списка. Если бренда нет, сначала создайте его в разделе "Фильтры".</li>
             <li><strong>Тип продукта</strong> - Категория продукта (корм, аксессуар и т.д.). Выберите из списка.</li>
-            <li><strong>Категории/Породы/Страны/Тип корма/Вкусы</strong> - Можно выбрать несколько значений. Эти данные используются для фильтрации на сайте.</li>
+            <li><strong>Категории/Фильтры/Страны/Тип корма/Вкусы</strong> - Можно выбрать несколько значений. Эти данные используются для фильтрации на сайте.</li>
             <li><strong>Варианты товара</strong> - Обязательно добавьте хотя бы один вариант! Вариант = конкретная упаковка товара (размер, вес, цвет и т.д.)</li>
-            <li><strong>Изображения</strong> - Загружайте только при создании нового товара. Формат: JPEG. Рекомендуемый размер: не менее 800x800px.</li>
+            <li><strong>Изображения</strong> - Загружайте только при создании нового товара. Форматы: JPEG/JPG/PNG. Рекомендуемый размер: не менее 800x800px.</li>
           </ul>
         </div>
       </div>
@@ -1324,12 +1356,14 @@ function ProductForm({
           </div>
           <div>
             <MultiSelectField
-              label="Породы"
-              options={breeds}
+              label="Фильтры"
+              options={allowedBreeds}
               selected={formData.breedIds}
               onChange={(value) => toggleMultiSelect("breedIds", value)}
             />
-            <p className="mt-1 text-xs text-gray-500">Для каких пород подходит товар. Можно выбрать несколько пород</p>
+            <p className="mt-1 text-xs text-gray-500">
+              Выбор фильтров (бывш. "породы") зависит от выбранных категорий. Сначала выберите категорию (например, "Кошки"), затем отметьте подходящие фильтры.
+            </p>
           </div>
           <div>
             <MultiSelectField
@@ -1477,7 +1511,7 @@ function ProductForm({
             <div className="p-3 mb-2 border border-green-200 rounded bg-green-50">
               <p className="text-xs text-green-800"><strong>📸 Требования к изображениям:</strong></p>
               <ul className="mt-1 space-y-1 text-xs text-green-700 list-disc list-inside">
-                <li>Формат: JPEG</li>
+                <li>Форматы: JPEG/JPG/PNG</li>
                 <li>Рекомендуемый размер: минимум 800x800 пикселей</li>
                 <li>Количество изображений = количество вариантов товара. Фотографии должны быть по такому же порядку как и вариант.</li>
                 <li>Первое изображение будет главным (превью) в карточке товара в каталоге</li>
