@@ -61,8 +61,17 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
     container_name: landor-shop-frontend
+    env_file:
+      - .env
+    environment:
+      # SSL сертификаты через переменные окружения
+      - SSL_CERTIFICATE=${SSL_CERTIFICATE:-}
+      - SSL_PRIVATE_KEY=${SSL_PRIVATE_KEY:-}
+      - SSL_INTERMEDIATE=${SSL_INTERMEDIATE:-}
+      - SSL_ROOT=${SSL_ROOT:-}
     ports:
       - "${FRONTEND_PORT:-80}:80"
+      - "443:443"
     depends_on:
       - backend
     networks:
