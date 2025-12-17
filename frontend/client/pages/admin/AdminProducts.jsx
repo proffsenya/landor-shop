@@ -667,8 +667,8 @@ export default function AdminProducts() {
 
               {/* Пагинация */}
               {products.length > pageSize && (
-                <div className="mt-6 flex items-center justify-between px-4 py-3 bg-white border-t border-gray-200 sm:px-6">
-                  <div className="flex flex-1 justify-between sm:hidden">
+                <div className="flex items-center justify-between px-4 py-3 mt-6 bg-white border-t border-gray-200 sm:px-6">
+                  <div className="flex justify-between flex-1 sm:hidden">
                     <Button
                       onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
                       disabled={currentPage === 1}
@@ -823,7 +823,7 @@ function ProductForm({
       productTypeId: product.productTypeId ? String(product.productTypeId) : "",
           variants: (product.variants || []).map(v => ({
             ...v,
-            weight: v.weight ? v.weight / 1000 : 0, // Конвертируем граммы в килограммы для отображения
+            weight: v.weight || 0,
           })),
       quantityInStock: product.quantityInStock || 0,
       isActive: product.isActive !== undefined ? product.isActive : true,
@@ -953,7 +953,7 @@ function ProductForm({
               sku: v.sku || "",
           price: Number(v.price) || 0,
           stock: Number(v.stock) || 0,
-          weight: Number(v.weight) ? Number(v.weight) * 1000 : 0, // Конвертируем килограммы обратно в граммы для сохранения
+          weight: Number(v.weight) || 0,
           colorIds: Array.isArray(v.colorIds) 
                 ? v.colorIds.map((c) => {
                     if (typeof c === "object" && c.id !== undefined) {
@@ -1067,7 +1067,7 @@ function ProductForm({
               price: Number(v.price) || 0,
               oldPrice: (v.oldPrice !== undefined && v.oldPrice !== null && v.oldPrice !== "" && !isNaN(Number(v.oldPrice)) && Number(v.oldPrice) !== 0) ? Number(v.oldPrice) : null,
               stock: Number(v.stock) || 0,
-              weight: Number(v.weight) ? Number(v.weight) * 1000 : 0, // Конвертируем килограммы обратно в граммы для сохранения
+              weight: Number(v.weight) || 0,
               colorIds: colorObjects,
               scentIds: scentObjects,
               displayName: v.displayName || "",
@@ -1118,9 +1118,9 @@ function ProductForm({
         ...formData.variants,
         {
           sku: "",
-          price: 0,
-          stock: 0,
-          weight: 0,
+          price: "",
+          stock: "",
+          weight: "",
           colorIds: [],
           scentIds: [],
         },
@@ -1582,8 +1582,11 @@ function VariantForm({ variant, index, colors, scents, onChange, onRemove, isEdi
             type="number"
             step="0.01"
             min="0"
-            value={variant.price || 0}
-            onChange={(e) => onChange(index, "price", Number(e.target.value))}
+            value={variant.price === "" || variant.price === undefined || variant.price === null ? "" : variant.price}
+            onChange={(e) => {
+              const value = e.target.value;
+              onChange(index, "price", value === "" ? "" : Number(value));
+            }}
             placeholder="1500.00"
           />
           <p className="mt-1 text-xs text-gray-500">Цена в рублях. Можно указать копейки (например: 1499.99).</p>
@@ -1604,7 +1607,7 @@ function VariantForm({ variant, index, colors, scents, onChange, onRemove, isEdi
               }}
               placeholder="2000.00"
             />
-            <p className="mt-1 text-xs text-gray-500">Цена до скидки (для отображения зачеркнутой цены). Оставьте пустым, если скидки нет.</p>
+            <p className="mt-1 text-xs text-gray-500">⚠️Не работает!! Заготовка</p>
           </div>
         )}
         <div>
@@ -1614,8 +1617,11 @@ function VariantForm({ variant, index, colors, scents, onChange, onRemove, isEdi
           <Input
             type="number"
             min="0"
-            value={variant.stock || 0}
-            onChange={(e) => onChange(index, "stock", Number(e.target.value))}
+            value={variant.stock === "" || variant.stock === undefined || variant.stock === null ? "" : variant.stock}
+            onChange={(e) => {
+              const value = e.target.value;
+              onChange(index, "stock", value === "" ? "" : Number(value));
+            }}
             placeholder="0"
           />
           <p className="mt-1 text-xs text-gray-500">Количество товара на складе. Только целые числа (0, 1, 2, 10, 100...).</p>
@@ -1628,8 +1634,11 @@ function VariantForm({ variant, index, colors, scents, onChange, onRemove, isEdi
             type="number"
             min="0"
             step="0.001"
-            value={variant.weight || 0}
-            onChange={(e) => onChange(index, "weight", Number(e.target.value))}
+            value={variant.weight === "" || variant.weight === undefined || variant.weight === null ? "" : variant.weight}
+            onChange={(e) => {
+              const value = e.target.value;
+              onChange(index, "weight", value === "" ? "" : Number(value));
+            }}
             placeholder="2.0"
           />
           <p className="mt-1 text-xs text-gray-500">Вес упаковки в килограммах. Пример: 2 (для 2 кг), 0.5 (для 500 г), 1.5 (для 1.5 кг). Можно использовать десятичные дроби.</p>
