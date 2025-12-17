@@ -23,8 +23,8 @@ public class Product {
     @Column(name = "name", length = 100)
     private String name;
 
-    @Size(max = 1000)
-    @Column(name = "description", length = 1000)
+    @Size(max = 2000)
+    @Column(name = "description", length = 2000)
     private String description;
 
     @Size(max = 100)

@@ -77,7 +77,7 @@ CREATE TABLE IF NOT EXISTS product_types (
 CREATE TABLE IF NOT EXISTS products (
     id BIGSERIAL PRIMARY KEY,
     name VARCHAR(100),
-    description VARCHAR(1000),
+    description VARCHAR(2000),
     slug VARCHAR(100),
     is_active BOOLEAN DEFAULT true,
     is_featured BOOLEAN DEFAULT false,

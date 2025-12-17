@@ -127,7 +127,7 @@ public class ProductImagesService {
             }
         if (!ok) throw new InvalidRequestException("Unsupported file type: " + ct + " filename=" + file.getOriginalFilename());
 
-        long maxBytes = 2 * 1024 * 1024;
+        long maxBytes = 6 * 1024 * 1024;
         if (file.getSize() > maxBytes) throw new InvalidRequestException("File too large: " + file.getOriginalFilename());
 
         ProductImage img = new ProductImage();
