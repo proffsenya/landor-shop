@@ -7,12 +7,12 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.filter.CorsFilter;
 
 @Configuration
-public class CorsConfiguration {
+public class WebCorsConfiguration {
     
     @Bean
     public CorsFilter corsFilter() {
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        org.springframework.web.cors.CorsConfiguration config = new org.springframework.web.cors.CorsConfiguration();
+        CorsConfiguration config = new CorsConfiguration();
         
         // Разрешаем домены
         config.addAllowedOrigin("https://landor-shop.ru");
