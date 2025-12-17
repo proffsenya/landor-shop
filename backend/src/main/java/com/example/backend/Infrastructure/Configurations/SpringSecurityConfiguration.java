@@ -28,6 +28,7 @@ public class SpringSecurityConfiguration {
     public SecurityFilterChain springFilterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(csrf -> csrf.disable())
+                .cors(cors -> cors.configure(http))
                 .authorizeHttpRequests(auth -> auth
                         // Публичные endpoints (без аутентификации)
                         .requestMatchers(HttpMethod.GET, "/api/**").permitAll()
