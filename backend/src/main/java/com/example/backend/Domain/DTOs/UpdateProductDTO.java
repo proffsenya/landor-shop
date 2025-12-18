@@ -10,7 +10,7 @@ import java.util.List;
 /**
  * DTO for {@link com.example.backend.Domain.Models.Product}
  */
-public record UpdateProductDTO(@Size(max = 100) String name, @Size(max = 1000) String description,
+public record UpdateProductDTO(@Size(max = 100) String name, @Size(max = 2000) String description,
                                @Size(max = 500) String guaranteedIndicators,
                                @Size(max = 100) String feedingNote,
                                @Size(max = 100) String slug,
