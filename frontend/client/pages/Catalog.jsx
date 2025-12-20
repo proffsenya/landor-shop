@@ -319,9 +319,19 @@ export default function Catalog() {
       if (countryFilters[key]) queryParams.append("country_" + key, "true");
     });
     
-    // typeoffood: dry, wet (таблица typeoffood)
-    if (categoryFilters.dry) queryParams.append("typeoffood_dry", "true");
-    if (categoryFilters.wet) queryParams.append("typeoffood_wet", "true");
+    // typeoffood: динамически обрабатываем все типы корма из API (таблица typeoffood)
+    // Обрабатываем все типы корма из availableFilters.typeOfFoods
+    if (availableFilters.typeOfFoods && Array.isArray(availableFilters.typeOfFoods)) {
+      availableFilters.typeOfFoods.forEach((type) => {
+        if (categoryFilters[type.slug]) {
+          queryParams.append(`typeoffood_${type.slug}`, "true");
+        }
+      });
+    } else {
+      // Fallback для обратной совместимости (если availableFilters еще не загружен)
+      if (categoryFilters.dry) queryParams.append("typeoffood_dry", "true");
+      if (categoryFilters.wet) queryParams.append("typeoffood_wet", "true");
+    }
     
     // taste/flavor: вкусы (таблица flavors) - используем taste_ как указано
     Object.keys(flavorFilters).forEach((key) => {
@@ -353,7 +363,7 @@ export default function Catalog() {
     if (searchQuery) queryParams.append("search_query", searchQuery);
 
     return queryParams.toString(); // БЕЗ начального "?"
-  }, [categoryFilters, catFilters, dogFilters, minicatFilters, minidogFilters, countryFilters, flavorFilters, brandFilters, scentFilters, productTypeFilters, priceFrom, priceTo, searchQuery]);
+  }, [categoryFilters, catFilters, dogFilters, minicatFilters, minidogFilters, countryFilters, flavorFilters, brandFilters, scentFilters, productTypeFilters, priceFrom, priceTo, searchQuery, availableFilters.typeOfFoods]);
 
   // ---------- Кэш для результатов запросов ----------
   const cacheRef = useMemo(() => new Map(), []);
@@ -1226,6 +1236,21 @@ export default function Catalog() {
         }
       });
 
+      // Восстанавливаем фильтры typeoffood из URL параметров
+      const newCategoryFilters = { ...categoryFilters };
+      urlParams.forEach((value, key) => {
+        if (key.startsWith("typeoffood_")) {
+          const typeSlug = key.replace("typeoffood_", "");
+          if (value === "true") {
+            newCategoryFilters[typeSlug] = true;
+            newCategoryFilters.all = false;
+          }
+        }
+      });
+      if (Object.keys(newCategoryFilters).some(key => newCategoryFilters[key] && key !== "all")) {
+        setCategoryFilters(newCategoryFilters);
+      }
+
       // Динамически устанавливаем фильтры в состояние для отображения в UI
       if (categoryParam === "filler") {
         // Для наполнителей устанавливаем фильтр категории, тип продукта "Наполнитель" и ВСЕ запахи
@@ -1297,6 +1322,21 @@ export default function Catalog() {
       }
     } else {
       // Если нет параметра category, используем обычную логику
+      // Восстанавливаем фильтры typeoffood из URL параметров
+      const newCategoryFilters = { ...categoryFilters };
+      urlParams.forEach((value, key) => {
+        if (key.startsWith("typeoffood_")) {
+          const typeSlug = key.replace("typeoffood_", "");
+          if (value === "true") {
+            newCategoryFilters[typeSlug] = true;
+            newCategoryFilters.all = false;
+          }
+        }
+      });
+      if (Object.keys(newCategoryFilters).some(key => newCategoryFilters[key] && key !== "all")) {
+        setCategoryFilters(newCategoryFilters);
+      }
+      
       fetchCards(queryString, true);
       if (queryString) {
         sessionStorage.setItem("catalog:lastQuery", queryString);
