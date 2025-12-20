@@ -3,7 +3,7 @@
   <!-- Главная страница -->
   <url>
     <loc>https://landor-shop.ru/</loc>
-    <lastmod>2024-01-15</lastmod>
+    <lastmod>2025-12-20</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
   </url>
@@ -11,7 +11,7 @@
   <!-- Каталог -->
   <url>
     <loc>https://landor-shop.ru/catalog</loc>
-    <lastmod>2024-01-15</lastmod>
+    <lastmod>2025-12-20</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.9</priority>
   </url>
@@ -19,7 +19,7 @@
   <!-- О компании -->
   <url>
     <loc>https://landor-shop.ru/about</loc>
-    <lastmod>2024-01-15</lastmod>
+    <lastmod>2025-12-20</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
@@ -27,7 +27,7 @@
   <!-- Сотрудничество -->
   <url>
     <loc>https://landor-shop.ru/cooperation</loc>
-    <lastmod>2024-01-15</lastmod>
+    <lastmod>2025-12-20</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
@@ -35,7 +35,7 @@
   <!-- Заводчикам -->
   <url>
     <loc>https://landor-shop.ru/breeders</loc>
-    <lastmod>2024-01-15</lastmod>
+    <lastmod>2025-12-20</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
@@ -43,7 +43,7 @@
   <!-- Как сделать заказ -->
   <url>
     <loc>https://landor-shop.ru/howtoorder</loc>
-    <lastmod>2024-01-15</lastmod>
+    <lastmod>2025-12-20</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
@@ -51,7 +51,7 @@
   <!-- Доставка и оплата -->
   <url>
     <loc>https://landor-shop.ru/deliverypayment</loc>
-    <lastmod>2024-01-15</lastmod>
+    <lastmod>2025-12-20</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
@@ -59,7 +59,7 @@
   <!-- Обмен и возврат -->
   <url>
     <loc>https://landor-shop.ru/exchangereturn</loc>
-    <lastmod>2024-01-15</lastmod>
+    <lastmod>2025-12-20</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
@@ -67,7 +67,7 @@
   <!-- Лицензии и сертификаты -->
   <url>
     <loc>https://landor-shop.ru/licenses</loc>
-    <lastmod>2024-01-15</lastmod>
+    <lastmod>2025-12-20</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
@@ -75,7 +75,7 @@
   <!-- Политика конфиденциальности -->
   <url>
     <loc>https://landor-shop.ru/privacy-policy</loc>
-    <lastmod>2024-01-15</lastmod>
+    <lastmod>2025-12-20</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.5</priority>
   </url>
