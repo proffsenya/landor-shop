@@ -44,6 +44,17 @@ services:
       - ADMIN_FIRST_NAME=${ADMIN_FIRST_NAME:-Admin}
       - ADMIN_LAST_NAME=${ADMIN_LAST_NAME:-User}
       - ADMIN_PHONE=${ADMIN_PHONE:-+79991234567}
+      # Email настройки (по умолчанию для Yandex, можно переопределить через .env)
+      - MAIL_HOST=${MAIL_HOST:-smtp.yandex.ru}
+      - MAIL_PORT=${MAIL_PORT:-465}
+      - MAIL_USERNAME=${MAIL_USERNAME:-}
+      - MAIL_PASSWORD=${MAIL_PASSWORD:-}
+      - MAIL_SMTP_AUTH=${MAIL_SMTP_AUTH:-true}
+      - MAIL_SMTP_STARTTLS=${MAIL_SMTP_STARTTLS:-false}
+      - MAIL_SMTP_SSL=${MAIL_SMTP_SSL:-true}
+      - MAIL_SMTP_SSL_REQUIRED=${MAIL_SMTP_SSL_REQUIRED:-true}
+      - MAIL_FROM=${MAIL_FROM:-noreply@landorshop.ru}
+      - MAIL_TO=${MAIL_TO:-admin@landorshop.ru}
     ports:
       - "${BACKEND_PORT:-8080}:8080"
     depends_on:
@@ -71,6 +82,19 @@ services:
     networks:
       - landor-network
     restart: unless-stopped
+
+  # MailHog для локального тестирования email (опционально)
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: landor-shop-mailhog
+    ports:
+      - "1025:1025"  # SMTP порт
+      - "8025:8025"  # Web UI порт
+    networks:
+      - landor-network
+    restart: unless-stopped
+    profiles:
+      - local  # Запускается только с профилем local: docker-compose --profile local up
 
 networks:
   landor-network:

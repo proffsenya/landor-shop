@@ -878,7 +878,7 @@ export default function Product() {
         <div className="container mx-auto px-4 py-6 md:px-10 lg:px-[84px] md:py-8">
           <BreadcrumbNav items={[
             { label: "Главная", to: "/" },
-            { label: "Каталог", to: "/catalog" },
+            { label: "Каталог", to: catalogLink },
             { label: title || "Товар" }
           ]} />
 

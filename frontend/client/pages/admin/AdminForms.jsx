@@ -370,16 +370,22 @@ function FeedbackFormsTable({ forms, currentPage, itemsPerPage, onPageChange }) 
                 </div>
                 <div className="text-xs text-right text-gray-500">
                   {form.createdAt
-                    ? new Date(form.createdAt).toLocaleDateString("ru-RU", {
+                    ? new Date(form.createdAt).toLocaleString("ru-RU", {
                         year: "numeric",
                         month: "2-digit",
                         day: "2-digit",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                        second: "2-digit",
                       })
                     : form.created_at
-                    ? new Date(form.created_at).toLocaleDateString("ru-RU", {
+                    ? new Date(form.created_at).toLocaleString("ru-RU", {
                         year: "numeric",
                         month: "2-digit",
                         day: "2-digit",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                        second: "2-digit",
                       })
                     : "-"}
                 </div>
@@ -905,16 +911,22 @@ function NurseryFormsTable({ forms, currentPage, itemsPerPage, onPageChange }) {
                 </div>
                 <div className="text-xs text-gray-500 text-right">
                   {form.createdAt
-                    ? new Date(form.createdAt).toLocaleDateString("ru-RU", {
+                    ? new Date(form.createdAt).toLocaleString("ru-RU", {
                         year: "numeric",
                         month: "2-digit",
                         day: "2-digit",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                        second: "2-digit",
                       })
                     : form.created_at
-                    ? new Date(form.created_at).toLocaleDateString("ru-RU", {
+                    ? new Date(form.created_at).toLocaleString("ru-RU", {
                         year: "numeric",
                         month: "2-digit",
                         day: "2-digit",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                        second: "2-digit",
                       })
                     : "-"}
                 </div>

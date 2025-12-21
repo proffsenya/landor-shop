@@ -1,12 +1,12 @@
 package com.example.backend.Application.Controllers;
 
-import com.example.backend.Domain.DTOs.CreateProductDTO;
 import com.example.backend.Domain.DTOs.FeedbackFormDTO;
 import com.example.backend.Domain.DTOs.NurseryFormDTO;
 import com.example.backend.Domain.Models.FeedbackForm;
 import com.example.backend.Domain.Models.NurseryForm;
 import com.example.backend.Infrastructure.Repos.FeedbackFormRepository;
 import com.example.backend.Infrastructure.Repos.NurseryFormRepository;
+import com.example.backend.Infrastructure.Services.EmailService;
 import com.example.backend.Infrastructure.Services.FormService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpHeaders;
@@ -26,15 +26,30 @@ class FormController {
     private final FeedbackFormRepository feedbackFormRepository;
     private final NurseryFormRepository nurseryFormRepository;
     private final FormService formService;
-    public FormController(FeedbackFormRepository feedbackFormRepository,  NurseryFormRepository nurseryFormRepository, FormService formService) {
+    private final EmailService emailService;
+    
+    public FormController(FeedbackFormRepository feedbackFormRepository,  NurseryFormRepository nurseryFormRepository, 
+                         FormService formService, EmailService emailService) {
         this.feedbackFormRepository = feedbackFormRepository;
         this.nurseryFormRepository = nurseryFormRepository;
         this.formService = formService;
+        this.emailService = emailService;
     }
 
     @PostMapping("/feedbackform")
     public ResponseEntity<FeedbackForm> createFeedbackForm(@RequestBody FeedbackFormDTO formDTO) {
-        return ResponseEntity.ok(formService.saveFeedbackForm(formDTO));
+        FeedbackForm savedForm = formService.saveFeedbackForm(formDTO);
+        
+        // Отправляем email уведомление
+        emailService.sendCooperationFormEmail(
+            formDTO.name(),
+            formDTO.phone(),
+            formDTO.email(),
+            formDTO.city(),
+            formDTO.comment()
+        );
+        
+        return ResponseEntity.ok(savedForm);
     }
 
     @PostMapping(value ="/nurseryform", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -42,7 +57,19 @@ class FormController {
             @RequestPart("nurseryFormDTO") @Valid NurseryFormDTO dto,
             @RequestPart(value = "registrationFile", required = false) MultipartFile registrationFile
     ) {
-        return ResponseEntity.ok(formService.saveNurseryForm(dto, registrationFile));
+        NurseryForm savedForm = formService.saveNurseryForm(dto, registrationFile);
+        
+        // Отправляем email уведомление
+        emailService.sendBreedersFormEmail(
+            dto.organizationName(),
+            dto.fullName(),
+            dto.city(),
+            dto.email(),
+            dto.phone(),
+            dto.fileName()
+        );
+        
+        return ResponseEntity.ok(savedForm);
     }
 
     @GetMapping("/feedbackform")

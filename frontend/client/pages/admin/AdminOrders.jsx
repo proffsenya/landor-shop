@@ -461,7 +461,14 @@ export default function AdminOrders() {
                       <tr key={order.id} className="transition-colors hover:bg-gray-50">
                           <td className="px-3 py-4 text-sm text-gray-900 sm:px-6 whitespace-nowrap">#{order.id}</td>
                           <td className="px-3 py-4 text-sm text-gray-500 sm:px-6">
-                          {new Date(order.createdAt).toLocaleDateString("ru-RU")}
+                          {new Date(order.createdAt).toLocaleString("ru-RU", {
+                            year: "numeric",
+                            month: "2-digit",
+                            day: "2-digit",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                            second: "2-digit"
+                          })}
                         </td>
                           <td className="px-3 py-4 text-sm text-gray-900 sm:px-6">
                             <div className="max-w-[250px]">
@@ -547,7 +554,14 @@ export default function AdminOrders() {
                       <div>
                         <h3 className="text-lg font-semibold text-gray-900">Заказ #{order.id}</h3>
                         <p className="mt-1 text-sm text-gray-500">
-                          {new Date(order.createdAt).toLocaleDateString("ru-RU")}
+                          {new Date(order.createdAt).toLocaleString("ru-RU", {
+                            year: "numeric",
+                            month: "2-digit",
+                            day: "2-digit",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                            second: "2-digit"
+                          })}
                         </p>
                       </div>
                       <button
@@ -988,12 +1002,13 @@ function OrderModal({ order, loading, onClose, onUpdateStatus, onConfirmPayment,
                 <div>
                   <span className="text-[#6F6F6F]">Дата создания:</span>
                   <span className="ml-2 font-medium text-[#1E1E1E]">
-                    {order.createdAt ? new Date(order.createdAt).toLocaleDateString("ru-RU", {
+                    {order.createdAt ? new Date(order.createdAt).toLocaleString("ru-RU", {
                       day: "2-digit",
                       month: "2-digit",
                       year: "numeric",
                       hour: "2-digit",
-                      minute: "2-digit"
+                      minute: "2-digit",
+                      second: "2-digit"
                     }) : "-"}
                   </span>
                 </div>
