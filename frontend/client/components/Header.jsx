@@ -197,7 +197,7 @@ export default function Header() {
                   style={{ fontFamily: '"Aoboshi One", serif' }}
                 >
                   Land
-                  <img className="inline h-8 align-baseline w-9" src="/logo.svg" alt="logo" />
+                  <img className="inline h-8 align-baseline w-9" src="/favicon.svg" alt="logo" />
                   r
                 </div>
                 <div className="text-[#6F2A2B] text-[10px] font-normal mt-[2px]">
@@ -259,7 +259,7 @@ export default function Header() {
                   style={{ fontFamily: '"Aoboshi One", serif' }}
                 >
                   Land
-                  <img src="/logo.svg" className="inline h-6 align-baseline w-7" alt="logo" />
+                  <img src="/favicon.svg" className="inline h-6 align-baseline w-7" alt="logo" />
                   r
                 </div>
               </Link>

@@ -109,7 +109,13 @@ export default function AdminProducts() {
       if (productsRes.ok) {
         const data = await productsRes.json();
         const productsList = Array.isArray(data) ? data : [];
-        setProducts(productsList);
+        // Сортируем товары по ID по возрастанию (от 1 до последнего)
+        const sortedProducts = productsList.sort((a, b) => {
+          const idA = a.id || 0;
+          const idB = b.id || 0;
+          return idA - idB;
+        });
+        setProducts(sortedProducts);
       }
       if (categoriesRes.ok) {
         const data = await categoriesRes.json();
@@ -1514,7 +1520,6 @@ function ProductForm({
                 <li>Форматы: JPEG/JPG/PNG</li>
                 <li>Рекомендуемый размер: минимум 800x800 пикселей</li>
                 <li>Количество изображений = количество вариантов товара. Фотографии должны быть по такому же порядку как и вариант.</li>
-                <li>Первое изображение будет главным (превью) в карточке товара в каталоге</li>
               </ul>
             </div>
             <input
@@ -1532,7 +1537,7 @@ function ProductForm({
                 Выбрано файлов: {imageFiles.length}
               </p>
             )}
-            <p className="mt-1 text-xs text-gray-500">Изображения загружаются только при создании нового товара. После создания товара изображения можно добавить через редактирование.</p>
+            <p className="mt-1 text-xs text-gray-500">Изображения загружаются только при создании нового товара.</p>
           </div>
         )}
 

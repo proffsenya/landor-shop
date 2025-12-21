@@ -430,26 +430,31 @@ public class ProductService {
 
     public VariantCardDTO toVariantCardDTO(ProductVariant v) {
         Product product = v.getProduct();
-        List<ProductImage> images = product.getImages() == null ? List.of() : new ArrayList<>(product.getImages());
-
-        Optional<ProductImage> mainImageOpt = product.getImages().stream()
-                .filter(img -> img.getProductVariant() == null && img.getIsMain())
-                .findFirst();
-
-        Long productMainId = mainImageOpt.map(ProductImage::getId)
-                .orElse(null);
-
-        Optional<ProductImage> variantImageOpt = images.stream()
-                .filter(img -> img.getProductVariant() != null &&
-                        img.getProductVariant().getId().equals(v.getId()))
-                .findFirst();
-        Long imageId;
-        if (variantImageOpt.isPresent()) {
-            imageId = variantImageOpt.get().getId();
-        } else {
-            imageId = productMainId;
+        
+        // Оптимизация: используем уже загруженные изображения из EntityGraph
+        // и ищем нужное изображение более эффективно
+        Long imageId = null;
+        
+        if (product.getImages() != null && !product.getImages().isEmpty()) {
+            // Сначала ищем изображение для варианта (более специфичное)
+            for (ProductImage img : product.getImages()) {
+                if (img.getProductVariant() != null && img.getProductVariant().getId().equals(v.getId())) {
+                    imageId = img.getId();
+                    break; // Нашли - выходим
+                }
+            }
+            
+            // Если не нашли изображение для варианта, ищем главное изображение продукта
+            if (imageId == null) {
+                for (ProductImage img : product.getImages()) {
+                    if (img.getProductVariant() == null && Boolean.TRUE.equals(img.getIsMain())) {
+                        imageId = img.getId();
+                        break; // Нашли - выходим
+                    }
+                }
+            }
         }
-
+        
         String imageUrl = imageId == null ? null :
                 "/api/products/" + product.getId() + "/images/" + imageId;
 
