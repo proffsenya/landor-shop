@@ -2122,13 +2122,11 @@ export default function Catalog() {
 
           {/* Правая колонка — товары */}
           <div className="lg:col-span-3">
-            <ScrollFade>
-              <div className="mb-6">
-                <h1 className="mb-4 text-2xl font-bold text-gray-900">
-                  Каталог
-                </h1>
-              </div>
-            </ScrollFade>
+            <div className="mb-6">
+              <h1 className="mb-4 text-2xl font-bold text-gray-900">
+                Каталог
+              </h1>
+            </div>
 
             {loading && (
               <div className="py-12 text-center text-gray-500">Загрузка…</div>
@@ -2146,50 +2144,44 @@ export default function Catalog() {
 
             {!loading && !error && products.length > 0 && (
               <>
-                <StaggerParent
-                  delayChildren={0.05}
-                  stagger={0.05}
-                  key={page}
-                >
-                  <div className="grid items-stretch grid-cols-1 gap-4 mb-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                    {products.map((product) => {
-                      // Вариант определяется по наличию parentId и его отличию от id
-                      const isVariantCard =
-                        product.parentId != null && 
-                        String(product.parentId) !== String(product.id);
-                      
-                      // Всегда формируем URL с вариантом, если есть parentId
-                      const to = product.parentId != null
-                        ? `/product/${encodeURIComponent(
-                            product.parentId
-                          )}?variant=${encodeURIComponent(product.id)}`
-                        : `/product/${encodeURIComponent(product.id)}`;
+                <div className="grid items-stretch grid-cols-1 gap-4 mb-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                  {products.map((product) => {
+                    // Вариант определяется по наличию parentId и его отличию от id
+                    const isVariantCard =
+                      product.parentId != null && 
+                      String(product.parentId) !== String(product.id);
+                    
+                    // Всегда формируем URL с вариантом, если есть parentId
+                    const to = product.parentId != null
+                      ? `/product/${encodeURIComponent(
+                          product.parentId
+                        )}?variant=${encodeURIComponent(product.id)}`
+                      : `/product/${encodeURIComponent(product.id)}`;
 
-                      // Форматируем вес
-                      const weightDisplay = product.weight 
-                        ? (typeof product.weight === "number" 
-                          ? formatWeight(product.weight)
-                          : product.weight)
-                        : product.weightLabel || null;
+                    // Форматируем вес
+                    const weightDisplay = product.weight 
+                      ? (typeof product.weight === "number" 
+                        ? formatWeight(product.weight)
+                        : product.weight)
+                      : product.weightLabel || null;
 
-                      return (
-                        <ProductCard
-                          key={product.cardId}
-                          to={to}
-                          productId={product.parentId || product.id}
-                          variantId={product.id}
-                          image={product.image}
-                          title={product.title ?? product.name ?? "Товар"}
-                          price={`${Number(
-                            product.price ?? 0
-                          ).toLocaleString()} ₽`}
-                          stock={product.stock}
-                          weight={weightDisplay}
-                        />
-                      );
-                    })}
-                  </div>
-                </StaggerParent>
+                    return (
+                      <ProductCard
+                        key={product.cardId}
+                        to={to}
+                        productId={product.parentId || product.id}
+                        variantId={product.id}
+                        image={product.image}
+                        title={product.title ?? product.name ?? "Товар"}
+                        price={`${Number(
+                          product.price ?? 0
+                        ).toLocaleString()} ₽`}
+                        stock={product.stock}
+                        weight={weightDisplay}
+                      />
+                    );
+                  })}
+                </div>
 
                 <PageFade>
                   <div className="flex justify-center mt-6">

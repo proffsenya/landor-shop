@@ -358,8 +358,8 @@ const handleToggleFavorite = useCallback(async (e) => {
 
 
 
-  return (
-    <StaggerItem className="h-full">
+  const cardContent = (
+    <>
       <HoverLift className="h-full">
         <div className="flex flex-col h-full overflow-hidden transition-shadow bg-white border border-gray-200 rounded-xl hover:shadow-lg">
           {/* Верхняя часть карточки */}
@@ -481,7 +481,22 @@ const handleToggleFavorite = useCallback(async (e) => {
         onClose={() => setShowAuthToast(false)}
         message={authToastMessage}
       />
-    </StaggerItem>
+    </>
+  );
+
+  return (
+    <>
+      {/* Десктоп версия с анимацией */}
+      <div className="h-full hidden lg:block">
+        <StaggerItem className="h-full">
+          {cardContent}
+        </StaggerItem>
+      </div>
+      {/* Мобильная версия без анимации */}
+      <div className="h-full lg:hidden">
+        {cardContent}
+      </div>
+    </>
   );
 });
 

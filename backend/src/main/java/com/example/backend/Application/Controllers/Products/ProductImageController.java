@@ -91,7 +91,8 @@ class ProductImageController {
 
     public ProductImageDTO toProductImageDTO(ProductImage productImage){
         if(productImage != null){
-            return new ProductImageDTO(productImage.getId(), productImage.getIsMain(), productImage.getAltText());}
+            Long variantId = productImage.getProductVariant() != null ? productImage.getProductVariant().getId() : null;
+            return new ProductImageDTO(productImage.getId(), productImage.getIsMain(), productImage.getAltText(), variantId);}
         else {throw new InvalidRequestException("Product image not found");}
     }
 

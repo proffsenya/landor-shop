@@ -372,9 +372,19 @@ export default function Product() {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const meta = await res.json();
 
-        // Сохраняем исходный порядок картинок (они соответствуют вариантам по порядку)
-        // Сортируем по id, чтобы сохранить порядок: картинка 1 -> вариант 1, картинка 2 -> вариант 2 и т.д.
-        const ordered = [...meta].sort((a, b) => (a.id || 0) - (b.id || 0));
+        // Сохраняем исходный порядок картинок
+        // Сортируем: сначала изображения вариантов (по productVariantId), затем главные изображения продукта
+        const ordered = [...meta].sort((a, b) => {
+          // Если у обоих есть productVariantId, сортируем по нему
+          if (a.productVariantId != null && b.productVariantId != null) {
+            return (a.productVariantId || 0) - (b.productVariantId || 0);
+          }
+          // Изображения вариантов идут перед главными
+          if (a.productVariantId != null && b.productVariantId == null) return -1;
+          if (a.productVariantId == null && b.productVariantId != null) return 1;
+          // Если оба главные, сортируем по id
+          return (a.id || 0) - (b.id || 0);
+        });
 
         const urls = await Promise.all(
           ordered.map((m) => fetchImageUrl(productId, m.id, token))
@@ -427,21 +437,32 @@ export default function Product() {
   useEffect(() => {
     if (!selectedVariant || !gallery.length || !product) return;
     
-    // Картинки идут строго по порядку с вариантами: картинка 1 -> вариант 1, картинка 2 -> вариант 2 и т.д.
-    // Находим индекс варианта в исходном массиве variants продукта
-    const rawVariants = Array.isArray(product.variants) ? product.variants : [];
-    const variantIndexInProduct = rawVariants.findIndex(
-      (v) => String(v?.id) === String(selectedVariant.id)
+    const variantId = String(selectedVariant.id);
+    
+    // Ищем изображение, привязанное к конкретному варианту
+    let imageIdx = gallery.findIndex(
+      (img) => img.productVariantId != null && String(img.productVariantId) === variantId
     );
-
-    if (variantIndexInProduct >= 0 && variantIndexInProduct < gallery.length) {
-      // Устанавливаем картинку с соответствующим индексом
-      setSelectedImageIdx(variantIndexInProduct);
-    } else {
-      // Если индекс не найден или выходит за пределы, показываем первую картинку
-      setSelectedImageIdx(0);
+    
+    // Если не нашли изображение для варианта, ищем главное изображение продукта
+    if (imageIdx === -1) {
+      imageIdx = gallery.findIndex(
+        (img) => img.productVariantId == null && img.isMain === true
+      );
     }
-  }, [selectedVariant?.id, gallery.length, product]);
+    
+    // Если и главного нет, показываем первое изображение без варианта
+    if (imageIdx === -1) {
+      imageIdx = gallery.findIndex((img) => img.productVariantId == null);
+    }
+    
+    // Если ничего не нашли, показываем первую картинку
+    if (imageIdx === -1) {
+      imageIdx = 0;
+    }
+    
+    setSelectedImageIdx(imageIdx);
+  }, [selectedVariant?.id, gallery, product]);
 
   const title = useMemo(() => {
     if (!product) return "Товар";
@@ -557,24 +578,21 @@ export default function Product() {
   const handleSelectImage = useCallback((imageIdx) => {
     if (!product || imageIdx < 0 || imageIdx >= gallery.length) return;
     
-    // Картинки идут строго по порядку с вариантами: картинка 1 -> вариант 1, картинка 2 -> вариант 2 и т.д.
-    const rawVariants = Array.isArray(product.variants) ? product.variants : [];
-    if (imageIdx >= rawVariants.length) return;
+    const selectedImage = gallery[imageIdx];
+    if (!selectedImage) return;
     
-    // Находим вариант в исходном массиве по индексу картинки
-    const rawVariant = rawVariants[imageIdx];
-    if (!rawVariant) return;
-    
-    const rawVariantId = String(rawVariant?.id ?? rawVariant?.sku ?? "");
-    if (!rawVariantId) return;
-    
-    // Находим индекс этого варианта в нормализованном массиве variants
-    const variantIdx = variants.findIndex((v) => String(v.id) === rawVariantId);
-    if (variantIdx >= 0) {
-      // Используем handleSelectWeight для установки варианта
-      handleSelectWeight(variantIdx);
+    // Если у изображения есть productVariantId, переключаемся на этот вариант
+    if (selectedImage.productVariantId != null) {
+      const variantId = String(selectedImage.productVariantId);
+      const variantIdx = variants.findIndex((v) => String(v.id) === variantId);
+      if (variantIdx >= 0) {
+        handleSelectWeight(variantIdx);
+      }
+    } else {
+      // Если это главное изображение продукта, просто показываем его (не меняем вариант)
+      setSelectedImageIdx(imageIdx);
     }
-  }, [product, gallery.length, variants, handleSelectWeight]);
+  }, [product, gallery, variants, handleSelectWeight]);
 
   // ---------- синхронизация с сессией (кнопки) ----------
   useEffect(() => {
@@ -870,6 +888,26 @@ export default function Product() {
 
   // ---------- рендер ----------
   const mainImage = gallery[selectedImageIdx]?.url || "/korm1.svg";
+  
+  // Фильтруем миниатюры: показываем изображения для текущего варианта и главные изображения продукта
+  const relevantThumbnails = useMemo(() => {
+    if (!selectedVariant || !gallery.length) return gallery;
+    
+    const variantId = String(selectedVariant.id);
+    
+    // Находим изображения для текущего варианта и главные изображения продукта
+    return gallery.filter((img) => {
+      // Показываем изображение, если оно привязано к текущему варианту
+      if (img.productVariantId != null && String(img.productVariantId) === variantId) {
+        return true;
+      }
+      // Или если это главное изображение продукта (без варианта)
+      if (img.productVariantId == null) {
+        return true;
+      }
+      return false;
+    });
+  }, [selectedVariant?.id, gallery]);
 
   return (
     <div className="flex flex-col min-h-screen bg-white">
@@ -899,29 +937,41 @@ export default function Product() {
               </div>
 
               {/* превьюшки */}
-              <div className="grid grid-cols-4 gap-2 mt-3">
-                {gallery.map((img, i) => (
-                  <button
-                    key={img.id ?? i}
-                    onClick={() => handleSelectImage(i)}
-                    className={`overflow-hidden rounded-md ${
-                      selectedImageIdx === i
-                        ? "ring-2 ring-[#6F2A2B]"
-                        : ""
-                    } bg-white h-16`}
-                    title={img.altText || ""}
-                  >
-                    <img
-                      src={img.url}
-                      alt={img.altText || `img-${i}`}
-                      className="object-contain w-full h-full"
-                      onError={(e) => {
-                        e.currentTarget.src = "/korm1.svg";
-                      }}
-                    />
-                  </button>
-                ))}
-              </div>
+              {relevantThumbnails.length > 0 && (
+                <div className="grid grid-cols-4 gap-2 mt-3">
+                  {relevantThumbnails.map((img, i) => {
+                    // Находим индекс этого изображения в полном массиве gallery для правильного выделения
+                    const fullGalleryIdx = gallery.findIndex((g) => g.id === img.id);
+                    const isSelected = fullGalleryIdx === selectedImageIdx;
+                    
+                    return (
+                      <button
+                        key={img.id ?? i}
+                        onClick={() => {
+                          if (fullGalleryIdx >= 0) {
+                            handleSelectImage(fullGalleryIdx);
+                          }
+                        }}
+                        className={`overflow-hidden rounded-md ${
+                          isSelected
+                            ? "ring-2 ring-[#6F2A2B]"
+                            : ""
+                        } bg-white h-16`}
+                        title={img.altText || ""}
+                      >
+                        <img
+                          src={img.url}
+                          alt={img.altText || `img-${i}`}
+                          className="object-contain w-full h-full"
+                          onError={(e) => {
+                            e.currentTarget.src = "/korm1.svg";
+                          }}
+                        />
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
             </div>
 
             {/* Информация */}

@@ -9,5 +9,6 @@ import java.io.Serializable;
  * DTO for {@link com.example.backend.Domain.Models.ProductImage}
  */
 public record ProductImageDTO(Long id, Boolean isMain,
-                              @Size(max = 255) String altText) implements Serializable {
+                              @Size(max = 255) String altText,
+                              Long productVariantId) implements Serializable {
 }

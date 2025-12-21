@@ -118,7 +118,8 @@ class ProductController {
                         .map(img -> new ProductImageDTO(
                                 img.getId(),
                                 img.getIsMain(),    // Boolean isMain - второй параметр
-                                img.getAltText()    // String altText - третий параметр
+                                img.getAltText(),   // String altText - третий параметр
+                                img.getProductVariant() != null ? img.getProductVariant().getId() : null  // Long productVariantId - четвертый параметр
                         ))
                         .toList(),
                 product.getFlavors().stream().map(f ->
