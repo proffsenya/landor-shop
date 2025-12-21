@@ -560,6 +560,26 @@ export default function Product() {
 
   const description = product?.description ?? "—";
   const guaranteedIndicators = product?.guaranteedIndicators ?? "—";
+
+  // Фильтруем миниатюры: показываем изображения для текущего варианта и главные изображения продукта
+  const relevantThumbnails = useMemo(() => {
+    if (!selectedVariant || !gallery.length) return gallery;
+    
+    const variantId = String(selectedVariant.id);
+    
+    // Находим изображения для текущего варианта и главные изображения продукта
+    return gallery.filter((img) => {
+      // Показываем изображение, если оно привязано к текущему варианту
+      if (img.productVariantId != null && String(img.productVariantId) === variantId) {
+        return true;
+      }
+      // Или если это главное изображение продукта (без варианта)
+      if (img.productVariantId == null) {
+        return true;
+      }
+      return false;
+    });
+  }, [selectedVariant?.id, gallery]);
   const feedingNote = product?.feedingNote ?? "—";
 
   const handleSelectWeight = useCallback((idx) => {
@@ -887,27 +907,7 @@ export default function Product() {
   }
 
   // ---------- рендер ----------
-  const mainImage = gallery[selectedImageIdx]?.url || "/korm1.svg";
-  
-  // Фильтруем миниатюры: показываем изображения для текущего варианта и главные изображения продукта
-  const relevantThumbnails = useMemo(() => {
-    if (!selectedVariant || !gallery.length) return gallery;
-    
-    const variantId = String(selectedVariant.id);
-    
-    // Находим изображения для текущего варианта и главные изображения продукта
-    return gallery.filter((img) => {
-      // Показываем изображение, если оно привязано к текущему варианту
-      if (img.productVariantId != null && String(img.productVariantId) === variantId) {
-        return true;
-      }
-      // Или если это главное изображение продукта (без варианта)
-      if (img.productVariantId == null) {
-        return true;
-      }
-      return false;
-    });
-  }, [selectedVariant?.id, gallery]);
+  const mainImage = gallery[selectedImageIdx]?.url || null;
 
   return (
     <div className="flex flex-col min-h-screen bg-white">
