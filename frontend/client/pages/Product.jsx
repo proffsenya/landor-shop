@@ -548,7 +548,7 @@ export default function Product() {
   const stockText = useMemo(() => {
     const st = Number(selectedVariant?.raw?.stock ?? product?.stock ?? 0);
     if (!Number.isFinite(st)) return "—";
-    return st > 0 ? `${st} шт.` : "Нет в наличии";
+    return st > 0 ? "Есть в наличии" : "Нет в наличии";
   }, [selectedVariant, product]);
 
   const totalStock = useMemo(() => {

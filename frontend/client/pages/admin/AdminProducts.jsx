@@ -11,12 +11,60 @@ import {
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, Edit, Trash2, X, ChevronLeft, ChevronRight } from "lucide-react";
+import { Plus, Edit, Trash2, X, ChevronLeft, ChevronRight, Search } from "lucide-react";
 import { checkAdminAccess, getAdminToken } from "@/utils/adminAuth";
 import { handleApiError } from "@/utils/errorMessages";
 import { safeError } from "@/utils/logger";
 import { ToastMotion } from "@/utils/PageAnimations";
 import { formatWeight } from "@/utils/formatting";
+
+// Функция нормализации е/ё для поиска
+const normalizeE = (str) => {
+  return str.replace(/ё/g, 'е').replace(/Ё/g, 'Е');
+};
+
+// Функция поиска для админки (ищет по названию товара и возвращает целые товары)
+const searchProducts = (query, products) => {
+  if (!query || !query.trim() || !products || products.length === 0) {
+    return products;
+  }
+
+  const cleanQuery = normalizeE(query.trim().toLowerCase())
+    .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  if (!cleanQuery) {
+    return products;
+  }
+
+  const queryWords = cleanQuery.split(' ').filter(word => word.length > 0);
+
+  return products.filter(product => {
+    // Ищем по названию товара
+    const productName = normalizeE((product.name || product.productName || '').toLowerCase())
+      .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+
+    // Ищем по ID товара
+    const productId = String(product.id || '').toLowerCase();
+
+    // Ищем по названиям вариантов
+    const variantNames = (product.variants || []).map(variant => {
+      return normalizeE((variant.displayName || '').toLowerCase())
+        .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+    }).join(' ');
+
+    // Объединяем все тексты для поиска
+    const searchText = `${productName} ${productId} ${variantNames}`.toLowerCase();
+
+    // Проверяем, содержатся ли все слова запроса
+    return queryWords.every(word => searchText.includes(word));
+  });
+};
 
 export default function AdminProducts() {
   const navigate = useNavigate();
@@ -28,6 +76,9 @@ export default function AdminProducts() {
   const [editingProduct, setEditingProduct] = useState(null);
   const [expandedProductId, setExpandedProductId] = useState(null);
   const [toast, setToast] = useState({ message: "", type: "success", show: false });
+  
+  // Поиск
+  const [searchQuery, setSearchQuery] = useState("");
   
   // Пагинация
   const [currentPage, setCurrentPage] = useState(1);
@@ -165,18 +216,21 @@ export default function AdminProducts() {
     setTimeout(() => setToast({ message: "", type: "success", show: false }), 3000);
   };
 
+  // Фильтрация товаров по поисковому запросу
+  const filteredProducts = searchProducts(searchQuery, products);
+
   // Вычисляем отображаемые товары для текущей страницы
-  const totalPages = Math.ceil(products.length / pageSize);
+  const totalPages = Math.ceil(filteredProducts.length / pageSize);
   const startIndex = (currentPage - 1) * pageSize;
   const endIndex = startIndex + pageSize;
-  const displayedProducts = products.slice(startIndex, endIndex);
+  const displayedProducts = filteredProducts.slice(startIndex, endIndex);
 
-  // Сбрасываем страницу при изменении списка товаров
+  // Сбрасываем страницу при изменении списка товаров или поискового запроса
   useEffect(() => {
     if (currentPage > totalPages && totalPages > 0) {
       setCurrentPage(1);
     }
-  }, [products.length, currentPage, totalPages]);
+  }, [filteredProducts.length, currentPage, totalPages]);
 
   const handleDelete = async (productId) => {
     try {
@@ -224,17 +278,33 @@ export default function AdminProducts() {
           <div className="max-w-[1600px] mx-auto">
             <div className="flex flex-col gap-4 mb-4 sm:flex-row sm:items-center sm:justify-between sm:mb-6">
               <h1 className="text-2xl font-bold text-gray-900 sm:text-3xl">Товары</h1>
-              <Button
-                onClick={() => {
-                  setEditingProduct(null);
-                  setShowForm(true);
-                }}
-                className="bg-[#6F2A2B] text-white hover:bg-[#5a2223] w-full sm:w-auto"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                <span className="hidden sm:inline">Добавить товар</span>
-                <span className="sm:hidden">Добавить</span>
-              </Button>
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                {/* Поле поиска */}
+                <div className="relative flex-1 sm:flex-initial sm:w-64">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <Input
+                    type="text"
+                    placeholder="Поиск товаров..."
+                    value={searchQuery}
+                    onChange={(e) => {
+                      setSearchQuery(e.target.value);
+                      setCurrentPage(1); // Сбрасываем на первую страницу при поиске
+                    }}
+                    className="pl-10 w-full"
+                  />
+                </div>
+                <Button
+                  onClick={() => {
+                    setEditingProduct(null);
+                    setShowForm(true);
+                  }}
+                  className="bg-[#6F2A2B] text-white hover:bg-[#5a2223] w-full sm:w-auto"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  <span className="hidden sm:inline">Добавить товар</span>
+                  <span className="sm:hidden">Добавить</span>
+                </Button>
+              </div>
             </div>
 
             {showForm && (
@@ -278,10 +348,10 @@ export default function AdminProducts() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
-                  {products.length === 0 ? (
+                  {filteredProducts.length === 0 ? (
                     <tr>
                         <td colSpan="7" className="px-3 py-4 text-center text-gray-500 sm:px-6">
-                        Нет товаров
+                        {searchQuery.trim() ? "Товары не найдены" : "Нет товаров"}
                       </td>
                     </tr>
                   ) : (
@@ -476,9 +546,9 @@ export default function AdminProducts() {
 
               {/* Мобильные карточки */}
               <div className="md:hidden">
-                {products.length === 0 ? (
+                {filteredProducts.length === 0 ? (
                   <div className="p-6 text-center text-gray-500">
-                    Нет товаров
+                    {searchQuery.trim() ? "Товары не найдены" : "Нет товаров"}
                   </div>
                 ) : (
                   <div className="divide-y divide-gray-200">
@@ -672,7 +742,7 @@ export default function AdminProducts() {
               </div>
 
               {/* Пагинация */}
-              {products.length > pageSize && (
+              {filteredProducts.length > pageSize && (
                 <div className="flex items-center justify-between px-4 py-3 mt-6 bg-white border-t border-gray-200 sm:px-6">
                   <div className="flex justify-between flex-1 sm:hidden">
                     <Button
@@ -702,7 +772,12 @@ export default function AdminProducts() {
                   <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
                     <div>
                       <p className="text-sm text-gray-700">
-                        Показано <span className="font-medium">{startIndex + 1}</span> - <span className="font-medium">{Math.min(endIndex, products.length)}</span> из <span className="font-medium">{products.length}</span> товаров
+                        Показано <span className="font-medium">{startIndex + 1}</span> - <span className="font-medium">{Math.min(endIndex, filteredProducts.length)}</span> из <span className="font-medium">{filteredProducts.length}</span> товаров
+                        {searchQuery.trim() && (
+                          <span className="ml-2 text-gray-500">
+                            (из {products.length} всего)
+                          </span>
+                        )}
                       </p>
                     </div>
                     <div className="flex items-center gap-2">
