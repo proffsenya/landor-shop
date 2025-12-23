@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Search } from "lucide-react";
 import useDebouncedValue from "@/hooks/useDebouncedValue";
-import { localSearch as originalLocalSearch } from "@/utils/localSearch";
+import { localSearch } from "@/utils/localSearch";
 import { getAuthToken } from "@/utils/auth";
 import { formatWeight } from "@/utils/formatting";
 
@@ -14,113 +14,6 @@ const formatPrice = (price) => {
     currency: "RUB",
     minimumFractionDigits: 0,
   }).format(price);
-};
-
-// Функция нормализации е/ё для поиска
-const normalizeE = (str) => {
-  return str.replace(/ё/g, 'е').replace(/Ё/g, 'Е');
-};
-
-// Улучшенная функция поиска на основе оригинальной
-const localSearch = (query, dataset, maxResults = 10) => {
-  if (!query || !dataset || dataset.length === 0) return [];
-
-  // Нормализуем е/ё и очищаем запрос от знаков препинания и лишних пробелов
-  const cleanQuery = normalizeE(query)
-    .toLowerCase()
-    .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, ' ') // заменяем знаки препинания на пробелы
-    .replace(/\s+/g, ' ') // заменяем множественные пробелы на один
-    .trim();
-
-  if (!cleanQuery) return [];
-
-  // Создаем очищенный dataset для поиска
-  const cleanedDataset = dataset.map(item => {
-    // Формируем строку для поиска: название + вес (с нормализацией е/ё)
-    let searchText = normalizeE(item.title || '')
-      ?.toLowerCase()
-      .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, ' ')
-      .replace(/\s+/g, ' ')
-      .trim() || '';
-    
-    // Добавляем вес в поиск
-    if (item.weight) {
-      let weightStr = "";
-      if (typeof item.weight === "number") {
-        weightStr = ` ${item.weight} кг ${item.weight % 1 === 0 ? item.weight : item.weight.toFixed(3)}`;
-      } else {
-        weightStr = ` ${String(item.weight).toLowerCase()}`;
-      }
-      searchText += weightStr;
-    }
-    if (item.weightLabel) {
-      searchText += ` ${String(item.weightLabel).toLowerCase().replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, ' ')}`;
-    }
-    
-    return {
-      ...item,
-      cleanSearchText: searchText
-    };
-  });
-
-  const results = cleanedDataset.filter(item => {
-    return item.cleanSearchText.includes(cleanQuery);
-  });
-
-  // Возвращаем оригинальные объекты (без cleanSearchText)
-  return results.slice(0, maxResults).map(({ cleanSearchText, ...item }) => item);
-};
-
-// Альтернативный вариант - если предыдущий не работает, используем этот:
-const localSearchSimple = (query, dataset, maxResults = 5) => {
-  if (!query || !dataset || dataset.length === 0) return [];
-
-  const cleanQuery = normalizeE(query).toLowerCase().replace(/[^a-zA-Zа-яА-Я0-9\s]/g, ' ').replace(/\s+/g, ' ').trim();
-  
-  if (!cleanQuery) return [];
-
-  const results = dataset.filter(item => {
-    const cleanTitle = normalizeE(item.title || '').toLowerCase().replace(/[^a-zA-Zа-яА-Я0-9\s]/g, ' ').replace(/\s+/g, ' ').trim() || '';
-    
-    // Добавляем вес в поиск
-    let searchText = cleanTitle;
-    if (item.weight) {
-      let weightStr = "";
-      if (typeof item.weight === "number") {
-        weightStr = ` ${item.weight} кг ${item.weight % 1 === 0 ? item.weight : item.weight.toFixed(3)}`;
-      } else {
-        weightStr = ` ${String(item.weight).toLowerCase()}`;
-      }
-      searchText += weightStr;
-    }
-    if (item.weightLabel) {
-      searchText += ` ${String(item.weightLabel).toLowerCase().replace(/[^a-zA-Zа-яА-Я0-9\s]/g, ' ')}`;
-    }
-    
-    return searchText.includes(cleanQuery);
-  });
-
-  return results.slice(0, maxResults);
-};
-
-// Кэш для парсинга sessionStorage
-let cachedProducts = null;
-let cacheTimestamp = 0;
-const CACHE_DURATION = 1000; // 1 секунда
-
-const getAllProducts = () => {
-  const now = Date.now();
-  if (cachedProducts && (now - cacheTimestamp) < CACHE_DURATION) {
-    return cachedProducts;
-  }
-  try {
-    cachedProducts = JSON.parse(sessionStorage.getItem("catalog:all") || "[]");
-    cacheTimestamp = now;
-    return cachedProducts;
-  } catch {
-    cachedProducts = [];
-    return [];
-  }
 };
 
 // Кэш для изображений
@@ -186,21 +79,8 @@ export default function GlobalSearch({
       return;
     }
 
-    // Используем оригинальный localSearch, который работает с полными данными товаров
-    let results = [];
-    if (originalLocalSearch) {
-      results = originalLocalSearch(dq, dataset, maxItems);
-    }
-    
-    // Если не нашли результатов, пробуем простой вариант
-    if (results.length === 0) {
-      results = localSearch(dq, dataset, maxItems);
-    }
-
-    // Если все еще нет результатов, пробуем простой вариант
-    if (results.length === 0) {
-      results = localSearchSimple(dq, dataset, maxItems);
-    }
+    // Используем полную функцию localSearch из localSearch.js, которая работает со всеми полями
+    const results = localSearch(dq, dataset, maxItems);
 
     setItems(results);
     setActive(0);
