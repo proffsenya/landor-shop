@@ -8,13 +8,66 @@
  * @param {number} [limit=15] - максимум результатов
  * @returns {Array<{id, title, subtitle, url, image, type}>}
  */
-// Функция нормализации е/ё для поиска
+// Функция нормализации е/ё и других символов для поиска
 const normalizeE = (str) => {
-  return str.replace(/ё/g, 'е').replace(/Ё/g, 'Е');
+  if (!str || typeof str !== 'string') return '';
+  return str
+    .replace(/ё/g, 'е')
+    .replace(/Ё/g, 'Е')
+    .replace(/\u200B/g, '') // Убираем невидимые пробелы
+    .replace(/\u00A0/g, ' ') // Заменяем неразрывные пробелы на обычные
+    .trim();
+};
+
+// Функция для расширения запроса синонимами и вариантами
+const expandQuery = (query) => {
+  const normalized = normalizeE(query.toLowerCase().trim());
+  
+  // Словарь синонимов и вариантов
+  const synonyms = {
+    'все': ['всех', 'всем', 'всеми', 'всего'],
+    'породы': ['пород', 'породам', 'породами', 'породе'],
+    'все породы': ['для всех', 'для всех пород', 'всех пород', 'всем породам', 'все пород'],
+    'для стерилизованных': ['стерилизованным', 'стерилизованным кошкам', 'для стерилизованных кошек', 'стерилизованные', 'стерилизованным котам'],
+    'стерилизованных': ['стерилизованным', 'стерилизованным кошкам', 'для стерилизованных', 'стерилизованные', 'стерилизованным котам'],
+    'для котят': ['котенок', 'котенка', 'котенку', 'котенком', 'котятам', 'котят', 'для котят', 'котенку', 'котенка'],
+    'котят': ['котенок', 'котенка', 'котенку', 'котенком', 'котятам', 'для котят', 'котенку', 'котенка'],
+    'для щенков': ['щенок', 'щенка', 'щенку', 'щенком', 'щенкам', 'щенков', 'для щенков', 'щенку', 'щенка'],
+    'щенков': ['щенок', 'щенка', 'щенку', 'щенком', 'щенкам', 'для щенков', 'щенку', 'щенка'],
+    'котенок': ['котят', 'котенка', 'котенку', 'котенком', 'котятам', 'для котят'],
+    'щенок': ['щенков', 'щенка', 'щенку', 'щенком', 'щенкам', 'для щенков'],
+  };
+  
+  // Расширяем запрос синонимами
+  let expanded = [normalized];
+  
+  // Проверяем полные фразы
+  for (const [key, variants] of Object.entries(synonyms)) {
+    if (normalized.includes(key)) {
+      expanded.push(...variants);
+      // Также добавляем комбинации
+      variants.forEach(variant => {
+        expanded.push(normalized.replace(key, variant));
+      });
+    }
+  }
+  
+  // Проверяем отдельные слова
+  const words = normalized.split(/\s+/);
+  words.forEach(word => {
+    if (synonyms[word]) {
+      expanded.push(...synonyms[word]);
+    }
+  });
+  
+  // Убираем дубликаты и возвращаем уникальные варианты
+  return [...new Set(expanded)];
 };
 
 export function localSearch(query, dataset = [], limit = 15) {
-  const q = String(query || "").trim().toLowerCase();
+  // Более надежная нормализация запроса
+  if (!query || (typeof query !== 'string' && typeof query !== 'number')) return [];
+  const q = String(query).trim().toLowerCase();
   if (!q) return [];
 
   // Нормализуем е/ё в запросе
@@ -28,7 +81,15 @@ export function localSearch(query, dataset = [], limit = 15) {
 
   if (!cleanQuery) return [];
 
-  // Разбиваем запрос на отдельные слова
+  // Расширяем запрос синонимами
+  const expandedQueries = expandQuery(cleanQuery);
+  
+  // Разбиваем запрос на отдельные слова для каждого варианта
+  const queryWordsVariants = expandedQueries.map(expandedQuery => 
+    expandedQuery.split(' ').filter(word => word.length > 0)
+  );
+  
+  // Берем основной вариант для проверки
   const queryWords = cleanQuery.split(' ').filter(word => word.length > 0);
 
   const res = [];
@@ -39,8 +100,19 @@ export function localSearch(query, dataset = [], limit = 15) {
     if (variants.length > 0) {
       // Старая структура: продукт с вариантами
       variants.forEach((variant) => {
-        const title = variant?.displayName || variant?.display_name || item?.productName || item?.name || "";
-        const desc = variant?.description || item?.brand || "";
+        // Нормализуем все поля перед использованием
+        const title = normalizeE(
+          variant?.displayName || 
+          variant?.display_name || 
+          item?.productName || 
+          item?.name || 
+          ""
+        );
+        const desc = normalizeE(
+          variant?.description || 
+          item?.brand || 
+          ""
+        );
         
         // Формируем строку веса для поиска
         let weightStr = "";
@@ -68,9 +140,27 @@ export function localSearch(query, dataset = [], limit = 15) {
           .trim();
 
         // Проверяем, содержатся ли все слова запроса в тексте (в любом порядке)
-        const allWordsFound = queryWords.every(word => 
-          cleanCombined.includes(word)
-        );
+        // Также проверяем расширенные варианты запроса
+        const checkMatch = (words) => {
+          if (!words || words.length === 0) return false;
+          // Проверяем, что все слова найдены (более гибкая проверка)
+          return words.every(word => {
+            if (word.length < 2) return true; // Игнорируем очень короткие слова
+            return cleanCombined.includes(word);
+          });
+        };
+        
+        // Также проверяем частичное совпадение (хотя бы одно слово)
+        const checkPartialMatch = (words) => {
+          if (!words || words.length === 0) return false;
+          return words.some(word => word.length >= 2 && cleanCombined.includes(word));
+        };
+        
+        const allWordsFound = checkMatch(queryWords) || 
+          queryWordsVariants.some(variantWords => checkMatch(variantWords)) ||
+          expandedQueries.some(expandedQuery => cleanCombined.includes(expandedQuery)) ||
+          // Дополнительная проверка: если запрос короткий (1-2 слова), используем частичное совпадение
+          (queryWords.length <= 2 && checkPartialMatch(queryWords));
 
         if (allWordsFound) {
           const variantId = variant?.id ?? variant?.variantId;
@@ -93,8 +183,22 @@ export function localSearch(query, dataset = [], limit = 15) {
       });
     } else {
       // Новая структура: плоская карточка (из /api/products/cards/search-by-url)
-      const title = item?.displayName || item?.display_name || item?.productName || item?.name || "";
-      const desc = item?.description || item?.brand || "";
+      // Собираем все возможные поля названия для более надежного поиска
+      // Нормализуем все поля перед использованием
+      const title = normalizeE(
+        item?.displayName || 
+        item?.display_name || 
+        item?.productName || 
+        item?.name || 
+        item?.title || 
+        ""
+      );
+      const desc = normalizeE(
+        item?.description || 
+        item?.brand || 
+        item?.subtitle || 
+        ""
+      );
       
       // Формируем строку веса для поиска
       let weightStr = "";
@@ -130,9 +234,27 @@ export function localSearch(query, dataset = [], limit = 15) {
         .trim();
 
       // Проверяем, содержатся ли все слова запроса в тексте (в любом порядке)
-      const allWordsFound = queryWords.every(word => 
-        cleanCombined.includes(word)
-      );
+      // Также проверяем расширенные варианты запроса
+      const checkMatch = (words) => {
+        if (!words || words.length === 0) return false;
+        // Проверяем, что все слова найдены (более гибкая проверка)
+        return words.every(word => {
+          if (word.length < 2) return true; // Игнорируем очень короткие слова
+          return cleanCombined.includes(word);
+        });
+      };
+      
+      // Также проверяем частичное совпадение (хотя бы одно слово)
+      const checkPartialMatch = (words) => {
+        if (!words || words.length === 0) return false;
+        return words.some(word => word.length >= 2 && cleanCombined.includes(word));
+      };
+      
+      const allWordsFound = checkMatch(queryWords) || 
+        queryWordsVariants.some(variantWords => checkMatch(variantWords)) ||
+        expandedQueries.some(expandedQuery => cleanCombined.includes(expandedQuery)) ||
+        // Дополнительная проверка: если запрос короткий (1-2 слова), используем частичное совпадение
+        (queryWords.length <= 2 && checkPartialMatch(queryWords));
 
       if (allWordsFound) {
         const variantId = item?.id ?? item?.variantId;

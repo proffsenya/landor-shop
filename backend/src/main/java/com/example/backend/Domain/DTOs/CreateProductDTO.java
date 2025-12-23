@@ -11,7 +11,7 @@ import java.util.List;
  */
 public record CreateProductDTO(@Size(max = 100) String name, @Size(max = 2000) String description,
                                @Size(max = 1000) String feedingNote,
-                               @Size(max = 500) String guaranteedIndicators,
+                               @Size(max = 1000) String guaranteedIndicators,
                                @Size(max = 100) String slug,
                                List<Integer> breedIds,
                                List<Long> categoryIds,
