@@ -19,12 +19,8 @@ const normalizeE = (str) => {
     .trim();
 };
 
-// Функция для расширения запроса синонимами и вариантами
-const expandQuery = (query) => {
-  const normalized = normalizeE(query.toLowerCase().trim());
-  
-  // Словарь синонимов и вариантов
-  const synonyms = {
+// Словарь синонимов и вариантов (вынесен наружу для использования в поиске)
+const synonyms = {
     // Общие слова
     'все': ['всех', 'всем', 'всеми', 'всего', 'для всех'],
     'для всех': ['все', 'всех', 'всем', 'всеми', 'всего'],
@@ -262,6 +258,10 @@ const expandQuery = (query) => {
     'чистые': ['чистые пушистые'],
     'пушистые': ['чистые пушистые'],
   };
+
+// Функция для расширения запроса синонимами и вариантами
+const expandQuery = (query) => {
+  const normalized = normalizeE(query.toLowerCase().trim());
   
   // Расширяем запрос синонимами
   let expanded = [normalized];
@@ -382,14 +382,26 @@ export function localSearch(query, dataset = [], limit = 15) {
           // Проверяем, что все слова найдены (более гибкая проверка)
           return words.every(word => {
             if (word.length < 2) return true; // Игнорируем очень короткие слова
-            return cleanCombined.includes(word);
+            // Проверяем прямое вхождение слова
+            if (cleanCombined.includes(word)) return true;
+            // Также проверяем все расширенные варианты этого слова
+            // Если слово есть в словаре синонимов, проверяем его варианты
+            const wordVariants = synonyms[word] || [];
+            return wordVariants.some(variant => cleanCombined.includes(variant));
           });
         };
         
         // Также проверяем частичное совпадение (хотя бы одно слово)
         const checkPartialMatch = (words) => {
           if (!words || words.length === 0) return false;
-          return words.some(word => word.length >= 2 && cleanCombined.includes(word));
+          return words.some(word => {
+            if (word.length < 2) return false;
+            // Проверяем прямое вхождение
+            if (cleanCombined.includes(word)) return true;
+            // Также проверяем варианты слова
+            const wordVariants = synonyms[word] || [];
+            return wordVariants.some(variant => cleanCombined.includes(variant));
+          });
         };
         
         const allWordsFound = checkMatch(queryWords) || 
@@ -476,14 +488,26 @@ export function localSearch(query, dataset = [], limit = 15) {
         // Проверяем, что все слова найдены (более гибкая проверка)
         return words.every(word => {
           if (word.length < 2) return true; // Игнорируем очень короткие слова
-          return cleanCombined.includes(word);
+          // Проверяем прямое вхождение слова
+          if (cleanCombined.includes(word)) return true;
+          // Также проверяем все расширенные варианты этого слова
+          // Если слово есть в словаре синонимов, проверяем его варианты
+          const wordVariants = synonyms[word] || [];
+          return wordVariants.some(variant => cleanCombined.includes(variant));
         });
       };
       
       // Также проверяем частичное совпадение (хотя бы одно слово)
       const checkPartialMatch = (words) => {
         if (!words || words.length === 0) return false;
-        return words.some(word => word.length >= 2 && cleanCombined.includes(word));
+        return words.some(word => {
+          if (word.length < 2) return false;
+          // Проверяем прямое вхождение
+          if (cleanCombined.includes(word)) return true;
+          // Также проверяем варианты слова
+          const wordVariants = synonyms[word] || [];
+          return wordVariants.some(variant => cleanCombined.includes(variant));
+        });
       };
       
       const allWordsFound = checkMatch(queryWords) || 
