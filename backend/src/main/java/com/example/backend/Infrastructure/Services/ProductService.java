@@ -902,16 +902,16 @@ public class ProductService {
             
             // Если не нашли точное совпадение, проверяем синонимы
             if (!wordMatched) {
-                for (String variant : variants) {
-                    if (variant.length() <= 1) continue;
+                for (String synonym : variants) {
+                    if (synonym.length() <= 1) continue;
                     
                     for (String displayWord : displayWords) {
-                        if (displayWord.equals(variant)) {
+                        if (displayWord.equals(synonym)) {
                             exactMatches++;
                             score += 80.0; // Точное совпадение синонима
                             wordMatched = true;
                             break;
-                        } else if (displayWord.contains(variant) || variant.contains(displayWord)) {
+                        } else if (displayWord.contains(synonym) || synonym.contains(displayWord)) {
                             partialMatches++;
                             score += 20.0; // Частичное совпадение
                             wordMatched = true;
