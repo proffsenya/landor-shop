@@ -715,8 +715,23 @@ public class ProductService {
             .replace('ё', 'е')
             .replaceAll("\\s+", " ");
 
-        // Расширяем запрос синонимами
-        Set<String> searchTerms = expandSearchTerms(normalizedQuery);
+        // Разбиваем запрос на слова
+        String[] queryWords = normalizedQuery.split("\\s+");
+        
+        // Для каждого слова находим его синонимы
+        List<Set<String>> wordVariants = new ArrayList<>();
+        for (String word : queryWords) {
+            if (word.length() <= 1) continue;
+            Set<String> variants = new HashSet<>();
+            variants.add(word); // Добавляем само слово
+            variants.addAll(expandSearchTerms(word)); // Добавляем синонимы
+            wordVariants.add(variants);
+        }
+        
+        // Если нет слов для поиска, возвращаем пустой результат
+        if (wordVariants.isEmpty()) {
+            return Page.empty(pageable);
+        }
 
         // Создаем спецификацию для поиска по displayName и весу
         Specification<ProductVariant> textSearchSpec = (root, criteriaQuery, cb) -> {
@@ -728,53 +743,56 @@ public class ProductService {
             Expression<String> displayNameLower = cb.lower(root.get("displayName"));
             Expression<BigDecimal> weight = root.get("weight");
             
-            // Создаем список условий OR для всех терминов поиска
-            List<Predicate> predicates = new ArrayList<>();
+            // Создаем список условий для КАЖДОГО слова (AND логика)
+            // Товар должен содержать хотя бы один вариант КАЖДОГО слова
+            List<Predicate> wordPredicates = new ArrayList<>();
             
-            for (String term : searchTerms) {
-                if (term.length() <= 1) continue; // Пропускаем слишком короткие термины
+            for (Set<String> variants : wordVariants) {
+                List<Predicate> variantPredicates = new ArrayList<>();
                 
-                String searchPattern = "%" + term + "%";
+                for (String variant : variants) {
+                    if (variant.length() <= 1) continue;
+                    
+                    String searchPattern = "%" + variant + "%";
+                    String searchPatternWithYo = "%" + variant.replace('е', 'ё') + "%";
+                    
+                    // Поиск по displayName
+                    variantPredicates.add(cb.like(displayNameLower, searchPattern));
+                    variantPredicates.add(cb.like(displayNameLower, searchPatternWithYo));
+                }
                 
-                // Добавляем вариант с ё (если в термине было е, а в БД ё)
-                String searchPatternWithYo = "%" + term.replace('е', 'ё') + "%";
-                
-                // Поиск по displayName
-                predicates.add(cb.like(displayNameLower, searchPattern));
-                predicates.add(cb.like(displayNameLower, searchPatternWithYo));
-                
-                // Пытаемся найти число в термине для поиска по весу
-                try {
-                    // Убираем все нецифровые символы кроме точки и запятой
-                    String numericString = term.replaceAll("[^0-9.,]", "").replace(',', '.');
-                    if (!numericString.isEmpty()) {
-                        BigDecimal weightValue = new BigDecimal(numericString);
-                        // Ищем точное совпадение веса
-                        predicates.add(cb.equal(weight, weightValue));
-                    }
-                } catch (NumberFormatException | ArithmeticException e) {
-                    // Если не получилось распарсить как число, игнорируем
+                // Для каждого слова: хотя бы один вариант должен совпадать (OR внутри слова)
+                if (!variantPredicates.isEmpty()) {
+                    wordPredicates.add(cb.or(variantPredicates.toArray(new Predicate[0])));
                 }
             }
             
-            // Также проверяем исходный запрос на наличие числа
-            try {
-                String numericString = normalizedQuery.replaceAll("[^0-9.,]", "").replace(',', '.');
-                if (!numericString.isEmpty()) {
-                    BigDecimal weightValue = new BigDecimal(numericString);
-                    predicates.add(cb.equal(weight, weightValue));
+            // Также добавляем поиск по весу (опционально, не обязательно)
+            List<Predicate> weightPredicates = new ArrayList<>();
+            for (String word : queryWords) {
+                try {
+                    String numericString = word.replaceAll("[^0-9.,]", "").replace(',', '.');
+                    if (!numericString.isEmpty()) {
+                        BigDecimal weightValue = new BigDecimal(numericString);
+                        weightPredicates.add(cb.equal(weight, weightValue));
+                    }
+                } catch (NumberFormatException | ArithmeticException e) {
+                    // Игнорируем
                 }
-            } catch (NumberFormatException | ArithmeticException e) {
-                // Если не получилось распарсить как число, игнорируем
+            }
+            
+            // Если есть поиск по весу, добавляем его как опциональное условие
+            if (!weightPredicates.isEmpty()) {
+                wordPredicates.add(cb.or(weightPredicates.toArray(new Predicate[0])));
             }
             
             // Если нет условий, возвращаем условие, которое никогда не сработает
-            if (predicates.isEmpty()) {
+            if (wordPredicates.isEmpty()) {
                 return cb.disjunction();
             }
             
-            // Объединяем все условия через OR
-            return cb.or(predicates.toArray(new Predicate[0]));
+            // Все слова должны совпадать (AND между словами)
+            return cb.and(wordPredicates.toArray(new Predicate[0]));
         };
 
         // Добавляем фильтр по активности продукта и варианта
@@ -804,8 +822,8 @@ public class ProductService {
         // Вычисляем релевантность и сортируем
         List<ProductVariant> sortedResults = allResults.stream()
             .map(variant -> {
-                // Вычисляем релевантность
-                double relevance = calculateRelevance(variant, normalizedQuery, searchTerms);
+                // Вычисляем релевантность с учетом всех слов запроса
+                double relevance = calculateRelevance(variant, normalizedQuery, queryWords, wordVariants);
                 return new RelevanceWrapper(variant, relevance);
             })
             .sorted((a, b) -> Double.compare(b.relevance, a.relevance)) // Сортируем по убыванию релевантности
@@ -841,7 +859,7 @@ public class ProductService {
     }
     
     // Вычисление релевантности товара к запросу
-    private double calculateRelevance(ProductVariant variant, String query, Set<String> searchTerms) {
+    private double calculateRelevance(ProductVariant variant, String query, String[] queryWords, List<Set<String>> wordVariants) {
         String displayName = variant.getDisplayName();
         if (displayName == null) return 0.0;
         
@@ -850,7 +868,6 @@ public class ProductService {
             .replaceAll("\\s+", " ");
         
         double score = 0.0;
-        String[] queryWords = query.split("\\s+");
         String[] displayWords = normalizedDisplayName.split("\\s+");
         
         // 1. Точное совпадение всего запроса (максимальный балл)
@@ -859,35 +876,84 @@ public class ProductService {
         } else if (normalizedDisplayName.startsWith(query)) {
             score += 500.0; // Запрос в начале названия
         } else if (normalizedDisplayName.contains(query)) {
-            score += 100.0; // Запрос содержится в названии
+            score += 200.0; // Запрос содержится в названии как фраза
         }
         
-        // 2. Количество совпадающих слов из запроса
-        int matchingWords = 0;
-        for (String queryWord : queryWords) {
-            if (queryWord.length() > 1) {
-                for (String displayWord : displayWords) {
-                    if (displayWord.equals(queryWord)) {
-                        matchingWords++;
-                        score += 50.0; // Точное совпадение слова
-                        break;
-                    } else if (displayWord.contains(queryWord) || queryWord.contains(displayWord)) {
-                        matchingWords++;
-                        score += 10.0; // Частичное совпадение слова
-                        break;
-                    }
+        // 2. Проверяем совпадение каждого слова из запроса
+        int exactMatches = 0;
+        int partialMatches = 0;
+        
+        for (int i = 0; i < queryWords.length; i++) {
+            String queryWord = queryWords[i];
+            if (queryWord.length() <= 1) continue;
+            
+            Set<String> variants = wordVariants.get(i);
+            boolean wordMatched = false;
+            
+            // Проверяем точное совпадение исходного слова
+            for (String displayWord : displayWords) {
+                if (displayWord.equals(queryWord)) {
+                    exactMatches++;
+                    score += 100.0; // Точное совпадение исходного слова
+                    wordMatched = true;
+                    break;
                 }
             }
-        }
-        
-        // 3. Бонус за совпадение с исходными терминами запроса (не синонимами)
-        for (String queryWord : queryWords) {
-            if (queryWord.length() > 1 && normalizedDisplayName.contains(queryWord)) {
-                score += 20.0; // Дополнительный балл за исходные слова запроса
+            
+            // Если не нашли точное совпадение, проверяем синонимы
+            if (!wordMatched) {
+                for (String variant : variants) {
+                    if (variant.length() <= 1) continue;
+                    
+                    for (String displayWord : displayWords) {
+                        if (displayWord.equals(variant)) {
+                            exactMatches++;
+                            score += 80.0; // Точное совпадение синонима
+                            wordMatched = true;
+                            break;
+                        } else if (displayWord.contains(variant) || variant.contains(displayWord)) {
+                            partialMatches++;
+                            score += 20.0; // Частичное совпадение
+                            wordMatched = true;
+                            break;
+                        }
+                    }
+                    if (wordMatched) break;
+                }
+            }
+            
+            // Также проверяем вхождение в полное название (не только по словам)
+            if (!wordMatched && normalizedDisplayName.contains(queryWord)) {
+                partialMatches++;
+                score += 15.0; // Слово найдено в названии
             }
         }
         
-        // 4. Штраф за длину - короткие названия с совпадением лучше
+        // 3. Бонус за совпадение всех слов (важно для многословных запросов)
+        if (exactMatches == queryWords.length) {
+            score += 300.0; // Все слова точно совпали
+        } else if (exactMatches + partialMatches == queryWords.length) {
+            score += 150.0; // Все слова найдены (хотя бы частично)
+        }
+        
+        // 4. Бонус за порядок слов - если слова идут в том же порядке
+        if (queryWords.length > 1) {
+            int orderMatches = 0;
+            int lastIndex = -1;
+            for (String queryWord : queryWords) {
+                if (queryWord.length() <= 1) continue;
+                int index = normalizedDisplayName.indexOf(queryWord, lastIndex + 1);
+                if (index > lastIndex) {
+                    orderMatches++;
+                    lastIndex = index;
+                }
+            }
+            if (orderMatches == queryWords.length) {
+                score += 100.0; // Слова идут в правильном порядке
+            }
+        }
+        
+        // 5. Штраф за длину - короткие названия с совпадением лучше
         if (score > 0) {
             double lengthPenalty = Math.min(displayName.length() / 100.0, 10.0);
             score = score / (1.0 + lengthPenalty * 0.1);
