@@ -60,7 +60,7 @@ export default function Header() {
   };
 
 
-  // Загрузка продуктов для поиска из sessionStorage
+  // Загрузка продуктов для поиска из sessionStorage или API
   useEffect(() => {
     const loadProducts = () => {
       try {
@@ -77,8 +77,84 @@ export default function Header() {
       }
     };
 
-    // Загружаем при монтировании
-    loadProducts();
+    // Загрузка продуктов из API, если их нет в sessionStorage
+    const loadProductsFromAPI = async () => {
+      try {
+        // Загружаем все товары без фильтров
+        const url = `/api/products/cards/search-by-url?filtersUrl=${encodeURIComponent("catalog?")}`;
+        
+        const res = await fetch(url);
+        if (!res.ok) {
+          safeWarn("Failed to load all products for search:", res.status);
+          return;
+        }
+
+        const response = await res.json();
+        
+        // API может возвращать объект с полем content (Spring Data Page) или просто массив
+        const data = Array.isArray(response) ? response : (response?.content || []);
+        
+        if (!Array.isArray(data)) {
+          return;
+        }
+
+        // Фильтруем неактивные товары
+        const activeItems = data.filter(item => {
+          // Если в ответе есть isActive, используем его
+          if (item?.isActive !== undefined) {
+            return item.isActive !== false;
+          }
+          if (item?.productIsActive !== undefined) {
+            return item.productIsActive !== false;
+          }
+          // Если нет информации, оставляем (для обратной совместимости)
+          return true;
+        });
+
+        // Формируем полные данные для поиска с картинками, ценами и весом
+        const searchData = activeItems.map((item) => {
+          // Извлекаем productId из imageUrl, если он есть
+          let productId = item?.productId;
+          if (!productId && item?.imageUrl && item.imageUrl.startsWith("/api/products/")) {
+            const match = item.imageUrl.match(/\/api\/products\/(\d+)\/images\/(\d+)/);
+            if (match) {
+              productId = parseInt(match[1]);
+            }
+          }
+          
+          return {
+            id: item?.id,
+            variantId: item?.id,
+            productId: productId,
+            displayName: item?.displayName || "Товар",
+            title: item?.displayName || "Товар",
+            price: item?.price ?? null,
+            weight: item?.weight ?? null,
+            weightLabel: item?.weightLabel || (item?.weight ? (typeof item.weight === "number" ? `${item.weight} кг` : item.weight) : null),
+            imageUrl: item?.imageUrl || "/korm1.svg",
+            image: item?.imageUrl || "/korm1.svg",
+          };
+        });
+
+        // Сохраняем в sessionStorage
+        sessionStorage.setItem("catalog:all", JSON.stringify(searchData));
+        
+        // Обновляем состояние
+        setAllProducts(searchData);
+      } catch (e) {
+        safeWarn("Error loading all products for search:", e);
+      }
+    };
+
+    // Проверяем, есть ли данные в sessionStorage
+    const stored = sessionStorage.getItem("catalog:all");
+    if (stored) {
+      // Загружаем из sessionStorage
+      loadProducts();
+    } else {
+      // Загружаем из API
+      loadProductsFromAPI();
+    }
 
     // Слушаем изменения в sessionStorage
     const handleStorageChange = (e) => {
