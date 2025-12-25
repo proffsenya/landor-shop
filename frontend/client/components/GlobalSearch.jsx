@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Search } from "lucide-react";
 import useDebouncedValue from "@/hooks/useDebouncedValue";
-import { localSearch } from "@/utils/localSearch";
 import { getAuthToken } from "@/utils/auth";
 import { formatWeight } from "@/utils/formatting";
 
@@ -56,7 +55,6 @@ async function fetchImageUrl(productId, imageId, token) {
 
 export default function GlobalSearch({
   placeholder = "Искать здесь...",
-  dataset = [],
   maxItems = 5,
   className = "",
   onSelect,
@@ -79,13 +77,71 @@ export default function GlobalSearch({
       return;
     }
 
-    // Используем полную функцию localSearch из localSearch.js, которая работает со всеми полями
-    const results = localSearch(dq, dataset, maxItems);
+    // Используем API для поиска вместо локального поиска
+    const searchAbortController = new AbortController();
 
-    setItems(results);
-    setActive(0);
-    setOpen(results.length > 0 || dq.length > 0);
-  }, [dq, dataset, maxItems]);
+    const performSearch = async () => {
+      try {
+        const url = `/api/products/cards/search?q=${encodeURIComponent(dq)}&size=${maxItems}&page=0`;
+        const response = await fetch(url, {
+          signal: searchAbortController.signal,
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+
+        const data = await response.json();
+        
+        // API возвращает Page объект с полем content
+        const results = Array.isArray(data) ? data : (data?.content || []);
+        
+        // Преобразуем результаты в формат, который ожидает компонент
+        const formattedResults = results.map((item) => {
+          const variantId = item?.id ?? item?.variantId;
+          const productId = item?.parentId ?? item?.productId;
+          
+          return {
+            id: String(variantId ?? Math.random()),
+            title: item?.displayName || item?.title || "Товар",
+            displayName: item?.displayName || "Товар",
+            subtitle: typeof item?.price === "number" ? `${item.price} ₽` : (item?.subtitle || ""),
+            image: item?.imageUrl || item?.image || "/korm1.svg",
+            imageUrl: item?.imageUrl || item?.image || "/korm1.svg",
+            price: item?.price ?? null,
+            weight: item?.weight ?? null,
+            weightLabel: item?.weightLabel || (item?.weight ? (typeof item.weight === "number" ? `${item.weight} кг` : item.weight) : null),
+            productId: productId,
+            variantId: variantId,
+            url: item?.url || (productId && variantId
+              ? `/product/${encodeURIComponent(productId)}?variant=${encodeURIComponent(variantId)}`
+              : variantId
+              ? `/product/${encodeURIComponent(variantId)}`
+              : "#"),
+            type: "product",
+          };
+        });
+
+        setItems(formattedResults);
+        setActive(0);
+        setOpen(formattedResults.length > 0 || dq.length > 0);
+      } catch (error) {
+        if (error.name === 'AbortError') {
+          // Запрос был отменен, это нормально
+          return;
+        }
+        console.error('Search error:', error);
+        setItems([]);
+        setOpen(false);
+      }
+    };
+
+    performSearch();
+
+    return () => {
+      searchAbortController.abort();
+    };
+  }, [dq, maxItems]);
 
   // Отдельный эффект для загрузки изображений
   useEffect(() => {

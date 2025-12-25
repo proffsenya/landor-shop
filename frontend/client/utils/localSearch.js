@@ -259,40 +259,8 @@ const synonyms = {
     'пушистые': ['чистые пушистые'],
   };
 
-// Функция для расширения запроса синонимами и вариантами
-const expandQuery = (query) => {
-  const normalized = normalizeE(query.toLowerCase().trim());
-  
-  // Расширяем запрос синонимами
-  let expanded = [normalized];
-  
-  // Проверяем полные фразы (сначала длинные, потом короткие)
-  const sortedKeys = Object.keys(synonyms).sort((a, b) => b.length - a.length);
-  for (const key of sortedKeys) {
-    if (normalized.includes(key)) {
-      const variants = synonyms[key];
-      expanded.push(...variants);
-      // Также добавляем комбинации
-      variants.forEach(variant => {
-        expanded.push(normalized.replace(key, variant));
-      });
-    }
-  }
-  
-  // Проверяем отдельные слова
-  const words = normalized.split(/\s+/);
-  words.forEach(word => {
-    if (synonyms[word]) {
-      expanded.push(...synonyms[word]);
-    }
-  });
-  
-  // Убираем дубликаты и возвращаем уникальные варианты
-  return [...new Set(expanded)];
-};
-
 export function localSearch(query, dataset = [], limit = 15) {
-  // Более надежная нормализация запроса
+  // Нормализуем запрос
   if (!query || (typeof query !== 'string' && typeof query !== 'number')) return [];
   const q = String(query).trim().toLowerCase();
   if (!q) return [];
@@ -300,7 +268,7 @@ export function localSearch(query, dataset = [], limit = 15) {
   // Нормализуем е/ё в запросе
   const normalizedQuery = normalizeE(q);
 
-  // Очищаем запрос от знаков препинания и разбиваем на слова
+  // Очищаем запрос от знаков препинания
   const cleanQuery = normalizedQuery
     .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, ' ')
     .replace(/\s+/g, ' ')
@@ -308,25 +276,68 @@ export function localSearch(query, dataset = [], limit = 15) {
 
   if (!cleanQuery) return [];
 
-  // Расширяем запрос синонимами
-  const expandedQueries = expandQuery(cleanQuery);
+  // Разбиваем запрос на слова
+  const queryWords = cleanQuery.split(' ').filter(word => word.length > 1);
+  if (queryWords.length === 0) return [];
+
+  // Собираем ВСЕ возможные варианты для поиска
+  const searchTerms = new Set();
   
-  // Нормализуем и очищаем расширенные запросы
-  const normalizedExpandedQueries = expandedQueries.map(eq => {
-    const normalized = normalizeE(eq);
-    return normalized
-      .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, ' ')
-      .replace(/\s+/g, ' ')
-      .trim();
-  }).filter(eq => eq.length > 0);
+  // Добавляем исходные слова запроса
+  queryWords.forEach(word => {
+    searchTerms.add(word);
+    
+    // Добавляем все синонимы из словаря (прямой поиск)
+    if (synonyms[word]) {
+      synonyms[word].forEach(variant => {
+        if (typeof variant === 'string' && variant.length > 1) {
+          searchTerms.add(variant);
+        }
+      });
+    }
+  });
+
+  // Также добавляем весь запрос целиком (для фраз)
+  searchTerms.add(cleanQuery);
   
-  // Разбиваем запрос на отдельные слова для каждого варианта
-  const queryWordsVariants = normalizedExpandedQueries.map(expandedQuery => 
-    expandedQuery.split(' ').filter(word => word.length > 0)
-  );
-  
-  // Берем основной вариант для проверки
-  const queryWords = cleanQuery.split(' ').filter(word => word.length > 0);
+  // Проверяем ВСЕ ключи словаря на совпадение с запросом или его словами
+  Object.keys(synonyms).forEach(key => {
+    let shouldAdd = false;
+    
+    // Если запрос полностью совпадает с ключом
+    if (cleanQuery === key) {
+      shouldAdd = true;
+    }
+    // Если запрос содержит ключ
+    else if (cleanQuery.includes(key)) {
+      shouldAdd = true;
+    }
+    // Если ключ содержит запрос
+    else if (key.includes(cleanQuery)) {
+      shouldAdd = true;
+    }
+    // Если любое слово запроса совпадает с ключом или содержится в нем
+    else {
+      for (const word of queryWords) {
+        if (key === word || key.includes(word) || word.includes(key)) {
+          shouldAdd = true;
+          break;
+        }
+      }
+    }
+    
+    if (shouldAdd) {
+      searchTerms.add(key);
+      // Добавляем все варианты этого ключа
+      synonyms[key].forEach(variant => {
+        if (typeof variant === 'string' && variant.length > 1) {
+          searchTerms.add(variant);
+        }
+      });
+    }
+  });
+
+  const searchTermsArray = Array.from(searchTerms);
 
   const res = [];
   for (const item of dataset) {
@@ -336,8 +347,8 @@ export function localSearch(query, dataset = [], limit = 15) {
     if (variants.length > 0) {
       // Старая структура: продукт с вариантами
       variants.forEach((variant) => {
-        // Нормализуем все поля перед использованием
-        const title = normalizeE(
+        // Нормализуем displayName - это основной текст для поиска
+        const displayName = normalizeE(
           variant?.displayName || 
           variant?.display_name || 
           item?.productName || 
@@ -354,69 +365,32 @@ export function localSearch(query, dataset = [], limit = 15) {
         let weightStr = "";
         if (variant?.weight) {
           if (typeof variant.weight === "number") {
-            // Добавляем разные варианты написания веса: "1", "1 кг", "1.0", "1,0" и т.д.
-            const weightNum = variant.weight;
-            const weightInt = Math.floor(weightNum);
-            const weightDecimal = weightNum % 1 === 0 ? "" : weightNum.toFixed(3);
-            weightStr = `${weightNum} ${weightInt} ${weightDecimal} кг ${weightNum.toString().replace('.', ',')} ${weightNum.toString().replace(',', '.')}`;
+            weightStr = `${variant.weight} кг`;
           } else {
             weightStr = String(variant.weight);
           }
         }
         
-        const combined = `${title} ${desc} ${weightStr}`.toLowerCase().trim();
-
-        // Нормализуем е/ё в тексте для поиска
-        const normalizedCombined = normalizeE(combined);
-
-        // Очищаем комбинированную строку так же как запрос
-        const cleanCombined = normalizedCombined
+        // Собираем весь текст товара
+        const fullText = `${displayName} ${desc} ${weightStr}`.toLowerCase();
+        const normalizedText = normalizeE(fullText)
           .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, ' ')
           .replace(/\s+/g, ' ')
           .trim();
 
-        // Проверяем, содержатся ли все слова запроса в тексте (в любом порядке)
-        // Также проверяем расширенные варианты запроса
-        const checkMatch = (words) => {
-          if (!words || words.length === 0) return false;
-          // Проверяем, что все слова найдены (более гибкая проверка)
-          return words.every(word => {
-            if (word.length < 2) return true; // Игнорируем очень короткие слова
-            // Проверяем прямое вхождение слова
-            if (cleanCombined.includes(word)) return true;
-            // Также проверяем все расширенные варианты этого слова
-            // Если слово есть в словаре синонимов, проверяем его варианты
-            const wordVariants = synonyms[word] || [];
-            return wordVariants.some(variant => cleanCombined.includes(variant));
-          });
-        };
-        
-        // Также проверяем частичное совпадение (хотя бы одно слово)
-        const checkPartialMatch = (words) => {
-          if (!words || words.length === 0) return false;
-          return words.some(word => {
-            if (word.length < 2) return false;
-            // Проверяем прямое вхождение
-            if (cleanCombined.includes(word)) return true;
-            // Также проверяем варианты слова
-            const wordVariants = synonyms[word] || [];
-            return wordVariants.some(variant => cleanCombined.includes(variant));
-          });
-        };
-        
-        const allWordsFound = checkMatch(queryWords) || 
-          queryWordsVariants.some(variantWords => checkMatch(variantWords)) ||
-          normalizedExpandedQueries.some(expandedQuery => cleanCombined.includes(expandedQuery)) ||
-          // Дополнительная проверка: если запрос короткий (1-2 слова), используем частичное совпадение
-          (queryWords.length <= 2 && checkPartialMatch(queryWords));
+        // ПРОСТАЯ проверка: содержит ли текст хотя бы один из терминов поиска
+        const matches = searchTermsArray.some(term => {
+          if (term.length <= 1) return false;
+          return normalizedText.includes(term);
+        });
 
-        if (allWordsFound) {
+        if (matches) {
           const variantId = variant?.id ?? variant?.variantId;
           const productId = item?.id ?? item?.productId ?? item?.parentId;
           
           res.push({
             id: String(variantId ?? Math.random()),
-            title: title || "Товар",
+            title: displayName || "Товар",
             subtitle: typeof variant?.price === "number" ? `${variant.price} ₽` : desc,
             image: variant?.imageUrl || item?.imageUrl || "/korm1.svg",
             url: productId && variantId
@@ -431,9 +405,8 @@ export function localSearch(query, dataset = [], limit = 15) {
       });
     } else {
       // Новая структура: плоская карточка (из /api/products/cards/search-by-url)
-      // Собираем все возможные поля названия для более надежного поиска
-      // Нормализуем все поля перед использованием
-      const title = normalizeE(
+      // Нормализуем displayName - это основной текст для поиска
+      const displayName = normalizeE(
         item?.displayName || 
         item?.display_name || 
         item?.productName || 
@@ -452,71 +425,30 @@ export function localSearch(query, dataset = [], limit = 15) {
       let weightStr = "";
       if (item?.weight) {
         if (typeof item.weight === "number") {
-          // Добавляем разные варианты написания веса: "1", "1 кг", "1.0", "1,0" и т.д.
           const weightNum = item.weight;
-          const weightInt = Math.floor(weightNum);
-          const weightDecimal = weightNum % 1 === 0 ? "" : weightNum.toFixed(3);
-          weightStr = `${weightNum} ${weightInt} ${weightDecimal} кг ${weightNum.toString().replace('.', ',')} ${weightNum.toString().replace(',', '.')}`;
+          weightStr = `${weightNum} ${weightNum.toString().replace('.', ',')} кг`;
         } else {
           weightStr = String(item.weight);
         }
       }
       if (item?.weightLabel) {
-        // Извлекаем число из weightLabel для поиска
-        const labelNum = item.weightLabel.match(/[\d,\.]+/);
-        if (labelNum) {
-          weightStr += ` ${labelNum[0]} ${labelNum[0].replace(',', '.')} ${labelNum[0].replace('.', ',')}`;
-        }
-        weightStr += ` ${item.weightLabel} ${item.weightLabel.replace('кг', '').replace(/\s+/g, ' ').trim()}`;
+        weightStr += ` ${item.weightLabel}`;
       }
       
-      const combined = `${title} ${desc} ${weightStr}`.toLowerCase().trim();
-
-      // Нормализуем е/ё в тексте для поиска
-      const normalizedCombined = normalizeE(combined);
-
-      // Очищаем комбинированную строку так же как запрос
-      const cleanCombined = normalizedCombined
+      // Собираем весь текст товара
+      const fullText = `${displayName} ${desc} ${weightStr}`.toLowerCase();
+      const normalizedText = normalizeE(fullText)
         .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, ' ')
         .replace(/\s+/g, ' ')
         .trim();
 
-      // Проверяем, содержатся ли все слова запроса в тексте (в любом порядке)
-      // Также проверяем расширенные варианты запроса
-      const checkMatch = (words) => {
-        if (!words || words.length === 0) return false;
-        // Проверяем, что все слова найдены (более гибкая проверка)
-        return words.every(word => {
-          if (word.length < 2) return true; // Игнорируем очень короткие слова
-          // Проверяем прямое вхождение слова
-          if (cleanCombined.includes(word)) return true;
-          // Также проверяем все расширенные варианты этого слова
-          // Если слово есть в словаре синонимов, проверяем его варианты
-          const wordVariants = synonyms[word] || [];
-          return wordVariants.some(variant => cleanCombined.includes(variant));
-        });
-      };
-      
-      // Также проверяем частичное совпадение (хотя бы одно слово)
-      const checkPartialMatch = (words) => {
-        if (!words || words.length === 0) return false;
-        return words.some(word => {
-          if (word.length < 2) return false;
-          // Проверяем прямое вхождение
-          if (cleanCombined.includes(word)) return true;
-          // Также проверяем варианты слова
-          const wordVariants = synonyms[word] || [];
-          return wordVariants.some(variant => cleanCombined.includes(variant));
-        });
-      };
-      
-      const allWordsFound = checkMatch(queryWords) || 
-        queryWordsVariants.some(variantWords => checkMatch(variantWords)) ||
-        normalizedExpandedQueries.some(expandedQuery => cleanCombined.includes(expandedQuery)) ||
-        // Дополнительная проверка: если запрос короткий (1-2 слова), используем частичное совпадение
-        (queryWords.length <= 2 && checkPartialMatch(queryWords));
+      // ПРОСТАЯ проверка: содержит ли текст хотя бы один из терминов поиска
+      const matches = searchTermsArray.some(term => {
+        if (term.length <= 1) return false;
+        return normalizedText.includes(term);
+      });
 
-      if (allWordsFound) {
+      if (matches) {
         const variantId = item?.id ?? item?.variantId;
         const productId = item?.parentId ?? item?.productId ?? item?.productId;
         
@@ -524,8 +456,8 @@ export function localSearch(query, dataset = [], limit = 15) {
         res.push({
           ...item, // Сохраняем все исходные поля
           id: String(variantId ?? item?.id ?? Math.random()),
-          title: title || item?.title || "Товар",
-          displayName: title || item?.displayName || "Товар",
+          title: displayName || item?.title || "Товар",
+          displayName: displayName || item?.displayName || "Товар",
           subtitle: typeof item?.price === "number" ? `${item.price} ₽` : (item?.subtitle || desc),
           image: item?.imageUrl || item?.image || "/korm1.svg",
           imageUrl: item?.imageUrl || item?.image || "/korm1.svg",

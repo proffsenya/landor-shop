@@ -15,7 +15,6 @@ export default function Header() {
   const [city] = useState("Москва");
   const [favCount, setFavCount] = useState(0);
   const [cartCount, setCartCount] = useState(0);
-  const [allProducts, setAllProducts] = useState([]);
 
   const location = useLocation();
   const authToken = getAuthToken();
@@ -60,122 +59,6 @@ export default function Header() {
   };
 
 
-  // Загрузка продуктов для поиска из sessionStorage или API
-  useEffect(() => {
-    const loadProducts = () => {
-      try {
-        const stored = sessionStorage.getItem("catalog:all");
-        if (stored) {
-          const parsed = JSON.parse(stored);
-          setAllProducts(Array.isArray(parsed) ? parsed : []);
-        } else {
-          setAllProducts([]);
-        }
-      } catch (e) {
-        safeWarn("Failed to load products from sessionStorage:", e);
-        setAllProducts([]);
-      }
-    };
-
-    // Загрузка продуктов из API, если их нет в sessionStorage
-    const loadProductsFromAPI = async () => {
-      try {
-        // Загружаем все товары без фильтров
-        const url = `/api/products/cards/search-by-url?filtersUrl=${encodeURIComponent("catalog?")}`;
-        
-        const res = await fetch(url);
-        if (!res.ok) {
-          safeWarn("Failed to load all products for search:", res.status);
-          return;
-        }
-
-        const response = await res.json();
-        
-        // API может возвращать объект с полем content (Spring Data Page) или просто массив
-        const data = Array.isArray(response) ? response : (response?.content || []);
-        
-        if (!Array.isArray(data)) {
-          return;
-        }
-
-        // Фильтруем неактивные товары
-        const activeItems = data.filter(item => {
-          // Если в ответе есть isActive, используем его
-          if (item?.isActive !== undefined) {
-            return item.isActive !== false;
-          }
-          if (item?.productIsActive !== undefined) {
-            return item.productIsActive !== false;
-          }
-          // Если нет информации, оставляем (для обратной совместимости)
-          return true;
-        });
-
-        // Формируем полные данные для поиска с картинками, ценами и весом
-        const searchData = activeItems.map((item) => {
-          // Извлекаем productId из imageUrl, если он есть
-          let productId = item?.productId;
-          if (!productId && item?.imageUrl && item.imageUrl.startsWith("/api/products/")) {
-            const match = item.imageUrl.match(/\/api\/products\/(\d+)\/images\/(\d+)/);
-            if (match) {
-              productId = parseInt(match[1]);
-            }
-          }
-          
-          return {
-            id: item?.id,
-            variantId: item?.id,
-            productId: productId,
-            displayName: item?.displayName || "Товар",
-            title: item?.displayName || "Товар",
-            price: item?.price ?? null,
-            weight: item?.weight ?? null,
-            weightLabel: item?.weightLabel || (item?.weight ? (typeof item.weight === "number" ? `${item.weight} кг` : item.weight) : null),
-            imageUrl: item?.imageUrl || "/korm1.svg",
-            image: item?.imageUrl || "/korm1.svg",
-          };
-        });
-
-        // Сохраняем в sessionStorage
-        sessionStorage.setItem("catalog:all", JSON.stringify(searchData));
-        
-        // Обновляем состояние
-        setAllProducts(searchData);
-      } catch (e) {
-        safeWarn("Error loading all products for search:", e);
-      }
-    };
-
-    // Проверяем, есть ли данные в sessionStorage
-    const stored = sessionStorage.getItem("catalog:all");
-    if (stored) {
-      // Загружаем из sessionStorage
-      loadProducts();
-    } else {
-      // Загружаем из API
-      loadProductsFromAPI();
-    }
-
-    // Слушаем изменения в sessionStorage
-    const handleStorageChange = (e) => {
-      if (e.key === "catalog:all" || !e.key) {
-        loadProducts();
-      }
-    };
-
-    // Слушаем кастомное событие обновления каталога
-    const handleCatalogUpdate = () => {
-      loadProducts();
-    };
-
-    window.addEventListener("storage", handleStorageChange);
-    window.addEventListener("catalog:update", handleCatalogUpdate);
-
-    return () => {
-      window.removeEventListener("storage", handleStorageChange);
-      window.removeEventListener("catalog:update", handleCatalogUpdate);
-    };
-  }, []);
 
   useEffect(() => {
     // auth-флаг
@@ -298,7 +181,7 @@ export default function Header() {
 
             {/* Поиск и иконки */}
             <div className="flex items-center flex-shrink-0 gap-6">
-              <GlobalSearch dataset={allProducts} className="w-96" />
+              <GlobalSearch className="w-96" />
 
               {/* Избранное */}
               <Link to="/favorites" className="relative">
@@ -377,7 +260,6 @@ export default function Header() {
           {mobileOpen && (
             <div className="pt-3 pb-4 space-y-4">
               <GlobalSearch 
-                dataset={allProducts}
                 className="w-full"
                 placeholder="Искать здесь..."
                 onSelect={() => setMobileOpen(false)}
