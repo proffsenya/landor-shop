@@ -15,7 +15,6 @@ export default function Header() {
   const [city] = useState("Москва");
   const [favCount, setFavCount] = useState(0);
   const [cartCount, setCartCount] = useState(0);
-  const [allProducts, setAllProducts] = useState([]);
 
   const location = useLocation();
   const authToken = getAuthToken();
@@ -60,46 +59,6 @@ export default function Header() {
   };
 
 
-  // Загрузка продуктов для поиска из sessionStorage
-  useEffect(() => {
-    const loadProducts = () => {
-      try {
-        const stored = sessionStorage.getItem("catalog:all");
-        if (stored) {
-          const parsed = JSON.parse(stored);
-          setAllProducts(Array.isArray(parsed) ? parsed : []);
-        } else {
-          setAllProducts([]);
-        }
-      } catch (e) {
-        safeWarn("Failed to load products from sessionStorage:", e);
-        setAllProducts([]);
-      }
-    };
-
-    // Загружаем при монтировании
-    loadProducts();
-
-    // Слушаем изменения в sessionStorage
-    const handleStorageChange = (e) => {
-      if (e.key === "catalog:all" || !e.key) {
-        loadProducts();
-      }
-    };
-
-    // Слушаем кастомное событие обновления каталога
-    const handleCatalogUpdate = () => {
-      loadProducts();
-    };
-
-    window.addEventListener("storage", handleStorageChange);
-    window.addEventListener("catalog:update", handleCatalogUpdate);
-
-    return () => {
-      window.removeEventListener("storage", handleStorageChange);
-      window.removeEventListener("catalog:update", handleCatalogUpdate);
-    };
-  }, []);
 
   useEffect(() => {
     // auth-флаг
@@ -222,7 +181,7 @@ export default function Header() {
 
             {/* Поиск и иконки */}
             <div className="flex items-center flex-shrink-0 gap-6">
-              <GlobalSearch dataset={allProducts} className="w-96" />
+              <GlobalSearch className="w-96" />
 
               {/* Избранное */}
               <Link to="/favorites" className="relative">
@@ -301,7 +260,6 @@ export default function Header() {
           {mobileOpen && (
             <div className="pt-3 pb-4 space-y-4">
               <GlobalSearch 
-                dataset={allProducts}
                 className="w-full"
                 placeholder="Искать здесь..."
                 onSelect={() => setMobileOpen(false)}

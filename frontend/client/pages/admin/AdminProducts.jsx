@@ -1278,9 +1278,11 @@ function ProductForm({
         <div className="space-y-2 text-xs text-blue-800 sm:text-sm">
           <p><strong>Важно:</strong> Все данные сохраняются в базу данных. Заполняйте поля внимательно!</p>
           <ul className="ml-2 space-y-1 list-disc list-inside">
-            <li><strong>Название *</strong> - Полное название товара на русском языке. Пример: "Корм для собак премиум класса"</li>
-            <li><strong>Slug *</strong> - Уникальный идентификатор для URL (только латиница, цифры и дефисы). Автоматически формируется из названия. Пример: "korm-dlya-sobak-premium"</li>
-            <li><strong>Описание</strong> - Подробное описание товара.</li>
+            <li><strong>Название *</strong> - Полное название товара на русском языке. Максимум: <strong>100 символов</strong>. Пример: "Корм для собак премиум класса"</li>
+            <li><strong>Slug *</strong> - Уникальный идентификатор для URL (только латиница, цифры и дефисы). Максимум: <strong>100 символов</strong>. Автоматически формируется из названия. Пример: "korm-dlya-sobak-premium"</li>
+            <li><strong>Описание</strong> - Подробное описание товара. Максимум: <strong>2000 символов</strong>.</li>
+            <li><strong>Примечание по кормлению</strong> - Инструкции по кормлению, дозировке. Максимум: <strong>1000 символов</strong>.</li>
+            <li><strong>Гарантированные показатели</strong> - Гарантированный анализ состава. Максимум: <strong>1000 символов</strong>.</li>
             <li><strong>Бренд</strong> - Выберите бренд из списка. Если бренда нет, сначала создайте его в разделе "Фильтры".</li>
             <li><strong>Тип продукта</strong> - Категория продукта (корм, аксессуар и т.д.). Выберите из списка.</li>
             <li><strong>Категории/Фильтры/Страны/Тип корма/Вкусы</strong> - Можно выбрать несколько значений. Эти данные используются для фильтрации на сайте.</li>
@@ -1300,9 +1302,13 @@ function ProductForm({
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               placeholder="Например: Корм для собак премиум класса"
+              maxLength={100}
               required
             />
-            <p className="mt-1 text-xs text-gray-500">Полное название товара, которое будет отображаться на сайте</p>
+            <p className="mt-1 text-xs text-gray-500">
+              Полное название товара, которое будет отображаться на сайте
+              <span className="ml-2 text-gray-400">({(formData.name || "").length}/100 символов)</span>
+            </p>
           </div>
           <div>
             <label className="block mb-1 text-sm font-medium text-gray-700">
@@ -1317,9 +1323,13 @@ function ProductForm({
                 })
               }
               placeholder="korm-dlya-sobak-premium"
+              maxLength={100}
               required
             />
-            <p className="mt-1 text-xs text-gray-500">Уникальный идентификатор для URL. Только латиница, цифры и дефисы. Используется в адресе страницы товара.</p>
+            <p className="mt-1 text-xs text-gray-500">
+              Уникальный идентификатор для URL. Только латиница, цифры и дефисы. Используется в адресе страницы товара.
+              <span className="ml-2 text-gray-400">({(formData.slug || "").length}/100 символов)</span>
+            </p>
           </div>
         </div>
 
@@ -1334,9 +1344,15 @@ function ProductForm({
             }
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#6F2A2B]"
             rows="3"
+            maxLength={2000}
             placeholder="Подробное описание товара, его характеристики, состав, преимущества..."
           />
-          <p className="mt-1 text-xs text-gray-500">Подробное описание товара. Будет отображаться на странице товара. Можно использовать HTML для форматирования.</p>
+          <p className="mt-1 text-xs text-gray-500">
+            Подробное описание товара. Будет отображаться на странице товара. Можно использовать HTML для форматирования.
+            <span className={`ml-2 ${(formData.description || "").length > 1900 ? "text-red-600 font-semibold" : "text-gray-400"}`}>
+              ({(formData.description || "").length}/2000 символов)
+            </span>
+          </p>
         </div>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -1351,9 +1367,15 @@ function ProductForm({
               }
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#6F2A2B]"
               rows="2"
+              maxLength={1000}
               placeholder="Например: Рекомендуемая суточная норма для взрослой собаки 20-30 кг: 300-400 г"
             />
-            <p className="mt-1 text-xs text-gray-500">Инструкции по кормлению, дозировке, рекомендации по применению</p>
+            <p className="mt-1 text-xs text-gray-500">
+              Инструкции по кормлению, дозировке, рекомендации по применению
+              <span className={`ml-2 ${(formData.feedingNote || "").length > 900 ? "text-red-600 font-semibold" : "text-gray-400"}`}>
+                ({(formData.feedingNote || "").length}/1000 символов)
+              </span>
+            </p>
           </div>
           <div>
             <label className="block mb-1 text-sm font-medium text-gray-700">
@@ -1366,9 +1388,15 @@ function ProductForm({
               }
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#6F2A2B]"
               rows="2"
+              maxLength={1000}
               placeholder="Например: Белок: 28%, Жир: 15%, Клетчатка: 4%, Влажность: 10%"
             />
-            <p className="mt-1 text-xs text-gray-500">Гарантированный анализ состава (белки, жиры, углеводы, клетчатка и т.д.)</p>
+            <p className="mt-1 text-xs text-gray-500">
+              Гарантированный анализ состава (белки, жиры, углеводы, клетчатка и т.д.)
+              <span className={`ml-2 ${(formData.guaranteedIndicators || "").length > 900 ? "text-red-600 font-semibold" : "text-gray-400"}`}>
+                ({(formData.guaranteedIndicators || "").length}/1000 символов)
+              </span>
+            </p>
           </div>
         </div>
 
@@ -1507,79 +1535,7 @@ function ProductForm({
         {/* Дополнительные поля для редактирования */}
         {product && (
           <div>
-            <div className="p-3 mb-3 border border-gray-200 rounded bg-gray-50">
-              <p className="text-xs text-gray-700"><strong>ℹ️ Дополнительные настройки:</strong> Эти поля доступны только при редактировании существующего товара.</p>
-            </div>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div>
-                <label className="block mb-1 text-sm font-medium text-gray-700">
-                  Количество на складе
-                </label>
-                <Input
-                  type="number"
-                  min="0"
-                  value={formData.quantityInStock}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      quantityInStock: Number(e.target.value),
-                    })
-                  }
-                  placeholder="0"
-                />
-                <p className="mt-1 text-xs text-gray-500">⚠️Не работает!! Заготовка</p>
-              </div>
-              <div>
-                <label className="block mb-1 text-sm font-medium text-gray-700">
-                  Рейтинг
-                </label>
-                <Input
-                  type="number"
-                  step="0.1"
-                  min="0"
-                  max="5"
-                  value={formData.rating || ""}
-                  onChange={(e) => {
-                    const value = e.target.value;
-                    setFormData({ ...formData, rating: value === "" ? "" : Number(value) });
-                  }}
-                  placeholder="4.5"
-                />
-                <p className="mt-1 text-xs text-gray-500">⚠️Не работает!! Заготовка</p>
-              </div>
-              <div className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  id="isActive"
-                  checked={formData.isActive}
-                  onChange={(e) =>
-                    setFormData({ ...formData, isActive: e.target.checked })
-                  }
-                  className="w-4 h-4 text-[#6F2A2B] border-gray-300 rounded focus:ring-[#6F2A2B]"
-                />
-                <label htmlFor="isActive" className="text-sm font-medium text-gray-700">
-                  Активен
-                </label>
-              </div>
-              <div className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  id="isFeatured"
-                  checked={formData.isFeatured}
-                  onChange={(e) =>
-                    setFormData({ ...formData, isFeatured: e.target.checked })
-                  }
-                  className="w-4 h-4 text-[#6F2A2B] border-gray-300 rounded focus:ring-[#6F2A2B]"
-                />
-                <label htmlFor="isFeatured" className="text-sm font-medium text-gray-700">
-                  Рекомендуемый
-                </label>
-              </div>
-            </div>
-            <div className="mt-2 space-y-1 text-xs text-gray-500">
-              <p><strong>Активен:</strong> ⚠️ Не работает!! Заготовка</p>
-              <p><strong>Рекомендуемый:</strong>⚠️ Не работает!! Заготовка</p>
-            </div>
+            {/* Скрытые поля: quantityInStock, rating, isActive, isFeatured - остаются в данных для API, но не отображаются визуально */}
           </div>
         )}
 
@@ -1705,25 +1661,7 @@ function VariantForm({ variant, index, colors, scents, onChange, onRemove, isEdi
           />
           <p className="mt-1 text-xs text-gray-500">Цена в рублях. Можно указать копейки (например: 1499.99).</p>
         </div>
-        {isEdit && (
-          <div>
-            <label className="block mb-1 text-sm font-medium text-gray-700">
-              Старая цена (₽)
-            </label>
-            <Input
-              type="number"
-              step="0.01"
-              min="0"
-              value={variant.oldPrice || ""}
-              onChange={(e) => {
-                const value = e.target.value;
-                onChange(index, "oldPrice", value === "" ? "" : Number(value));
-              }}
-              placeholder="2000.00"
-            />
-            <p className="mt-1 text-xs text-gray-500">⚠️Не работает!! Заготовка</p>
-          </div>
-        )}
+        {/* Скрытое поле: oldPrice - остается в данных для API, но не отображается визуально */}
         <div>
           <label className="block mb-1 text-sm font-medium text-gray-700">
             Остаток (шт.)

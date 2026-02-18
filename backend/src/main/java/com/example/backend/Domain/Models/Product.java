@@ -96,8 +96,8 @@ public class Product {
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<ProductVariant> productVariants = new ArrayList<>();
 
-    @Size(max = 500)
-    @Column(name = "guaranteed_indicators", length = 500)
+    @Size(max = 1000)
+    @Column(name = "guaranteed_indicators", length = 1000)
     private String guaranteedIndicators;
 
     @Size(max = 1000)

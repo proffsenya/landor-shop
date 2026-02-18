@@ -287,6 +287,21 @@ export default function Catalog() {
 
   // ---------- Восстановление фильтров из URL параметров ----------
   const restoreFiltersFromUrl = useCallback((urlParams) => {
+    // Сбрасываем все фильтры перед восстановлением
+    setPriceFrom("");
+    setPriceTo("");
+    setSearchQuery("");
+    setCategoryFilters({ all: true });
+    setCatFilters({});
+    setDogFilters({});
+    setMiniCatFilters({});
+    setMiniDogFilters({});
+    setCountryFilters({});
+    setFlavorFilters({});
+    setBrandFilters({});
+    setScentFilters({});
+    setProductTypeFilters({});
+    
     // Восстанавливаем цены
     const minPrice = urlParams.get("minPrice");
     const maxPrice = urlParams.get("maxPrice");
@@ -743,17 +758,20 @@ export default function Catalog() {
         }
       }
       
-      // Сначала показываем карточки с fallback изображениями для быстрого отображения
-      const cardsWithFallback = cards.map((card) => ({
+      // Показываем карточки сразу с правильными imageUrl из API
+      // Если imageUrl есть и указывает на API, он будет загружен через loadImagesForCards
+      // Если нет, используем fallback
+      const cardsWithImages = cards.map((card) => ({
         ...card,
-        image: "/korm1.svg", // Временный fallback
-        imageUrl: card.image, // Сохраняем оригинальный путь для последующей загрузки
+        image: card.imageUrl || card.image || "/korm1.svg",
+        imageUrl: card.imageUrl || card.image || "/korm1.svg",
       }));
       
       // Показываем карточки сразу
-      setProducts(cardsWithFallback);
+      setProducts(cardsWithImages);
       
       // Затем асинхронно загружаем изображения в фоне (не блокируем UI)
+      // Это заменит imageUrl на загруженные blob URLs
       loadImagesForCards(cards);
       
       setLoading(false);
@@ -873,6 +891,15 @@ export default function Catalog() {
     const queryString = window.location.search || "";
     const urlParams = new URLSearchParams(queryString);
     const categoryParam = urlParams.get("category");
+    
+    // Восстанавливаем страницу из URL при первой загрузке
+    const pageParam = urlParams.get("page");
+    if (pageParam) {
+      const initialPage = parseInt(pageParam, 10);
+      if (!isNaN(initialPage) && initialPage >= 1) {
+        setPage(initialPage);
+      }
+    }
     
     // Если нет параметров в URL, пытаемся восстановить фильтры из sessionStorage
     if (!queryString && !categoryParam) {
@@ -1373,20 +1400,47 @@ export default function Catalog() {
       // Вызываем fetchCards с правильными параметрами
       const finalQueryString = categoryQueryParams.toString() ? `?${categoryQueryParams.toString()}` : "";
       
-      // Обновляем URL без перезагрузки страницы
-      window.history.pushState({}, "", finalQueryString || window.location.pathname);
-      
-      fetchCards(finalQueryString, true, 1);
-      if (finalQueryString) {
-        sessionStorage.setItem("catalog:lastQuery", finalQueryString);
+      // Добавляем страницу в URL, если её нет
+      const pageParam = categoryQueryParams.get("page");
+      if (!pageParam) {
+        categoryQueryParams.set("page", "1");
+        const finalQueryStringWithPage = `?${categoryQueryParams.toString()}`;
+        // Обновляем URL и добавляем в историю
+        window.history.pushState({ page: 1 }, "", finalQueryStringWithPage);
+        fetchCards(finalQueryStringWithPage, true, 1);
+        if (finalQueryStringWithPage) {
+          sessionStorage.setItem("catalog:lastQuery", finalQueryStringWithPage);
+        }
+      } else {
+        // Обновляем URL без перезагрузки страницы
+        window.history.pushState({}, "", finalQueryString || window.location.pathname);
+        fetchCards(finalQueryString, true, 1);
+        if (finalQueryString) {
+          sessionStorage.setItem("catalog:lastQuery", finalQueryString);
+        }
       }
     } else {
       // Если нет параметра category, используем обычную логику
       // Восстанавливаем все фильтры из URL параметров
       restoreFiltersFromUrl(urlParams);
       
-      // При первой загрузке всегда используем страницу 1
-      fetchCards(queryString, true, 1);
+      // Восстанавливаем страницу из URL или используем 1
+      const pageParam = urlParams.get("page");
+      const initialPage = pageParam ? parseInt(pageParam, 10) : 1;
+      const validPage = (!isNaN(initialPage) && initialPage >= 1) ? initialPage : 1;
+      
+      // При первой загрузке добавляем страницу в URL и историю, если её там нет
+      if (!pageParam) {
+        // Добавляем параметр page к текущему queryString
+        const newUrlParams = new URLSearchParams(queryString);
+        newUrlParams.set("page", String(validPage));
+        const urlWithPage = `?${newUrlParams.toString()}`;
+        // Добавляем первую страницу в историю через pushState
+        window.history.pushState({ page: validPage }, "", urlWithPage);
+      }
+      
+      setPage(validPage);
+      fetchCards(queryString, true, validPage);
       if (queryString) {
         sessionStorage.setItem("catalog:lastQuery", queryString);
       }
@@ -1401,6 +1455,58 @@ export default function Catalog() {
     }
   }, [page, totalPages]);
 
+  // Обработчик навигации назад/вперед в браузере и очистки кэша
+  useEffect(() => {
+    const handlePopState = () => {
+      // Проверяем, не переходим ли мы на страницу товара
+      const currentPath = window.location.pathname;
+      if (!currentPath.startsWith("/product/")) {
+        // При нажатии "Назад" восстанавливаем фильтры и страницу из URL
+        const queryString = window.location.search || "";
+        const urlParams = new URLSearchParams(queryString);
+        
+        // Восстанавливаем фильтры из URL
+        restoreFiltersFromUrl(urlParams);
+        
+        // Восстанавливаем страницу из URL
+        const pageParam = urlParams.get("page");
+        const restoredPage = pageParam ? parseInt(pageParam, 10) : 1;
+        const validPage = (!isNaN(restoredPage) && restoredPage >= 1) ? restoredPage : 1;
+        
+        // Загружаем карточки с параметрами из URL
+        setPage(validPage);
+        fetchCards(queryString, false, validPage);
+        
+        // Очищаем кэш при переходе внутри каталога
+        try {
+          sessionStorage.removeItem("catalog:filters");
+          sessionStorage.removeItem("catalog:lastQuery");
+        } catch (e) {
+          // Игнорируем ошибки
+        }
+      }
+    };
+
+    const handleBeforeUnload = () => {
+      // При закрытии страницы сбрасываем кэш
+      try {
+        sessionStorage.removeItem("catalog:filters");
+        sessionStorage.removeItem("catalog:lastQuery");
+      } catch (e) {
+        // Игнорируем ошибки
+      }
+    };
+
+    window.addEventListener("popstate", handlePopState);
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [restoreFiltersFromUrl, fetchCards]);
+
   const goto = (p) => {
     const newPage = Math.min(Math.max(1, p), totalPages);
     if (newPage !== page) {
@@ -1409,12 +1515,17 @@ export default function Catalog() {
       const queryParams = generateQueryParams();
       const filtersUrlString = queryParams ? `?${queryParams}` : "";
       fetchCards(filtersUrlString, false, newPage);
+      // Обновляем URL с pushState, чтобы добавить запись в историю для навигации назад
+      const urlWithPage = filtersUrlString 
+        ? `${filtersUrlString}&page=${newPage}` 
+        : `?page=${newPage}`;
+      window.history.pushState({ page: newPage }, "", urlWithPage || window.location.pathname);
       // Прокручиваем вверх
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
 
-  // Функция для генерации номеров страниц в формате: 1, 2, 3, ..., 80
+  // Функция для генерации номеров страниц в формате: 1, 2, 3, 4, ..., 80
   const getPageNumbers = () => {
     const pages = [];
     
@@ -1426,7 +1537,7 @@ export default function Catalog() {
     } else {
       // Если текущая страница близко к началу (1-3)
       if (page <= 3) {
-        for (let i = 1; i <= 3; i++) {
+        for (let i = 1; i <= 4; i++) {
           pages.push(i);
         }
         pages.push("ellipsis");
@@ -1436,7 +1547,9 @@ export default function Catalog() {
       else if (page >= totalPages - 2) {
         pages.push(1);
         pages.push("ellipsis");
-        for (let i = totalPages - 2; i <= totalPages; i++) {
+        // Показываем 4 страницы перед концом, как в начале
+        const startPage = Math.max(totalPages - 3, 1);
+        for (let i = startPage; i <= totalPages; i++) {
           pages.push(i);
         }
       }
@@ -1469,45 +1582,13 @@ export default function Catalog() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [page]);
 
-  // Сброс кэша фильтров при выходе со страницы каталога (кроме перехода на карточку товара)
+  // Установка флага активности каталога
   useEffect(() => {
     // Устанавливаем флаг, что мы на странице каталога
     sessionStorage.setItem("catalog:isActive", "true");
     
-    // Обработчик для отслеживания переходов
-    const handleBeforeUnload = () => {
-      // При закрытии страницы сбрасываем кэш
-      try {
-        sessionStorage.removeItem("catalog:filters");
-        sessionStorage.removeItem("catalog:lastQuery");
-      } catch (e) {
-        // Игнорируем ошибки
-      }
-    };
-
-    // Обработчик для отслеживания переходов через history API
-    const handlePopState = () => {
-      // Проверяем, не переходим ли мы на страницу товара
-      const currentPath = window.location.pathname;
-      if (!currentPath.startsWith("/product/")) {
-        // Если не на странице товара, сбрасываем кэш
-        try {
-          sessionStorage.removeItem("catalog:filters");
-          sessionStorage.removeItem("catalog:lastQuery");
-        } catch (e) {
-          // Игнорируем ошибки
-        }
-      }
-    };
-
-    window.addEventListener("beforeunload", handleBeforeUnload);
-    window.addEventListener("popstate", handlePopState);
-
     // Cleanup функция - сработает при размонтировании компонента
     return () => {
-      window.removeEventListener("beforeunload", handleBeforeUnload);
-      window.removeEventListener("popstate", handlePopState);
-      
       // Проверяем, не переходим ли мы на страницу товара
       const currentPath = window.location.pathname;
       if (!currentPath.startsWith("/product/")) {

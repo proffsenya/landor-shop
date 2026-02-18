@@ -589,7 +589,7 @@ export default function Product() {
     sp.set("variant", String(nextVariantId));
     navigate(
       `/product/${encodeURIComponent(productId)}?${sp.toString()}`,
-      { replace: false }
+      { replace: true }
     );
     // Индекс картинки будет автоматически обновлен через useEffect при смене варианта
   }, [variants, location.search, navigate, productId]);
@@ -1121,7 +1121,7 @@ export default function Product() {
                 <div>{weightLabel}</div>
 
                 <div className="text-[#6B6B6B]">Наличие:</div>
-                <div>{stockText}</div>
+                <div className={stockText === "Есть в наличии" ? "text-green-600" : ""}>{stockText}</div>
               </div>
             </div>
           </div>

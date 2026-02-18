@@ -40,4 +40,13 @@ class CatalogController {
         Page<VariantCardDTO> cards = productService.filterProductCardsByUrl(filtersUrl, pageable);
         return ResponseEntity.ok(cards);
     }
+
+    @GetMapping("/search")
+    public ResponseEntity<Page<VariantCardDTO>> searchProductCards(
+            @RequestParam("q") String query,
+            @PageableDefault(size = 15, sort = "id", direction = Sort.Direction.DESC) Pageable pageable
+    ) {
+        Page<VariantCardDTO> cards = productService.searchProductCardsByText(query, pageable);
+        return ResponseEntity.ok(cards);
+    }
 }
