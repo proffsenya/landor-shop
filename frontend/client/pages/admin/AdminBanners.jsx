@@ -71,8 +71,8 @@ export default function AdminBanners() {
         const allBanners = Array.isArray(data) ? data : [];
         setBanners(allBanners);
         
-        // Все баннеры из API идут на главную (максимум 2)
-        setHomeBanners(allBanners.slice(0, 2));
+        // Все баннеры из API идут на главную (максимум 3: первый + еще 2)
+        setHomeBanners(allBanners.slice(0, 3));
       } else {
         safeError("Error loading banners:", res.status);
         showToast("Ошибка при загрузке баннеров", "error");
@@ -91,9 +91,9 @@ export default function AdminBanners() {
       return;
     }
 
-    // Проверяем лимит баннеров (максимум 2)
-    if (banners.length >= 2) {
-      showToast("Можно загрузить максимум 2 баннера. Удалите один перед загрузкой нового", "error");
+    // Проверяем лимит баннеров (максимум 3)
+    if (banners.length >= 3) {
+      showToast("Можно загрузить максимум 3 баннера. Удалите один перед загрузкой нового", "error");
       return;
     }
 
@@ -162,8 +162,8 @@ export default function AdminBanners() {
       if (res.ok) {
         const updatedBanners = banners.filter((b) => b.id !== bannerId);
         setBanners(updatedBanners);
-        // Обновляем баннеры на главной (первые 2)
-        setHomeBanners(updatedBanners.slice(0, 2));
+        // Обновляем баннеры на главной (первые 3)
+        setHomeBanners(updatedBanners.slice(0, 3));
         showToast("Баннер успешно удален");
       } else {
         const errorMessage = await handleApiError(res, "удаление", "баннер");
@@ -251,28 +251,17 @@ export default function AdminBanners() {
               
               <div className="p-3 mb-4 border border-blue-200 rounded bg-blue-50">
                 <p className="text-sm text-blue-800">
-                  <strong>Примечание:</strong> Первый баннер (banner2.svg) всегда отображается на главной странице. 
-                  Все баннеры из API автоматически отображаются на главной (максимум 2 баннера).
+                  <strong>Примечание:</strong> Первый баннер нельзя удалить. 
+                  Все баннеры из API автоматически отображаются на главной (максимум 3 баннера: первый + еще 2).
                 </p>
               </div>
               
               <div className="space-y-2">
-                {/* Статический первый баннер */}
-                <div className="flex items-center gap-3 p-2 rounded bg-gray-50">
-                  <span className="w-8 text-xs font-medium text-gray-600">#1</span>
-                  <img
-                    src="/banner2.svg"
-                    alt="banner2"
-                    className="object-cover w-12 h-12 rounded"
-                  />
-                  <span className="flex-1 text-sm text-gray-900">banner2.svg (статический)</span>
-                  <span className="text-xs text-gray-500">Нельзя удалить</span>
-                </div>
-                
                 {/* Баннеры из API */}
                 {homeBanners.map((banner, index) => {
                   const imageUrl = getImageUrl(banner);
-                  const displayIndex = index + 2; // +2 потому что первый статический
+                  const displayIndex = index + 1;
+                  const isFirstBanner = index === 0;
                   return (
                     <div key={banner.id} className="flex items-center gap-3 p-2 rounded bg-gray-50">
                       <span className="w-8 text-xs font-medium text-gray-600">#{displayIndex}</span>
@@ -287,17 +276,20 @@ export default function AdminBanners() {
                         />
                       )}
                       <span className="flex-1 text-sm text-gray-900">{banner.fileName || `Баннер #${banner.id}`}</span>
+                      {isFirstBanner && (
+                        <span className="text-xs text-gray-500">Нельзя удалить</span>
+                      )}
                     </div>
                   );
                 })}
                 
                 {homeBanners.length === 0 && (
-                  <p className="text-sm italic text-gray-500">Нет баннеров из API. Загрузите баннеры выше (максимум 2).</p>
+                  <p className="text-sm italic text-gray-500">Нет баннеров. Загрузите первый баннер выше (максимум 3).</p>
                 )}
                 
-                {banners.length >= 2 && (
+                {banners.length >= 3 && (
                   <p className="mt-2 text-sm italic text-yellow-600">
-                    ⚠️ У вас уже загружено {banners.length} баннера(ов). Максимум 2 баннера будут отображаться на главной странице. Размер баннера: 1920x600
+                    ⚠️ У вас уже загружено {banners.length} баннера(ов). Максимум 3 баннера будут отображаться на главной странице. Размер баннера: 1920x600
                   </p>
                 )}
               </div>
@@ -392,8 +384,9 @@ export default function AdminBanners() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200">
-                      {banners.map((banner) => {
+                      {banners.map((banner, index) => {
                         const imageUrl = getImageUrl(banner);
+                        const isFirstBanner = index === 0;
                         return (
                           <tr key={banner.id} className="hover:bg-gray-50">
                             <td className="px-6 py-4 text-sm text-gray-900 whitespace-nowrap">{banner.id}</td>
@@ -418,13 +411,17 @@ export default function AdminBanners() {
                             <td className="px-6 py-4 text-sm text-gray-500">{formatFileSize(banner.size)}</td>
                             <td className="px-6 py-4 text-sm text-gray-500">{formatDate(banner.createdAt)}</td>
                             <td className="px-6 py-4 text-sm text-center whitespace-nowrap">
-                              <button
-                                onClick={() => handleDelete(banner.id)}
-                                className="inline-flex items-center justify-center text-red-600 hover:text-red-800"
-                                title="Удалить"
-                              >
-                                <Trash2 className="w-5 h-5" />
-                              </button>
+                              {isFirstBanner ? (
+                                <span className="text-xs text-gray-500">Нельзя удалить</span>
+                              ) : (
+                                <button
+                                  onClick={() => handleDelete(banner.id)}
+                                  className="inline-flex items-center justify-center text-red-600 hover:text-red-800"
+                                  title="Удалить"
+                                >
+                                  <Trash2 className="w-5 h-5" />
+                                </button>
+                              )}
                             </td>
                           </tr>
                         );
@@ -434,8 +431,9 @@ export default function AdminBanners() {
 
                   {/* Мобильные карточки */}
                   <div className="divide-y divide-gray-200 md:hidden">
-                    {banners.map((banner) => {
+                    {banners.map((banner, index) => {
                       const imageUrl = getImageUrl(banner);
+                      const isFirstBanner = index === 0;
                       return (
                         <div key={banner.id} className="p-4">
                           <div className="flex items-start gap-4">
@@ -461,13 +459,17 @@ export default function AdminBanners() {
                                   </p>
                                   <p className="mt-1 text-xs text-gray-500">ID: {banner.id}</p>
                                 </div>
-                                <button
-                                  onClick={() => handleDelete(banner.id)}
-                                  className="flex-shrink-0 p-1 text-red-600 hover:text-red-800"
-                                  title="Удалить"
-                                >
-                                  <Trash2 className="w-5 h-5" />
-                                </button>
+                                {isFirstBanner ? (
+                                  <span className="flex-shrink-0 text-xs text-gray-500">Нельзя удалить</span>
+                                ) : (
+                                  <button
+                                    onClick={() => handleDelete(banner.id)}
+                                    className="flex-shrink-0 p-1 text-red-600 hover:text-red-800"
+                                    title="Удалить"
+                                  >
+                                    <Trash2 className="w-5 h-5" />
+                                  </button>
+                                )}
                               </div>
                               <div className="space-y-1 text-xs text-gray-600">
                                 <div className="flex justify-between">

@@ -12,38 +12,23 @@ export default function HeroBanner() {
     // Загружаем баннеры для главной страницы
     const loadBanners = async () => {
       try {
-        // Статический первый баннер (всегда присутствует)
-        const staticBanner = {
-          image: "/banner2.svg",
-          title: "Добро пожаловать на Landor-shop!",
-          heading: "Ваш любимец — наш главный дегустатор",
-          buttonText: "Заказать сейчас",
-          showContent: true,
-        };
-
         // Загружаем все баннеры из API
         const res = await fetch("/api/banners");
         if (res.ok) {
           const data = await res.json();
           const allBanners = Array.isArray(data) ? data : [];
-          // Берем первые 2 баннера из API
-          const apiBanners = allBanners.slice(0, 2);
+          // Берем первые 3 баннера из API (первый + еще 2)
+          const apiBanners = allBanners.slice(0, 3);
           
-          // Объединяем: статический первый + баннеры из API
-          setBanners([staticBanner, ...apiBanners]);
+          // Используем баннеры из API (первый баннер теперь тоже из API)
+          setBanners(apiBanners);
         } else {
-          // Если API недоступен, показываем только статический баннер
-          setBanners([staticBanner]);
+          // Если API недоступен, показываем пустой массив
+          setBanners([]);
         }
       } catch (error) {
-        // При ошибке показываем только статический баннер
-        setBanners([{
-          image: "/banner2.svg",
-          title: "Добро пожаловать на Landor Shop!",
-          heading: "Ваш любимец — наш главный дегустатор",
-          buttonText: "Заказать сейчас",
-          showContent: true,
-        }]);
+        // При ошибке показываем пустой массив
+        setBanners([]);
       } finally {
         setLoading(false);
       }
@@ -94,7 +79,7 @@ export default function HeroBanner() {
       <section className="relative overflow-hidden bg-[#FFF1DA]">
         <div className="w-full">
           <div className="relative hidden w-full overflow-hidden lg:block">
-            <div className="relative h-[500px] xl:h-[500px] 2xl:h-[750px] flex items-center justify-center">
+            <div className="relative h-[500px] xl:h-[600px] 2xl:h-[750px] flex items-center justify-center">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#6F2A2B]"></div>
             </div>
           </div>
@@ -113,10 +98,17 @@ export default function HeroBanner() {
         {/* Баннер показывается только на lg и выше */}
         <div className="relative hidden w-full overflow-hidden lg:block">
           {/* Карусель */}
-          <div className="relative h-[500px] xl:h-[500px] 2xl:h-[750px]">
+          <div className="relative h-[500px] xl:h-[550px] 2xl:h-[650px] overflow-hidden">
             {banners.map((banner, index) => {
               const imageUrl = getBannerImageUrl(banner);
-              const showContent = banner.showContent !== false && (banner.title || banner.heading || banner.buttonText);
+              const isFirstBanner = index === 0;
+              
+              // Для первого баннера всегда показываем контент с дефолтными значениями
+              const title = banner.title || (isFirstBanner ? "Добро пожаловать на Landor-shop!" : null);
+              const heading = banner.heading || (isFirstBanner ? "Ваш любимец — наш главный дегустатор" : null);
+              const buttonText = banner.buttonText || (isFirstBanner ? "Заказать сейчас" : null);
+              
+              const showContent = isFirstBanner || (banner.showContent !== false && (title || heading || buttonText));
               
               return (
                 <div
@@ -125,41 +117,46 @@ export default function HeroBanner() {
                     currentSlide === index ? "opacity-100" : "opacity-0"
                   }`}
                 >
-                  <img
-                    src={imageUrl}
-                    alt={banner.title || banner.heading || `Landor Banner ${index + 1}`}
-                    className="object-cover w-full h-full z-0 pointer-events-none"
-                    onError={(e) => {
-                      e.currentTarget.src = "/banner2.svg";
-                    }}
-                  />
+                  <div className="absolute inset-0 flex items-center justify-center z-0">
+                    <img
+                      src={imageUrl}
+                      alt={title || heading || `Landor Banner ${index + 1}`}
+                      className="object-contain w-full h-full max-w-[95%] max-h-[95%] z-0 pointer-events-none"
+                      style={{ objectPosition: 'center' }}
+                      onError={(e) => {
+                        e.currentTarget.src = "/banner2.svg";
+                      }}
+                    />
+                  </div>
 
                   {/* Текст и кнопка для баннера */}
                   {showContent && currentSlide === index && (
                     <>
-                      {banner.heading && (
-                        <div className="absolute inset-0 flex flex-col justify-center px-8 xl:px-12 2xl:px-16 z-20">
-                          <div className="max-w-[560px] -translate-x-10 -translate-y-6 relative z-30">
-                            <h1 className="text-[#6F2A2B] font-bold leading-[1.15] text-[40px] xl:text-[40px] mb-4 relative z-30">
-                              {banner.heading}
+                      {heading && (
+                        <div className="absolute inset-0 flex flex-col justify-center px-6 lg:px-8 xl:px-12 2xl:px-16 z-20">
+                          <div className="max-w-[400px] lg:max-w-[450px] xl:max-w-[480px] 2xl:max-w-[520px] -translate-x-4 lg:-translate-x-6 xl:-translate-x-8 2xl:-translate-x-10 -translate-y-4 lg:-translate-y-5 xl:-translate-y-6 relative z-30 pr-4 lg:pr-6 xl:pr-8">
+                            <h1 className="text-[#6F2A2B] font-bold leading-[1.15] text-[28px] lg:text-[32px] xl:text-[36px] 2xl:text-[40px] mb-3 lg:mb-4 relative z-30 text-center">
+                              {heading}
                             </h1>
-                            {banner.buttonText && (
-                              <button 
-                                onClick={() => navigate("/catalog")}
-                                className="bg-[#6F2A2B] text-white px-7 py-3 rounded-full translate-x-[80px] hover:bg-[#5a2223] transition-colors text-[16px] font-semibold shadow-md cursor-pointer relative z-50 pointer-events-auto"
-                              >
-                                {banner.buttonText}
-                              </button>
+                            {buttonText && (
+                              <div className="text-center">
+                                <button 
+                                  onClick={() => navigate("/catalog")}
+                                  className="bg-[#6F2A2B] text-white px-5 py-2.5 lg:px-6 lg:py-3 xl:px-7 rounded-full hover:bg-[#5a2223] transition-colors text-[14px] lg:text-[15px] xl:text-[16px] font-semibold shadow-md cursor-pointer relative z-50 pointer-events-auto"
+                                >
+                                  {buttonText}
+                                </button>
+                              </div>
                             )}
                           </div>
                         </div>
                       )}
 
                       {/* Заголовок сверху */}
-                      {banner.title && (
-                        <div className="absolute top-[30px] left-1/2 -translate-x-1/2 text-center z-20">
-                          <p className="text-[#6F2A2B] font-bold text-[30px] xl:text-[34px]">
-                            {banner.title}
+                      {title && (
+                        <div className="absolute top-4 lg:top-6 xl:top-8 2xl:top-[30px] left-1/2 -translate-x-1/2 text-center z-20 px-4">
+                          <p className="text-[#6F2A2B] font-bold text-[24px] lg:text-[28px] xl:text-[32px] 2xl:text-[34px]">
+                            {title}
                           </p>
                         </div>
                       )}

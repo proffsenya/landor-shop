@@ -358,130 +358,151 @@ const handleToggleFavorite = useCallback(async (e) => {
 
 
 
-  return (
-    <StaggerItem className="h-full">
-      <HoverLift className="h-full">
-        <div className="flex flex-col h-full overflow-hidden transition-shadow bg-white border border-gray-200 rounded-xl hover:shadow-lg">
-          {/* Верхняя часть карточки */}
-          <div className="relative flex-shrink-0 p-2 bg-white border-b border-gray-200 sm:p-3 lg:p-4">
-            {/* Избранное */}
-            <button
-              type="button"
-              onClick={handleToggleFavorite}
-              className="absolute z-10 transition-transform top-3 right-3 sm:top-4 sm:right-4 hover:scale-110"
-              aria-label={isFavorite ? "Убрать из избранного" : "В избранное"}
-            >
-              <ScalePulse active={isFavorite}>
-                <FadeSwitch active={isFavorite}>
-                  <Heart
-                    className={`transition-colors ${
-                      isFavorite ? "text-red-500 fill-red-500" : "text-[#6F2A2B]"
-                    } w-5 h-5 sm:w-6 sm:h-6`}
-                  />
-                </FadeSwitch>
-              </ScalePulse>
-            </button>
+  const renderCardContent = () => (
+    <>
+      <div className="flex flex-col h-full overflow-hidden transition-shadow bg-white border border-gray-200 rounded-xl hover:shadow-lg">
+        {/* Верхняя часть карточки */}
+        <div className="relative flex-shrink-0 p-2 bg-white border-b border-gray-200 sm:p-3 lg:p-4">
+          {/* Избранное */}
+          <button
+            type="button"
+            onClick={handleToggleFavorite}
+            className="absolute z-10 transition-transform top-3 right-3 sm:top-4 sm:right-4 hover:scale-110"
+            aria-label={isFavorite ? "Убрать из избранного" : "В избранное"}
+          >
+            <ScalePulse active={isFavorite}>
+              <FadeSwitch active={isFavorite}>
+                <Heart
+                  className={`transition-colors ${
+                    isFavorite ? "text-red-500 fill-red-500" : "text-[#6F2A2B]"
+                  } w-5 h-5 sm:w-6 sm:h-6`}
+                />
+              </FadeSwitch>
+            </ScalePulse>
+          </button>
 
-            {/* Переход по картинке */}
-            <Link
-              to={productUrl}
-              className="block focus:outline-none focus:ring-2 focus:ring-[#6F2A2B] rounded relative"
-              aria-label={title || "Товар"}
-            >
+          {/* Переход по картинке */}
+          <Link
+            to={productUrl}
+            className="block focus:outline-none focus:ring-2 focus:ring-[#6F2A2B] rounded relative"
+            aria-label={title || "Товар"}
+          >
+            {imageError || !image ? (
+              <div className="w-32 h-56 mx-auto sm:h-72 sm:w-40 lg:h-80 lg:w-48 bg-transparent" />
+            ) : (
               <img
-                src={imageError || !image ? "/korm1.svg" : image}
+                src={image}
                 alt={title}
                 className="object-contain w-32 h-56 mx-auto sm:h-72 sm:w-40 lg:h-80 lg:w-48"
                 loading="lazy"
                 onError={() => setImageError(true)}
               />
-            </Link>
-          </div>
+            )}
+          </Link>
+        </div>
 
-          {/* Инфо-блок */}
-          <div className="flex flex-col flex-1 p-3 sm:p-4">
-            <Link
-              to={productUrl}
-              className="block flex-1 focus:outline-none focus:ring-2 focus:ring-[#6F2A2B] rounded"
-              title={title}
-              aria-label={title || "Товар"}
-            >
-              <p className="text-[#1E1E1E] text-sm sm:text-base mb-2">
-                {title}
+        {/* Инфо-блок */}
+        <div className="flex flex-col flex-1 p-3 sm:p-4">
+          <Link
+            to={productUrl}
+            className="block flex-1 focus:outline-none focus:ring-2 focus:ring-[#6F2A2B] rounded"
+            title={title}
+            aria-label={title || "Товар"}
+          >
+            <p className="text-[#1E1E1E] text-sm sm:text-base mb-2">
+              {title}
+            </p>
+            {weight && (
+              <p className="text-[#8B8B8B] text-xs sm:text-sm mb-4"> 
+                {typeof weight === "number" 
+                  ? formatWeight(weight)
+                  : weight}
               </p>
-              {weight && (
-                <p className="text-[#8B8B8B] text-xs sm:text-sm mb-4"> 
-                  {typeof weight === "number" 
-                    ? formatWeight(weight)
-                    : weight}
-                </p>
-              )}
-            </Link>
+            )}
+          </Link>
 
-            {/* Цена + кнопка */}
-            <div className="flex items-center justify-between gap-3 mt-auto">
-              <span className="text-xl sm:text-2xl text-[#6F2A2B] font-normal whitespace-nowrap">
-                {price}
+          {/* Цена + кнопка */}
+          <div className="flex items-center justify-between gap-3 mt-auto">
+            <span className="text-xl sm:text-2xl text-[#6F2A2B] font-normal whitespace-nowrap">
+              {price}
+            </span>
+
+            {available ? (
+              <button
+                type="button"
+                onClick={handleAddToCart}
+                className={`
+                  flex items-center justify-center
+                  rounded-md text-sm sm:text-[15px]
+                  transition-colors
+                  px-3 py-[10px]
+                  h-11
+                  min-w-[110px]
+                  ${
+                    inCart
+                      ? "bg-white border border-[#6F2A2B] text-[#6F2A2B]"
+                      : "bg-[#6F2A2B] text-white hover:bg-[#5a2223]"
+                  }
+                `}
+                aria-label={inCart ? "Убрать из корзины" : "Добавить в корзину"}
+              >
+                <FadeSwitch active={inCart}>
+                  <span className="flex items-center justify-center gap-1 leading-none whitespace-nowrap">
+                    {inCart ? (
+                      <>
+                        <Check className="w-4 h-4" />
+                        <span>В корзине</span>
+                      </>
+                    ) : (
+                      <span>В корзину</span>
+                    )}
+                  </span>
+                </FadeSwitch>
+              </button>
+            ) : (
+              <span
+                className="
+                  inline-flex items-center justify-center
+                  rounded-md text-sm sm:text-[15px]
+                  px-3 py-[10px]
+                  h-11
+                  min-w-[110px]
+                  bg-gray-100 text-gray-500
+                  whitespace-nowrap
+                "
+              >
+                Нет в наличии
               </span>
-
-              {available ? (
-                <button
-                  type="button"
-                  onClick={handleAddToCart}
-                  className={`
-                    flex items-center justify-center
-                    rounded-md text-sm sm:text-[15px]
-                    transition-colors
-                    px-3 py-[10px]
-                    h-11
-                    min-w-[110px]
-                    ${
-                      inCart
-                        ? "bg-white border border-[#6F2A2B] text-[#6F2A2B]"
-                        : "bg-[#6F2A2B] text-white hover:bg-[#5a2223]"
-                    }
-                  `}
-                  aria-label={inCart ? "Убрать из корзины" : "Добавить в корзину"}
-                >
-                  <FadeSwitch active={inCart}>
-                    <span className="flex items-center justify-center gap-1 leading-none whitespace-nowrap">
-                      {inCart ? (
-                        <>
-                          <Check className="w-4 h-4" />
-                          <span>В корзине</span>
-                        </>
-                      ) : (
-                        <span>В корзину</span>
-                      )}
-                    </span>
-                  </FadeSwitch>
-                </button>
-              ) : (
-                <span
-                  className="
-                    inline-flex items-center justify-center
-                    rounded-md text-sm sm:text-[15px]
-                    px-3 py-[10px]
-                    h-11
-                    min-w-[110px]
-                    bg-gray-100 text-gray-500
-                    whitespace-nowrap
-                  "
-                >
-                  Нет в наличии
-                </span>
-              )}
-            </div>
+            )}
           </div>
         </div>
-      </HoverLift>
+      </div>
+    </>
+  );
+
+  return (
+    <>
+      {/* Десктоп версия с анимацией */}
+      <div className="h-full hidden lg:block">
+        <StaggerItem className="h-full">
+          <HoverLift className="h-full">
+            {renderCardContent()}
+          </HoverLift>
+        </StaggerItem>
+      </div>
+      {/* Мобильная версия без анимации */}
+      <div className="h-full lg:hidden">
+        <HoverLift className="h-full">
+          {renderCardContent()}
+        </HoverLift>
+      </div>
       <ToastMotion show={!!toast}>{toast}</ToastMotion>
       <AuthToast 
         show={showAuthToast} 
         onClose={() => setShowAuthToast(false)}
         message={authToastMessage}
       />
-    </StaggerItem>
+    </>
   );
 });
 

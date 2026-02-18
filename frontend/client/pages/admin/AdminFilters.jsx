@@ -30,7 +30,7 @@ const FILTER_TYPES = {
     ],
   },
   breeds: {
-    label: "Породы",
+    label: "Фильтры",
     endpoint: "/api/catalog/breeds",
     adminEndpoint: "/api/catalog/breeds",
     createEndpoint: "/api/catalog/breeds", // Для POST используем обычный эндпоинт
@@ -694,8 +694,8 @@ function FilterForm({ filterType, config, item, items, onClose, onSave, showToas
                 <li><strong>Активна</strong> ?? - Если отмечено, категория видна на сайте. Если снято - скрыта, но остается в БД.</li>
               </>
             )}
-            {config.label === "Породы" && (
-              <li><strong>Категория *</strong> - Выберите категорию, к которой относится порода. Пример: "Собаки" или "Кошки"</li>
+            {config.label === "Фильтры" && (
+              <li><strong>Категория *</strong> - Выберите категорию, к которой относится фильтр. Пример: "Собаки" или "Кошки"</li>
             )}
             {config.label === "Вкусы" && (
               <li><strong>Каноническое название *</strong> - Научное или стандартное название вкуса. Используется для внутренней идентификации в БД. Пример: "CHICKEN", "BEEF"</li>

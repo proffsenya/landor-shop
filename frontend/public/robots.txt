@@ -1,0 +1,11 @@
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /profile
+Disallow: /cart
+Disallow: /favorites
+Disallow: /login
+Disallow: /register
+
+Sitemap: https://landor-shop.ru/sitemap.xml
+

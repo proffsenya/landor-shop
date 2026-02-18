@@ -11,12 +11,60 @@ import {
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, Edit, Trash2, X, ChevronLeft, ChevronRight } from "lucide-react";
+import { Plus, Edit, Trash2, X, ChevronLeft, ChevronRight, Search } from "lucide-react";
 import { checkAdminAccess, getAdminToken } from "@/utils/adminAuth";
 import { handleApiError } from "@/utils/errorMessages";
 import { safeError } from "@/utils/logger";
 import { ToastMotion } from "@/utils/PageAnimations";
 import { formatWeight } from "@/utils/formatting";
+
+// Функция нормализации е/ё для поиска
+const normalizeE = (str) => {
+  return str.replace(/ё/g, 'е').replace(/Ё/g, 'Е');
+};
+
+// Функция поиска для админки (ищет по названию товара и возвращает целые товары)
+const searchProducts = (query, products) => {
+  if (!query || !query.trim() || !products || products.length === 0) {
+    return products;
+  }
+
+  const cleanQuery = normalizeE(query.trim().toLowerCase())
+    .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  if (!cleanQuery) {
+    return products;
+  }
+
+  const queryWords = cleanQuery.split(' ').filter(word => word.length > 0);
+
+  return products.filter(product => {
+    // Ищем по названию товара
+    const productName = normalizeE((product.name || product.productName || '').toLowerCase())
+      .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+
+    // Ищем по ID товара
+    const productId = String(product.id || '').toLowerCase();
+
+    // Ищем по названиям вариантов
+    const variantNames = (product.variants || []).map(variant => {
+      return normalizeE((variant.displayName || '').toLowerCase())
+        .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+    }).join(' ');
+
+    // Объединяем все тексты для поиска
+    const searchText = `${productName} ${productId} ${variantNames}`.toLowerCase();
+
+    // Проверяем, содержатся ли все слова запроса
+    return queryWords.every(word => searchText.includes(word));
+  });
+};
 
 export default function AdminProducts() {
   const navigate = useNavigate();
@@ -28,6 +76,9 @@ export default function AdminProducts() {
   const [editingProduct, setEditingProduct] = useState(null);
   const [expandedProductId, setExpandedProductId] = useState(null);
   const [toast, setToast] = useState({ message: "", type: "success", show: false });
+  
+  // Поиск
+  const [searchQuery, setSearchQuery] = useState("");
   
   // Пагинация
   const [currentPage, setCurrentPage] = useState(1);
@@ -109,7 +160,13 @@ export default function AdminProducts() {
       if (productsRes.ok) {
         const data = await productsRes.json();
         const productsList = Array.isArray(data) ? data : [];
-        setProducts(productsList);
+        // Сортируем товары по ID по возрастанию (от 1 до последнего)
+        const sortedProducts = productsList.sort((a, b) => {
+          const idA = a.id || 0;
+          const idB = b.id || 0;
+          return idA - idB;
+        });
+        setProducts(sortedProducts);
       }
       if (categoriesRes.ok) {
         const data = await categoriesRes.json();
@@ -159,18 +216,21 @@ export default function AdminProducts() {
     setTimeout(() => setToast({ message: "", type: "success", show: false }), 3000);
   };
 
+  // Фильтрация товаров по поисковому запросу
+  const filteredProducts = searchProducts(searchQuery, products);
+
   // Вычисляем отображаемые товары для текущей страницы
-  const totalPages = Math.ceil(products.length / pageSize);
+  const totalPages = Math.ceil(filteredProducts.length / pageSize);
   const startIndex = (currentPage - 1) * pageSize;
   const endIndex = startIndex + pageSize;
-  const displayedProducts = products.slice(startIndex, endIndex);
+  const displayedProducts = filteredProducts.slice(startIndex, endIndex);
 
-  // Сбрасываем страницу при изменении списка товаров
+  // Сбрасываем страницу при изменении списка товаров или поискового запроса
   useEffect(() => {
     if (currentPage > totalPages && totalPages > 0) {
       setCurrentPage(1);
     }
-  }, [products.length, currentPage, totalPages]);
+  }, [filteredProducts.length, currentPage, totalPages]);
 
   const handleDelete = async (productId) => {
     try {
@@ -218,17 +278,33 @@ export default function AdminProducts() {
           <div className="max-w-[1600px] mx-auto">
             <div className="flex flex-col gap-4 mb-4 sm:flex-row sm:items-center sm:justify-between sm:mb-6">
               <h1 className="text-2xl font-bold text-gray-900 sm:text-3xl">Товары</h1>
-              <Button
-                onClick={() => {
-                  setEditingProduct(null);
-                  setShowForm(true);
-                }}
-                className="bg-[#6F2A2B] text-white hover:bg-[#5a2223] w-full sm:w-auto"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                <span className="hidden sm:inline">Добавить товар</span>
-                <span className="sm:hidden">Добавить</span>
-              </Button>
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                {/* Поле поиска */}
+                <div className="relative flex-1 sm:flex-initial sm:w-64">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <Input
+                    type="text"
+                    placeholder="Поиск товаров..."
+                    value={searchQuery}
+                    onChange={(e) => {
+                      setSearchQuery(e.target.value);
+                      setCurrentPage(1); // Сбрасываем на первую страницу при поиске
+                    }}
+                    className="pl-10 w-full"
+                  />
+                </div>
+                <Button
+                  onClick={() => {
+                    setEditingProduct(null);
+                    setShowForm(true);
+                  }}
+                  className="bg-[#6F2A2B] text-white hover:bg-[#5a2223] w-full sm:w-auto"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  <span className="hidden sm:inline">Добавить товар</span>
+                  <span className="sm:hidden">Добавить</span>
+                </Button>
+              </div>
             </div>
 
             {showForm && (
@@ -272,10 +348,10 @@ export default function AdminProducts() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
-                  {products.length === 0 ? (
+                  {filteredProducts.length === 0 ? (
                     <tr>
                         <td colSpan="7" className="px-3 py-4 text-center text-gray-500 sm:px-6">
-                        Нет товаров
+                        {searchQuery.trim() ? "Товары не найдены" : "Нет товаров"}
                       </td>
                     </tr>
                   ) : (
@@ -470,9 +546,9 @@ export default function AdminProducts() {
 
               {/* Мобильные карточки */}
               <div className="md:hidden">
-                {products.length === 0 ? (
+                {filteredProducts.length === 0 ? (
                   <div className="p-6 text-center text-gray-500">
-                    Нет товаров
+                    {searchQuery.trim() ? "Товары не найдены" : "Нет товаров"}
                   </div>
                 ) : (
                   <div className="divide-y divide-gray-200">
@@ -666,9 +742,9 @@ export default function AdminProducts() {
               </div>
 
               {/* Пагинация */}
-              {products.length > pageSize && (
-                <div className="mt-6 flex items-center justify-between px-4 py-3 bg-white border-t border-gray-200 sm:px-6">
-                  <div className="flex flex-1 justify-between sm:hidden">
+              {filteredProducts.length > pageSize && (
+                <div className="flex items-center justify-between px-4 py-3 mt-6 bg-white border-t border-gray-200 sm:px-6">
+                  <div className="flex justify-between flex-1 sm:hidden">
                     <Button
                       onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
                       disabled={currentPage === 1}
@@ -696,7 +772,12 @@ export default function AdminProducts() {
                   <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
                     <div>
                       <p className="text-sm text-gray-700">
-                        Показано <span className="font-medium">{startIndex + 1}</span> - <span className="font-medium">{Math.min(endIndex, products.length)}</span> из <span className="font-medium">{products.length}</span> товаров
+                        Показано <span className="font-medium">{startIndex + 1}</span> - <span className="font-medium">{Math.min(endIndex, filteredProducts.length)}</span> из <span className="font-medium">{filteredProducts.length}</span> товаров
+                        {searchQuery.trim() && (
+                          <span className="ml-2 text-gray-500">
+                            (из {products.length} всего)
+                          </span>
+                        )}
                       </p>
                     </div>
                     <div className="flex items-center gap-2">
@@ -823,7 +904,7 @@ function ProductForm({
       productTypeId: product.productTypeId ? String(product.productTypeId) : "",
           variants: (product.variants || []).map(v => ({
             ...v,
-            weight: v.weight ? v.weight / 1000 : 0, // Конвертируем граммы в килограммы для отображения
+            weight: v.weight || 0,
           })),
       quantityInStock: product.quantityInStock || 0,
       isActive: product.isActive !== undefined ? product.isActive : true,
@@ -836,6 +917,38 @@ function ProductForm({
   const [imageFiles, setImageFiles] = useState([]); // Для хранения выбранных изображений при создании
 
   const [saving, setSaving] = useState(false);
+
+  // --- Зависимые фильтры от выбранной категории ---
+  const selectedCategoryIds = Array.isArray(formData.categoryIds)
+    ? formData.categoryIds.map((id) => Number(id))
+    : [];
+
+  const allowedBreeds =
+    selectedCategoryIds.length > 0
+      ? (Array.isArray(breeds) ? breeds : []).filter((b) => {
+          const breedCategoryId = b?.categoryId != null ? Number(b.categoryId) : null;
+          return breedCategoryId != null && selectedCategoryIds.includes(breedCategoryId);
+        })
+      : breeds;
+
+  // Если категории выбраны — автоматически убираем из выбранных "фильтров" те, которые не относятся к этим категориям
+  useEffect(() => {
+    if (selectedCategoryIds.length === 0) return;
+
+    const allowedBreedIds = new Set(
+      (Array.isArray(allowedBreeds) ? allowedBreeds : [])
+        .map((b) => b?.id)
+        .filter((id) => id != null)
+        .map((id) => Number(id))
+    );
+
+    const currentBreedIds = Array.isArray(formData.breedIds) ? formData.breedIds : [];
+    const nextBreedIds = currentBreedIds.filter((id) => allowedBreedIds.has(Number(id)));
+
+    if (nextBreedIds.length !== currentBreedIds.length) {
+      setFormData((prev) => ({ ...prev, breedIds: nextBreedIds }));
+    }
+  }, [selectedCategoryIds.join(","), (Array.isArray(allowedBreeds) ? allowedBreeds.length : 0)]);
 
   // Сброс imageFiles при открытии формы создания
   useEffect(() => {
@@ -953,7 +1066,7 @@ function ProductForm({
               sku: v.sku || "",
           price: Number(v.price) || 0,
           stock: Number(v.stock) || 0,
-          weight: Number(v.weight) ? Number(v.weight) * 1000 : 0, // Конвертируем килограммы обратно в граммы для сохранения
+          weight: Number(v.weight) || 0,
           colorIds: Array.isArray(v.colorIds) 
                 ? v.colorIds.map((c) => {
                     if (typeof c === "object" && c.id !== undefined) {
@@ -1067,7 +1180,7 @@ function ProductForm({
               price: Number(v.price) || 0,
               oldPrice: (v.oldPrice !== undefined && v.oldPrice !== null && v.oldPrice !== "" && !isNaN(Number(v.oldPrice)) && Number(v.oldPrice) !== 0) ? Number(v.oldPrice) : null,
               stock: Number(v.stock) || 0,
-              weight: Number(v.weight) ? Number(v.weight) * 1000 : 0, // Конвертируем килограммы обратно в граммы для сохранения
+              weight: Number(v.weight) || 0,
               colorIds: colorObjects,
               scentIds: scentObjects,
               displayName: v.displayName || "",
@@ -1118,9 +1231,9 @@ function ProductForm({
         ...formData.variants,
         {
           sku: "",
-          price: 0,
-          stock: 0,
-          weight: 0,
+          price: "",
+          stock: "",
+          weight: "",
           colorIds: [],
           scentIds: [],
         },
@@ -1165,14 +1278,16 @@ function ProductForm({
         <div className="space-y-2 text-xs text-blue-800 sm:text-sm">
           <p><strong>Важно:</strong> Все данные сохраняются в базу данных. Заполняйте поля внимательно!</p>
           <ul className="ml-2 space-y-1 list-disc list-inside">
-            <li><strong>Название *</strong> - Полное название товара на русском языке. Пример: "Корм для собак премиум класса"</li>
-            <li><strong>Slug *</strong> - Уникальный идентификатор для URL (только латиница, цифры и дефисы). Автоматически формируется из названия. Пример: "korm-dlya-sobak-premium"</li>
-            <li><strong>Описание</strong> - Подробное описание товара.</li>
+            <li><strong>Название *</strong> - Полное название товара на русском языке. Максимум: <strong>100 символов</strong>. Пример: "Корм для собак премиум класса"</li>
+            <li><strong>Slug *</strong> - Уникальный идентификатор для URL (только латиница, цифры и дефисы). Максимум: <strong>100 символов</strong>. Автоматически формируется из названия. Пример: "korm-dlya-sobak-premium"</li>
+            <li><strong>Описание</strong> - Подробное описание товара. Максимум: <strong>2000 символов</strong>.</li>
+            <li><strong>Примечание по кормлению</strong> - Инструкции по кормлению, дозировке. Максимум: <strong>1000 символов</strong>.</li>
+            <li><strong>Гарантированные показатели</strong> - Гарантированный анализ состава. Максимум: <strong>1000 символов</strong>.</li>
             <li><strong>Бренд</strong> - Выберите бренд из списка. Если бренда нет, сначала создайте его в разделе "Фильтры".</li>
             <li><strong>Тип продукта</strong> - Категория продукта (корм, аксессуар и т.д.). Выберите из списка.</li>
-            <li><strong>Категории/Породы/Страны/Тип корма/Вкусы</strong> - Можно выбрать несколько значений. Эти данные используются для фильтрации на сайте.</li>
+            <li><strong>Категории/Фильтры/Страны/Тип корма/Вкусы</strong> - Можно выбрать несколько значений. Эти данные используются для фильтрации на сайте.</li>
             <li><strong>Варианты товара</strong> - Обязательно добавьте хотя бы один вариант! Вариант = конкретная упаковка товара (размер, вес, цвет и т.д.)</li>
-            <li><strong>Изображения</strong> - Загружайте только при создании нового товара. Формат: JPEG. Рекомендуемый размер: не менее 800x800px.</li>
+            <li><strong>Изображения</strong> - Загружайте только при создании нового товара. Форматы: JPEG/JPG/PNG. Рекомендуемый размер: не менее 800x800px.</li>
           </ul>
         </div>
       </div>
@@ -1187,9 +1302,13 @@ function ProductForm({
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               placeholder="Например: Корм для собак премиум класса"
+              maxLength={100}
               required
             />
-            <p className="mt-1 text-xs text-gray-500">Полное название товара, которое будет отображаться на сайте</p>
+            <p className="mt-1 text-xs text-gray-500">
+              Полное название товара, которое будет отображаться на сайте
+              <span className="ml-2 text-gray-400">({(formData.name || "").length}/100 символов)</span>
+            </p>
           </div>
           <div>
             <label className="block mb-1 text-sm font-medium text-gray-700">
@@ -1204,9 +1323,13 @@ function ProductForm({
                 })
               }
               placeholder="korm-dlya-sobak-premium"
+              maxLength={100}
               required
             />
-            <p className="mt-1 text-xs text-gray-500">Уникальный идентификатор для URL. Только латиница, цифры и дефисы. Используется в адресе страницы товара.</p>
+            <p className="mt-1 text-xs text-gray-500">
+              Уникальный идентификатор для URL. Только латиница, цифры и дефисы. Используется в адресе страницы товара.
+              <span className="ml-2 text-gray-400">({(formData.slug || "").length}/100 символов)</span>
+            </p>
           </div>
         </div>
 
@@ -1221,9 +1344,15 @@ function ProductForm({
             }
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#6F2A2B]"
             rows="3"
+            maxLength={2000}
             placeholder="Подробное описание товара, его характеристики, состав, преимущества..."
           />
-          <p className="mt-1 text-xs text-gray-500">Подробное описание товара. Будет отображаться на странице товара. Можно использовать HTML для форматирования.</p>
+          <p className="mt-1 text-xs text-gray-500">
+            Подробное описание товара. Будет отображаться на странице товара. Можно использовать HTML для форматирования.
+            <span className={`ml-2 ${(formData.description || "").length > 1900 ? "text-red-600 font-semibold" : "text-gray-400"}`}>
+              ({(formData.description || "").length}/2000 символов)
+            </span>
+          </p>
         </div>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -1238,9 +1367,15 @@ function ProductForm({
               }
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#6F2A2B]"
               rows="2"
+              maxLength={1000}
               placeholder="Например: Рекомендуемая суточная норма для взрослой собаки 20-30 кг: 300-400 г"
             />
-            <p className="mt-1 text-xs text-gray-500">Инструкции по кормлению, дозировке, рекомендации по применению</p>
+            <p className="mt-1 text-xs text-gray-500">
+              Инструкции по кормлению, дозировке, рекомендации по применению
+              <span className={`ml-2 ${(formData.feedingNote || "").length > 900 ? "text-red-600 font-semibold" : "text-gray-400"}`}>
+                ({(formData.feedingNote || "").length}/1000 символов)
+              </span>
+            </p>
           </div>
           <div>
             <label className="block mb-1 text-sm font-medium text-gray-700">
@@ -1253,9 +1388,15 @@ function ProductForm({
               }
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#6F2A2B]"
               rows="2"
+              maxLength={1000}
               placeholder="Например: Белок: 28%, Жир: 15%, Клетчатка: 4%, Влажность: 10%"
             />
-            <p className="mt-1 text-xs text-gray-500">Гарантированный анализ состава (белки, жиры, углеводы, клетчатка и т.д.)</p>
+            <p className="mt-1 text-xs text-gray-500">
+              Гарантированный анализ состава (белки, жиры, углеводы, клетчатка и т.д.)
+              <span className={`ml-2 ${(formData.guaranteedIndicators || "").length > 900 ? "text-red-600 font-semibold" : "text-gray-400"}`}>
+                ({(formData.guaranteedIndicators || "").length}/1000 символов)
+              </span>
+            </p>
           </div>
         </div>
 
@@ -1324,12 +1465,14 @@ function ProductForm({
           </div>
           <div>
             <MultiSelectField
-              label="Породы"
-              options={breeds}
+              label="Фильтры"
+              options={allowedBreeds}
               selected={formData.breedIds}
               onChange={(value) => toggleMultiSelect("breedIds", value)}
             />
-            <p className="mt-1 text-xs text-gray-500">Для каких пород подходит товар. Можно выбрать несколько пород</p>
+            <p className="mt-1 text-xs text-gray-500">
+              Выбор фильтров (бывш. "породы") зависит от выбранных категорий. Сначала выберите категорию (например, "Кошки"), затем отметьте подходящие фильтры.
+            </p>
           </div>
           <div>
             <MultiSelectField
@@ -1392,79 +1535,7 @@ function ProductForm({
         {/* Дополнительные поля для редактирования */}
         {product && (
           <div>
-            <div className="p-3 mb-3 border border-gray-200 rounded bg-gray-50">
-              <p className="text-xs text-gray-700"><strong>ℹ️ Дополнительные настройки:</strong> Эти поля доступны только при редактировании существующего товара.</p>
-            </div>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div>
-                <label className="block mb-1 text-sm font-medium text-gray-700">
-                  Количество на складе
-                </label>
-                <Input
-                  type="number"
-                  min="0"
-                  value={formData.quantityInStock}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      quantityInStock: Number(e.target.value),
-                    })
-                  }
-                  placeholder="0"
-                />
-                <p className="mt-1 text-xs text-gray-500">⚠️Не работает!! Заготовка</p>
-              </div>
-              <div>
-                <label className="block mb-1 text-sm font-medium text-gray-700">
-                  Рейтинг
-                </label>
-                <Input
-                  type="number"
-                  step="0.1"
-                  min="0"
-                  max="5"
-                  value={formData.rating || ""}
-                  onChange={(e) => {
-                    const value = e.target.value;
-                    setFormData({ ...formData, rating: value === "" ? "" : Number(value) });
-                  }}
-                  placeholder="4.5"
-                />
-                <p className="mt-1 text-xs text-gray-500">⚠️Не работает!! Заготовка</p>
-              </div>
-              <div className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  id="isActive"
-                  checked={formData.isActive}
-                  onChange={(e) =>
-                    setFormData({ ...formData, isActive: e.target.checked })
-                  }
-                  className="w-4 h-4 text-[#6F2A2B] border-gray-300 rounded focus:ring-[#6F2A2B]"
-                />
-                <label htmlFor="isActive" className="text-sm font-medium text-gray-700">
-                  Активен
-                </label>
-              </div>
-              <div className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  id="isFeatured"
-                  checked={formData.isFeatured}
-                  onChange={(e) =>
-                    setFormData({ ...formData, isFeatured: e.target.checked })
-                  }
-                  className="w-4 h-4 text-[#6F2A2B] border-gray-300 rounded focus:ring-[#6F2A2B]"
-                />
-                <label htmlFor="isFeatured" className="text-sm font-medium text-gray-700">
-                  Рекомендуемый
-                </label>
-              </div>
-            </div>
-            <div className="mt-2 space-y-1 text-xs text-gray-500">
-              <p><strong>Активен:</strong> ⚠️ Не работает!! Заготовка</p>
-              <p><strong>Рекомендуемый:</strong>⚠️ Не работает!! Заготовка</p>
-            </div>
+            {/* Скрытые поля: quantityInStock, rating, isActive, isFeatured - остаются в данных для API, но не отображаются визуально */}
           </div>
         )}
 
@@ -1477,10 +1548,9 @@ function ProductForm({
             <div className="p-3 mb-2 border border-green-200 rounded bg-green-50">
               <p className="text-xs text-green-800"><strong>📸 Требования к изображениям:</strong></p>
               <ul className="mt-1 space-y-1 text-xs text-green-700 list-disc list-inside">
-                <li>Формат: JPEG</li>
+                <li>Форматы: JPEG/JPG/PNG</li>
                 <li>Рекомендуемый размер: минимум 800x800 пикселей</li>
                 <li>Количество изображений = количество вариантов товара. Фотографии должны быть по такому же порядку как и вариант.</li>
-                <li>Первое изображение будет главным (превью) в карточке товара в каталоге</li>
               </ul>
             </div>
             <input
@@ -1498,7 +1568,7 @@ function ProductForm({
                 Выбрано файлов: {imageFiles.length}
               </p>
             )}
-            <p className="mt-1 text-xs text-gray-500">Изображения загружаются только при создании нового товара. После создания товара изображения можно добавить через редактирование.</p>
+            <p className="mt-1 text-xs text-gray-500">Изображения загружаются только при создании нового товара.</p>
           </div>
         )}
 
@@ -1582,31 +1652,16 @@ function VariantForm({ variant, index, colors, scents, onChange, onRemove, isEdi
             type="number"
             step="0.01"
             min="0"
-            value={variant.price || 0}
-            onChange={(e) => onChange(index, "price", Number(e.target.value))}
+            value={variant.price === "" || variant.price === undefined || variant.price === null ? "" : variant.price}
+            onChange={(e) => {
+              const value = e.target.value;
+              onChange(index, "price", value === "" ? "" : Number(value));
+            }}
             placeholder="1500.00"
           />
           <p className="mt-1 text-xs text-gray-500">Цена в рублях. Можно указать копейки (например: 1499.99).</p>
         </div>
-        {isEdit && (
-          <div>
-            <label className="block mb-1 text-sm font-medium text-gray-700">
-              Старая цена (₽)
-            </label>
-            <Input
-              type="number"
-              step="0.01"
-              min="0"
-              value={variant.oldPrice || ""}
-              onChange={(e) => {
-                const value = e.target.value;
-                onChange(index, "oldPrice", value === "" ? "" : Number(value));
-              }}
-              placeholder="2000.00"
-            />
-            <p className="mt-1 text-xs text-gray-500">Цена до скидки (для отображения зачеркнутой цены). Оставьте пустым, если скидки нет.</p>
-          </div>
-        )}
+        {/* Скрытое поле: oldPrice - остается в данных для API, но не отображается визуально */}
         <div>
           <label className="block mb-1 text-sm font-medium text-gray-700">
             Остаток (шт.)
@@ -1614,8 +1669,11 @@ function VariantForm({ variant, index, colors, scents, onChange, onRemove, isEdi
           <Input
             type="number"
             min="0"
-            value={variant.stock || 0}
-            onChange={(e) => onChange(index, "stock", Number(e.target.value))}
+            value={variant.stock === "" || variant.stock === undefined || variant.stock === null ? "" : variant.stock}
+            onChange={(e) => {
+              const value = e.target.value;
+              onChange(index, "stock", value === "" ? "" : Number(value));
+            }}
             placeholder="0"
           />
           <p className="mt-1 text-xs text-gray-500">Количество товара на складе. Только целые числа (0, 1, 2, 10, 100...).</p>
@@ -1628,8 +1686,11 @@ function VariantForm({ variant, index, colors, scents, onChange, onRemove, isEdi
             type="number"
             min="0"
             step="0.001"
-            value={variant.weight || 0}
-            onChange={(e) => onChange(index, "weight", Number(e.target.value))}
+            value={variant.weight === "" || variant.weight === undefined || variant.weight === null ? "" : variant.weight}
+            onChange={(e) => {
+              const value = e.target.value;
+              onChange(index, "weight", value === "" ? "" : Number(value));
+            }}
             placeholder="2.0"
           />
           <p className="mt-1 text-xs text-gray-500">Вес упаковки в килограммах. Пример: 2 (для 2 кг), 0.5 (для 500 г), 1.5 (для 1.5 кг). Можно использовать десятичные дроби.</p>

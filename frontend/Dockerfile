@@ -26,10 +26,16 @@ FROM nginx:alpine
 # Копируем собранные файлы
 COPY --from=builder /app/dist /usr/share/nginx/html
 
+# Удаляем дефолтные конфигурации nginx
+RUN rm -f /etc/nginx/conf.d/*.conf
+
 # Копируем конфигурацию nginx
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-EXPOSE 80
+# Копируем entrypoint скрипт
+COPY docker-entrypoint.sh /docker-entrypoint.sh
+RUN chmod +x /docker-entrypoint.sh
 
-CMD ["nginx", "-g", "daemon off;"]
+EXPOSE 80 443
 
+ENTRYPOINT ["/docker-entrypoint.sh"]

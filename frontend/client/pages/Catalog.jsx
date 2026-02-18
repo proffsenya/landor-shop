@@ -6,7 +6,14 @@ import BreadcrumbNav from "@/components/BreadcrumbNav";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ChevronDown, ChevronUp, Filter, X } from "lucide-react";
+import { ChevronDown, ChevronUp, Filter, X, ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+} from "@/components/ui/pagination";
 import ProductCard from "@/components/ProductCard";
 import AccordionMotion from "@/utils/AccordionMotion";
 import { motion } from "framer-motion";
@@ -226,6 +233,8 @@ export default function Catalog() {
   // пагинация
   const ITEMS_PER_PAGE = 12;
   const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalElements, setTotalElements] = useState(0);
 
   // ---------- Сохранение и восстановление фильтров ----------
   const saveFiltersToStorage = useCallback(() => {
@@ -276,6 +285,131 @@ export default function Catalog() {
     }
   }, []);
 
+  // ---------- Восстановление фильтров из URL параметров ----------
+  const restoreFiltersFromUrl = useCallback((urlParams) => {
+    // Сбрасываем все фильтры перед восстановлением
+    setPriceFrom("");
+    setPriceTo("");
+    setSearchQuery("");
+    setCategoryFilters({ all: true });
+    setCatFilters({});
+    setDogFilters({});
+    setMiniCatFilters({});
+    setMiniDogFilters({});
+    setCountryFilters({});
+    setFlavorFilters({});
+    setBrandFilters({});
+    setScentFilters({});
+    setProductTypeFilters({});
+    
+    // Восстанавливаем цены
+    const minPrice = urlParams.get("minPrice");
+    const maxPrice = urlParams.get("maxPrice");
+    if (minPrice) setPriceFrom(minPrice);
+    if (maxPrice) setPriceTo(maxPrice);
+
+    // Восстанавливаем поисковый запрос
+    const searchQueryParam = urlParams.get("search_query");
+    if (searchQueryParam) setSearchQuery(searchQueryParam);
+
+    // Восстанавливаем typeoffood фильтры
+    const newCategoryFilters = {};
+    urlParams.forEach((value, key) => {
+      if (key.startsWith("typeoffood_")) {
+        const typeSlug = key.replace("typeoffood_", "");
+        if (value === "true") {
+          newCategoryFilters[typeSlug] = true;
+          newCategoryFilters.all = false;
+        }
+      }
+    });
+    if (Object.keys(newCategoryFilters).length > 0) {
+      setCategoryFilters(newCategoryFilters);
+    }
+
+    // Восстанавливаем breed фильтры
+    const newCatFilters = {};
+    const newDogFilters = {};
+    const newMiniCatFilters = {};
+    const newMiniDogFilters = {};
+    
+    urlParams.forEach((value, key) => {
+      if (key.startsWith("breed_") && value === "true") {
+        const breedSlug = key.replace("breed_", "");
+        // Определяем, к какой категории относится порода
+        // Проверяем, есть ли категория в URL
+        if (urlParams.get("category_cat") === "true") {
+          newCatFilters[breedSlug] = true;
+        } else if (urlParams.get("category_dog") === "true") {
+          newDogFilters[breedSlug] = true;
+        } else if (urlParams.get("category_minicat") === "true") {
+          newMiniCatFilters[breedSlug] = true;
+        } else if (urlParams.get("category_minidog") === "true") {
+          newMiniDogFilters[breedSlug] = true;
+        } else {
+          // Если категория не указана, пробуем определить по доступным фильтрам
+          // Для обратной совместимости используем catFilters
+          newCatFilters[breedSlug] = true;
+        }
+      }
+    });
+    
+    if (Object.keys(newCatFilters).length > 0) setCatFilters(newCatFilters);
+    if (Object.keys(newDogFilters).length > 0) setDogFilters(newDogFilters);
+    if (Object.keys(newMiniCatFilters).length > 0) setMiniCatFilters(newMiniCatFilters);
+    if (Object.keys(newMiniDogFilters).length > 0) setMiniDogFilters(newMiniDogFilters);
+
+    // Восстанавливаем country фильтры
+    const newCountryFilters = {};
+    urlParams.forEach((value, key) => {
+      if (key.startsWith("country_") && value === "true") {
+        const countrySlug = key.replace("country_", "");
+        newCountryFilters[countrySlug] = true;
+      }
+    });
+    if (Object.keys(newCountryFilters).length > 0) setCountryFilters(newCountryFilters);
+
+    // Восстанавливаем flavor фильтры
+    const newFlavorFilters = {};
+    urlParams.forEach((value, key) => {
+      if (key.startsWith("flavor_") && value === "true") {
+        const flavorKey = key.replace("flavor_", "");
+        newFlavorFilters[flavorKey] = true;
+      }
+    });
+    if (Object.keys(newFlavorFilters).length > 0) setFlavorFilters(newFlavorFilters);
+
+    // Восстанавливаем brand фильтры
+    const newBrandFilters = {};
+    urlParams.forEach((value, key) => {
+      if (key.startsWith("brand_") && value === "true") {
+        const brandSlug = key.replace("brand_", "");
+        newBrandFilters[brandSlug] = true;
+      }
+    });
+    if (Object.keys(newBrandFilters).length > 0) setBrandFilters(newBrandFilters);
+
+    // Восстанавливаем scent фильтры
+    const newScentFilters = {};
+    urlParams.forEach((value, key) => {
+      if (key.startsWith("scent_") && value === "true") {
+        const scentSlug = key.replace("scent_", "");
+        newScentFilters[scentSlug] = true;
+      }
+    });
+    if (Object.keys(newScentFilters).length > 0) setScentFilters(newScentFilters);
+
+    // Восстанавливаем producttype фильтры
+    const newProductTypeFilters = {};
+    urlParams.forEach((value, key) => {
+      if (key.startsWith("producttype_") && value === "true") {
+        const productTypeSlug = key.replace("producttype_", "");
+        newProductTypeFilters[productTypeSlug] = true;
+      }
+    });
+    if (Object.keys(newProductTypeFilters).length > 0) setProductTypeFilters(newProductTypeFilters);
+  }, []);
+
   // ---------- Генерация query-строки для фильтров ----------
   const generateQueryParams = useCallback(() => {
     const queryParams = new URLSearchParams();
@@ -319,9 +453,19 @@ export default function Catalog() {
       if (countryFilters[key]) queryParams.append("country_" + key, "true");
     });
     
-    // typeoffood: dry, wet (таблица typeoffood)
-    if (categoryFilters.dry) queryParams.append("typeoffood_dry", "true");
-    if (categoryFilters.wet) queryParams.append("typeoffood_wet", "true");
+    // typeoffood: динамически обрабатываем все типы корма из API (таблица typeoffood)
+    // Обрабатываем все типы корма из availableFilters.typeOfFoods
+    if (availableFilters.typeOfFoods && Array.isArray(availableFilters.typeOfFoods)) {
+      availableFilters.typeOfFoods.forEach((type) => {
+        if (categoryFilters[type.slug]) {
+          queryParams.append(`typeoffood_${type.slug}`, "true");
+        }
+      });
+    } else {
+      // Fallback для обратной совместимости (если availableFilters еще не загружен)
+      if (categoryFilters.dry) queryParams.append("typeoffood_dry", "true");
+      if (categoryFilters.wet) queryParams.append("typeoffood_wet", "true");
+    }
     
     // taste/flavor: вкусы (таблица flavors) - используем taste_ как указано
     Object.keys(flavorFilters).forEach((key) => {
@@ -353,7 +497,7 @@ export default function Catalog() {
     if (searchQuery) queryParams.append("search_query", searchQuery);
 
     return queryParams.toString(); // БЕЗ начального "?"
-  }, [categoryFilters, catFilters, dogFilters, minicatFilters, minidogFilters, countryFilters, flavorFilters, brandFilters, scentFilters, productTypeFilters, priceFrom, priceTo, searchQuery]);
+  }, [categoryFilters, catFilters, dogFilters, minicatFilters, minidogFilters, countryFilters, flavorFilters, brandFilters, scentFilters, productTypeFilters, priceFrom, priceTo, searchQuery, availableFilters.typeOfFoods]);
 
   // ---------- Кэш для результатов запросов ----------
   const cacheRef = useMemo(() => new Map(), []);
@@ -405,7 +549,7 @@ export default function Catalog() {
   }, []);
 
   // ---------- API: /api/products/cards/search-by-url?filtersUrl=<строка> ----------
-  const fetchCards = useCallback(async (filtersUrlString = "", useCache = true) => {
+  const fetchCards = useCallback(async (filtersUrlString = "", useCache = true, pageNumber = 1) => {
     // Отменяем предыдущий запрос, если он еще выполняется
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
@@ -428,80 +572,20 @@ export default function Catalog() {
       // Формат: catalog?flavor_partridge=true&minPrice=800
       const filtersUrl = filtersUrlValue ? `catalog?${filtersUrlValue}` : "catalog?";
 
-      // Параметры пагинации: загружаем все товары сразу (большой размер страницы)
-      // Пагинация делается на клиенте, поэтому загружаем все товары сразу
-      const page = 0; // страница, начиная с 0
-      const size = 1000; // сколько товаров на странице (большое значение для загрузки всех)
+      // Параметры пагинации: загружаем по 12 товаров на странице
+      // pageNumber приходит как 1-based (страница 1, 2, 3...), но API ожидает 0-based (0, 1, 2...)
+      // Поэтому страница 7 для пользователя = page 6 для API
+      const pageParam = pageNumber - 1;
+      const size = ITEMS_PER_PAGE;
 
+      // Формируем URL с параметрами пагинации
+      // Spring Data Pageable принимает: page (0-based), size, sort (опционально)
+      // Страница 7 для пользователя (1-based) = page 6 для API (0-based)
       const url = `/api/products/cards/search-by-url?filtersUrl=${encodeURIComponent(
         filtersUrl
-      )}&page=${page}&size=${size}`;
+      )}&page=${pageParam}&size=${size}&sort=id,asc`;
 
-    // Проверяем кэш
-    const cacheKey = url;
-    if (useCache && cacheRef.has(cacheKey)) {
-      const cachedData = cacheRef.get(cacheKey);
-      // Проверяем, не устарел ли кэш (5 минут)
-      if (Date.now() - cachedData.timestamp < 5 * 60 * 1000) {
-        setLoading(false);
-        setError("");
-        const cards = cachedData.cards;
-        
-        // Фильтруем неактивные товары из кэша
-        const activeCards = cards.filter(card => {
-          // Если в кэше есть информация об isActive, используем её
-          if (card.isActive !== undefined) {
-            return card.isActive !== false;
-          }
-          // Если нет информации, показываем (для обратной совместимости)
-          return true;
-        });
-        
-        // Сначала показываем карточки с fallback изображениями
-        const cardsWithFallback = activeCards.map((card) => ({
-          ...card,
-          image: "/korm1.svg",
-          imageUrl: card.image,
-        }));
-        setProducts(cardsWithFallback);
-        
-        // Сохраняем все товары в sessionStorage для поиска (если еще не сохранено)
-        try {
-          const existing = sessionStorage.getItem("catalog:all");
-          if (!existing) {
-            // Фильтруем неактивные товары перед сохранением в sessionStorage
-            const activeCardsForSearch = cards.filter(card => {
-              if (card.isActive !== undefined) {
-                return card.isActive !== false;
-              }
-              return true;
-            });
-            
-            // Сохраняем полные данные для поиска с картинками, ценами и весом
-            const searchData = activeCardsForSearch.map((card) => ({
-              id: card.id || card.variantId,
-              variantId: card.variantId || card.id,
-              productId: card.productId || card.parentId,
-              displayName: card.displayName || card.title || "Товар",
-              title: card.displayName || card.title || "Товар",
-              price: card.price ?? null,
-              weight: card.weight ?? null,
-              weightLabel: card.weightLabel || (card.weight ? (typeof card.weight === "number" ? `${card.weight} кг` : card.weight) : null),
-              imageUrl: card.imageUrl || card.image || "/korm1.svg",
-              image: card.imageUrl || card.image || "/korm1.svg",
-            }));
-            sessionStorage.setItem("catalog:all", JSON.stringify(searchData));
-            window.dispatchEvent(new Event("catalog:update"));
-          }
-        } catch (e) {
-          safeWarn("Failed to save catalog:all to sessionStorage:", e);
-        }
-        
-        // Загружаем изображения в фоне
-        loadImagesForCards(cards);
-        return;
-      }
-    }
+    // Кэш отключаем для серверной пагинации, так как каждая страница должна загружаться отдельно
 
     setLoading(true);
     setError("");
@@ -518,10 +602,15 @@ export default function Catalog() {
 
       const response = await res.json();
       
-      // API /api/products/cards/search-by-url возвращает объект с полем content (Spring Data Page)
-      // Структура: { content: [{ id, displayName, price, stock, weight, imageUrl }, ...], ... }
-      // Или может быть просто массив для обратной совместимости
-      const data = Array.isArray(response) ? response : (response?.content || []);
+      // API возвращает Spring Data Page объект
+      // Структура: { content: [...], totalPages, totalElements, ... }
+      const data = response?.content || [];
+      const apiTotalPages = response?.totalPages || 1;
+      const apiTotalElements = response?.totalElements || 0;
+      
+      // Обновляем информацию о пагинации
+      setTotalPages(Math.max(1, apiTotalPages));
+      setTotalElements(apiTotalElements);
       
       if (!Array.isArray(data)) {
         safeWarn("API returned non-array data:", response);
@@ -635,16 +724,10 @@ export default function Catalog() {
         return true;
       });
       
-      // Сохраняем в кэш
-      cacheRef.set(cacheKey, {
-        cards,
-        timestamp: Date.now(),
-      });
-      
-      // Сохраняем все товары в sessionStorage для поиска (catalog:all), только если нет фильтров
+      // Сохраняем все товары в sessionStorage для поиска (catalog:all), только если нет фильтров и это первая страница
       // Проверяем, есть ли активные фильтры
       const hasFilters = filtersUrlValue && filtersUrlValue.length > 0;
-      if (!hasFilters) {
+      if (!hasFilters && pageNumber === 1) {
         try {
           // Фильтруем неактивные товары перед сохранением
           const activeCardsForSearch = cards.filter(card => {
@@ -675,17 +758,20 @@ export default function Catalog() {
         }
       }
       
-      // Сначала показываем карточки с fallback изображениями для быстрого отображения
-      const cardsWithFallback = cards.map((card) => ({
+      // Показываем карточки сразу с правильными imageUrl из API
+      // Если imageUrl есть и указывает на API, он будет загружен через loadImagesForCards
+      // Если нет, используем fallback
+      const cardsWithImages = cards.map((card) => ({
         ...card,
-        image: "/korm1.svg", // Временный fallback
-        imageUrl: card.image, // Сохраняем оригинальный путь для последующей загрузки
+        image: card.imageUrl || card.image || "/korm1.svg",
+        imageUrl: card.imageUrl || card.image || "/korm1.svg",
       }));
       
       // Показываем карточки сразу
-      setProducts(cardsWithFallback);
+      setProducts(cardsWithImages);
       
       // Затем асинхронно загружаем изображения в фоне (не блокируем UI)
+      // Это заменит imageUrl на загруженные blob URLs
       loadImagesForCards(cards);
       
       setLoading(false);
@@ -705,7 +791,7 @@ export default function Catalog() {
         abortControllerRef.current = null;
       }
     }
-  }, [cacheRef, abortControllerRef, loadImagesForCards]);
+  }, [abortControllerRef, loadImagesForCards, ITEMS_PER_PAGE]);
 
   // Дебаунсированная версия fetchCards
   const debouncedFetchCards = useCallback((filtersUrlString = "", useCache = true) => {
@@ -716,7 +802,7 @@ export default function Catalog() {
     
     // Устанавливаем новый таймер (300ms задержка)
     debounceTimerRef.current = setTimeout(() => {
-      fetchCards(filtersUrlString, useCache);
+      fetchCards(filtersUrlString, useCache, page);
     }, 300);
   }, [fetchCards, debounceTimerRef]);
 
@@ -806,6 +892,15 @@ export default function Catalog() {
     const urlParams = new URLSearchParams(queryString);
     const categoryParam = urlParams.get("category");
     
+    // Восстанавливаем страницу из URL при первой загрузке
+    const pageParam = urlParams.get("page");
+    if (pageParam) {
+      const initialPage = parseInt(pageParam, 10);
+      if (!isNaN(initialPage) && initialPage >= 1) {
+        setPage(initialPage);
+      }
+    }
+    
     // Если нет параметров в URL, пытаемся восстановить фильтры из sessionStorage
     if (!queryString && !categoryParam) {
       const restored = restoreFiltersFromStorage();
@@ -863,7 +958,7 @@ export default function Catalog() {
         const filtersUrlString = queryParams ? `?${queryParams}` : "";
         if (filtersUrlString) {
           window.history.pushState({}, "", filtersUrlString);
-          fetchCards(filtersUrlString, true);
+          fetchCards(filtersUrlString, true, 1);
           // НЕ прокручиваем вверх при восстановлении фильтров
         }
       }
@@ -1145,9 +1240,10 @@ export default function Catalog() {
       // Очищаем кэш запросов каталога
       cacheRef.clear();
       
-      // Перезагружаем товары с текущими фильтрами
+      // Перезагружаем товары с текущими фильтрами (сбрасываем на первую страницу)
+      setPage(1);
       const queryString = window.location.search || "";
-      fetchCards(queryString, false); // false = не использовать кэш
+      fetchCards(queryString, false, 1); // false = не использовать кэш
       
       // Перезагружаем все товары для поиска
       loadAllProductsForSearch();
@@ -1164,9 +1260,10 @@ export default function Catalog() {
       // Очищаем кэш запросов каталога
       cacheRef.clear();
       
-      // Перезагружаем товары с текущими фильтрами
+      // Перезагружаем товары с текущими фильтрами (сбрасываем на первую страницу)
+      setPage(1);
       const queryString = window.location.search || "";
-      fetchCards(queryString, false); // false = не использовать кэш
+      fetchCards(queryString, false, 1); // false = не использовать кэш
       
       // Перезагружаем все товары для поиска
       loadAllProductsForSearch();
@@ -1225,6 +1322,21 @@ export default function Catalog() {
           categoryQueryParams.append(key, value);
         }
       });
+
+      // Восстанавливаем фильтры typeoffood из URL параметров
+      const newCategoryFilters = { ...categoryFilters };
+      urlParams.forEach((value, key) => {
+        if (key.startsWith("typeoffood_")) {
+          const typeSlug = key.replace("typeoffood_", "");
+          if (value === "true") {
+            newCategoryFilters[typeSlug] = true;
+            newCategoryFilters.all = false;
+          }
+        }
+      });
+      if (Object.keys(newCategoryFilters).some(key => newCategoryFilters[key] && key !== "all")) {
+        setCategoryFilters(newCategoryFilters);
+      }
 
       // Динамически устанавливаем фильтры в состояние для отображения в UI
       if (categoryParam === "filler") {
@@ -1288,48 +1400,172 @@ export default function Catalog() {
       // Вызываем fetchCards с правильными параметрами
       const finalQueryString = categoryQueryParams.toString() ? `?${categoryQueryParams.toString()}` : "";
       
-      // Обновляем URL без перезагрузки страницы
-      window.history.pushState({}, "", finalQueryString || window.location.pathname);
-      
-      fetchCards(finalQueryString, true);
-      if (finalQueryString) {
-        sessionStorage.setItem("catalog:lastQuery", finalQueryString);
+      // Добавляем страницу в URL, если её нет
+      const pageParam = categoryQueryParams.get("page");
+      if (!pageParam) {
+        categoryQueryParams.set("page", "1");
+        const finalQueryStringWithPage = `?${categoryQueryParams.toString()}`;
+        // Обновляем URL и добавляем в историю
+        window.history.pushState({ page: 1 }, "", finalQueryStringWithPage);
+        fetchCards(finalQueryStringWithPage, true, 1);
+        if (finalQueryStringWithPage) {
+          sessionStorage.setItem("catalog:lastQuery", finalQueryStringWithPage);
+        }
+      } else {
+        // Обновляем URL без перезагрузки страницы
+        window.history.pushState({}, "", finalQueryString || window.location.pathname);
+        fetchCards(finalQueryString, true, 1);
+        if (finalQueryString) {
+          sessionStorage.setItem("catalog:lastQuery", finalQueryString);
+        }
       }
     } else {
       // Если нет параметра category, используем обычную логику
-      fetchCards(queryString, true);
+      // Восстанавливаем все фильтры из URL параметров
+      restoreFiltersFromUrl(urlParams);
+      
+      // Восстанавливаем страницу из URL или используем 1
+      const pageParam = urlParams.get("page");
+      const initialPage = pageParam ? parseInt(pageParam, 10) : 1;
+      const validPage = (!isNaN(initialPage) && initialPage >= 1) ? initialPage : 1;
+      
+      // При первой загрузке добавляем страницу в URL и историю, если её там нет
+      if (!pageParam) {
+        // Добавляем параметр page к текущему queryString
+        const newUrlParams = new URLSearchParams(queryString);
+        newUrlParams.set("page", String(validPage));
+        const urlWithPage = `?${newUrlParams.toString()}`;
+        // Добавляем первую страницу в историю через pushState
+        window.history.pushState({ page: validPage }, "", urlWithPage);
+      }
+      
+      setPage(validPage);
+      fetchCards(queryString, true, validPage);
       if (queryString) {
         sessionStorage.setItem("catalog:lastQuery", queryString);
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [availableFilters.loading, availableFilters.breedsByCategory, availableFilters.scents]);
+  }, [availableFilters.loading, availableFilters.breedsByCategory, availableFilters.scents, restoreFiltersFromUrl]);
 
-  // клиентская фильтрация по поиску (фильтрация по цене работает через API)
-  const filtered = useMemo(() => {
-    const q = searchQuery.trim().toLowerCase();
-
-    return products.filter((p) => {
-      const title = (p.title ?? p.name ?? "").toString().toLowerCase();
-      const byQuery = q ? title.includes(q) : true;
-      return byQuery;
-    });
-  }, [products, searchQuery]);
-
-  const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE));
-
+  // Проверяем, что текущая страница не превышает totalPages
   useEffect(() => {
-    if (page > totalPages) setPage(totalPages);
+    if (page > totalPages && totalPages > 0) {
+      setPage(totalPages);
+    }
   }, [page, totalPages]);
 
-  const paged = useMemo(() => {
-    const start = (page - 1) * ITEMS_PER_PAGE;
-    return filtered.slice(start, start + ITEMS_PER_PAGE);
-  }, [filtered, page]);
+  // Обработчик навигации назад/вперед в браузере и очистки кэша
+  useEffect(() => {
+    const handlePopState = () => {
+      // Проверяем, не переходим ли мы на страницу товара
+      const currentPath = window.location.pathname;
+      if (!currentPath.startsWith("/product/")) {
+        // При нажатии "Назад" восстанавливаем фильтры и страницу из URL
+        const queryString = window.location.search || "";
+        const urlParams = new URLSearchParams(queryString);
+        
+        // Восстанавливаем фильтры из URL
+        restoreFiltersFromUrl(urlParams);
+        
+        // Восстанавливаем страницу из URL
+        const pageParam = urlParams.get("page");
+        const restoredPage = pageParam ? parseInt(pageParam, 10) : 1;
+        const validPage = (!isNaN(restoredPage) && restoredPage >= 1) ? restoredPage : 1;
+        
+        // Загружаем карточки с параметрами из URL
+        setPage(validPage);
+        fetchCards(queryString, false, validPage);
+        
+        // Очищаем кэш при переходе внутри каталога
+        try {
+          sessionStorage.removeItem("catalog:filters");
+          sessionStorage.removeItem("catalog:lastQuery");
+        } catch (e) {
+          // Игнорируем ошибки
+        }
+      }
+    };
+
+    const handleBeforeUnload = () => {
+      // При закрытии страницы сбрасываем кэш
+      try {
+        sessionStorage.removeItem("catalog:filters");
+        sessionStorage.removeItem("catalog:lastQuery");
+      } catch (e) {
+        // Игнорируем ошибки
+      }
+    };
+
+    window.addEventListener("popstate", handlePopState);
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [restoreFiltersFromUrl, fetchCards]);
 
   const goto = (p) => {
     const newPage = Math.min(Math.max(1, p), totalPages);
-    setPage(newPage);
+    if (newPage !== page) {
+      setPage(newPage);
+      // Загружаем новую страницу при смене
+      const queryParams = generateQueryParams();
+      const filtersUrlString = queryParams ? `?${queryParams}` : "";
+      fetchCards(filtersUrlString, false, newPage);
+      // Обновляем URL с pushState, чтобы добавить запись в историю для навигации назад
+      const urlWithPage = filtersUrlString 
+        ? `${filtersUrlString}&page=${newPage}` 
+        : `?page=${newPage}`;
+      window.history.pushState({ page: newPage }, "", urlWithPage || window.location.pathname);
+      // Прокручиваем вверх
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
+  // Функция для генерации номеров страниц в формате: 1, 2, 3, 4, ..., 80
+  const getPageNumbers = () => {
+    const pages = [];
+    
+    if (totalPages <= 5) {
+      // Если страниц мало, показываем все
+      for (let i = 1; i <= totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      // Если текущая страница близко к началу (1-3)
+      if (page <= 3) {
+        for (let i = 1; i <= 4; i++) {
+          pages.push(i);
+        }
+        pages.push("ellipsis");
+        pages.push(totalPages);
+      }
+      // Если текущая страница близко к концу
+      else if (page >= totalPages - 2) {
+        pages.push(1);
+        pages.push("ellipsis");
+        // Показываем 4 страницы перед концом, как в начале
+        const startPage = Math.max(totalPages - 3, 1);
+        for (let i = startPage; i <= totalPages; i++) {
+          pages.push(i);
+        }
+      }
+      // Если текущая страница в середине
+      else {
+        pages.push(1);
+        pages.push("ellipsis");
+        for (let i = page - 1; i <= page + 1; i++) {
+          pages.push(i);
+        }
+        pages.push("ellipsis");
+        pages.push(totalPages);
+      }
+    }
+    
+    return pages;
   };
 
   // Автоматическое сохранение фильтров при их изменении
@@ -1340,10 +1576,40 @@ export default function Catalog() {
     }
   }, [searchQuery, priceFrom, priceTo, categoryFilters, catFilters, dogFilters, minicatFilters, minidogFilters, countryFilters, flavorFilters, brandFilters, scentFilters, page, saveFiltersToStorage, filtersRestored]);
 
+
   // Прокручиваем вверх при смене страницы
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [page]);
+
+  // Установка флага активности каталога
+  useEffect(() => {
+    // Устанавливаем флаг, что мы на странице каталога
+    sessionStorage.setItem("catalog:isActive", "true");
+    
+    // Cleanup функция - сработает при размонтировании компонента
+    return () => {
+      // Проверяем, не переходим ли мы на страницу товара
+      const currentPath = window.location.pathname;
+      if (!currentPath.startsWith("/product/")) {
+        // Если не на странице товара, сбрасываем кэш
+        try {
+          sessionStorage.removeItem("catalog:filters");
+          sessionStorage.removeItem("catalog:lastQuery");
+          sessionStorage.removeItem("catalog:isActive");
+        } catch (e) {
+          // Игнорируем ошибки
+        }
+      } else {
+        // Если переходим на товар, оставляем кэш, но убираем флаг активности
+        try {
+          sessionStorage.removeItem("catalog:isActive");
+        } catch (e) {
+          // Игнорируем ошибки
+        }
+      }
+    };
+  }, []);
 
   const handleCategoryChange = useCallback((category) => {
     if (category === "all") {
@@ -1376,8 +1642,10 @@ export default function Catalog() {
     // сохраняем состояние всех фильтров
     saveFiltersToStorage();
 
+    // Сбрасываем на первую страницу при применении фильтров
+    setPage(1);
     // отправляем в бэк именно эту строку (без дебаунсинга для явного применения фильтров)
-    fetchCards(filtersUrlString, true);
+    fetchCards(filtersUrlString, true, 1);
     setMobileFiltersOpen(false);
     // Прокручиваем вверх при применении фильтров
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -1440,12 +1708,14 @@ export default function Catalog() {
     // чистим URL
     window.history.pushState({}, "", window.location.pathname);
 
+    // Сбрасываем на первую страницу при сбросе фильтров
+    setPage(1);
     // отправляем пустую строку в filtersUrl
-    fetchCards("", true);
+    fetchCards("", true, 1);
     setMobileFiltersOpen(false);
     // Прокручиваем вверх при сбросе фильтров
     window.scrollTo({ top: 0, behavior: 'smooth' });
-  }, [availableFilters]);
+  }, [availableFilters, fetchCards]);
 
   // Мобильные фильтры
   const MobileFilters = () => (
@@ -1933,13 +2203,11 @@ export default function Catalog() {
 
           {/* Правая колонка — товары */}
           <div className="lg:col-span-3">
-            <ScrollFade>
-              <div className="mb-6">
-                <h1 className="mb-4 text-2xl font-bold text-gray-900">
-                  Каталог
-                </h1>
-              </div>
-            </ScrollFade>
+            <div className="mb-6">
+              <h1 className="mb-4 text-2xl font-bold text-gray-900">
+                Каталог
+              </h1>
+            </div>
 
             {loading && (
               <div className="py-12 text-center text-gray-500">Загрузка…</div>
@@ -1949,7 +2217,7 @@ export default function Catalog() {
                 Ошибка: {error}
               </div>
             )}
-            {!loading && !error && products.length === 0 && (
+            {!loading && !error && products.length === 0 && totalElements === 0 && (
               <div className="py-12 text-center text-gray-500">
                 Нет товаров
               </div>
@@ -1957,78 +2225,108 @@ export default function Catalog() {
 
             {!loading && !error && products.length > 0 && (
               <>
-                <StaggerParent
-                  delayChildren={0.05}
-                  stagger={0.05}
-                  key={page}
-                >
-                  <div className="grid items-stretch grid-cols-1 gap-4 mb-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                    {paged.map((product) => {
-                      // Вариант определяется по наличию parentId и его отличию от id
-                      const isVariantCard =
-                        product.parentId != null && 
-                        String(product.parentId) !== String(product.id);
-                      
-                      // Всегда формируем URL с вариантом, если есть parentId
-                      const to = product.parentId != null
-                        ? `/product/${encodeURIComponent(
-                            product.parentId
-                          )}?variant=${encodeURIComponent(product.id)}`
-                        : `/product/${encodeURIComponent(product.id)}`;
+                <div className="grid items-stretch grid-cols-1 gap-4 mb-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                  {products.map((product) => {
+                    // Вариант определяется по наличию parentId и его отличию от id
+                    const isVariantCard =
+                      product.parentId != null && 
+                      String(product.parentId) !== String(product.id);
+                    
+                    // Всегда формируем URL с вариантом, если есть parentId
+                    const to = product.parentId != null
+                      ? `/product/${encodeURIComponent(
+                          product.parentId
+                        )}?variant=${encodeURIComponent(product.id)}`
+                      : `/product/${encodeURIComponent(product.id)}`;
 
-                      // Форматируем вес
-                      const weightDisplay = product.weight 
-                        ? (typeof product.weight === "number" 
-                          ? formatWeight(product.weight)
-                          : product.weight)
-                        : product.weightLabel || null;
+                    // Форматируем вес
+                    const weightDisplay = product.weight 
+                      ? (typeof product.weight === "number" 
+                        ? formatWeight(product.weight)
+                        : product.weight)
+                      : product.weightLabel || null;
 
-                      return (
-                        <ProductCard
-                          key={product.cardId}
-                          to={to}
-                          productId={product.parentId || product.id}
-                          variantId={product.id}
-                          image={product.image}
-                          title={product.title ?? product.name ?? "Товар"}
-                          price={`${Number(
-                            product.price ?? 0
-                          ).toLocaleString()} ₽`}
-                          stock={product.stock}
-                          weight={weightDisplay}
-                        />
-                      );
-                    })}
-                  </div>
-                </StaggerParent>
+                    return (
+                      <ProductCard
+                        key={product.cardId}
+                        to={to}
+                        productId={product.parentId || product.id}
+                        variantId={product.id}
+                        image={product.image}
+                        title={product.title ?? product.name ?? "Товар"}
+                        price={`${Number(
+                          product.price ?? 0
+                        ).toLocaleString()} ₽`}
+                        stock={product.stock}
+                        weight={weightDisplay}
+                      />
+                    );
+                  })}
+                </div>
 
                 <PageFade>
-                  <div className="flex items-center justify-center space-x-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => goto(page - 1)}
-                      disabled={page === 1}
-                    >
-                      &lt;
-                    </Button>
-
-                    <span className="text-sm font-medium text-gray-700">
-                      {String(page).padStart(2, "0")}
-                    </span>
-
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => goto(page + 1)}
-                      disabled={page === totalPages}
-                    >
-                      &gt;
-                    </Button>
+                  <div className="flex justify-center mt-6">
+                    <Pagination>
+                      <PaginationContent>
+                        <PaginationItem>
+                          <PaginationLink
+                            href="#"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              if (page > 1) {
+                                goto(page - 1);
+                              }
+                            }}
+                            className={page === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                            size="icon"
+                          >
+                            <ChevronLeft className="h-4 w-4" />
+                            <span className="sr-only">Предыдущая страница</span>
+                          </PaginationLink>
+                        </PaginationItem>
+                        
+                        {getPageNumbers().map((pageNum, index) => (
+                          <PaginationItem key={index}>
+                            {pageNum === "ellipsis" ? (
+                              <PaginationEllipsis />
+                            ) : (
+                              <PaginationLink
+                                href="#"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  goto(pageNum);
+                                }}
+                                isActive={page === pageNum}
+                                className="cursor-pointer"
+                              >
+                                {pageNum}
+                              </PaginationLink>
+                            )}
+                          </PaginationItem>
+                        ))}
+                        
+                        <PaginationItem>
+                          <PaginationLink
+                            href="#"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              if (page < totalPages) {
+                                goto(page + 1);
+                              }
+                            }}
+                            className={page === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                            size="icon"
+                          >
+                            <ChevronRight className="h-4 w-4" />
+                            <span className="sr-only">Следующая страница</span>
+                          </PaginationLink>
+                        </PaginationItem>
+                      </PaginationContent>
+                    </Pagination>
                   </div>
 
                   <div className="mt-4 text-sm text-center text-gray-500">
-                    Показано {Math.min((page - 1) * ITEMS_PER_PAGE + paged.length, filtered.length)} из {filtered.length} товаров ·
+                    Показано {Math.min((page - 1) * ITEMS_PER_PAGE + products.length, totalElements)} из {totalElements} товаров ·
                     Страница {page} из {totalPages}
                   </div>
                 </PageFade>
