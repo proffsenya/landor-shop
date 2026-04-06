@@ -2280,7 +2280,7 @@ export default function Catalog() {
                             className={page === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
                             size="icon"
                           >
-                            <ChevronLeft className="h-4 w-4" />
+                            <ChevronLeft className="w-4 h-4" />
                             <span className="sr-only">Предыдущая страница</span>
                           </PaginationLink>
                         </PaginationItem>
@@ -2317,7 +2317,7 @@ export default function Catalog() {
                             className={page === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
                             size="icon"
                           >
-                            <ChevronRight className="h-4 w-4" />
+                            <ChevronRight className="w-4 h-4" />
                             <span className="sr-only">Следующая страница</span>
                           </PaginationLink>
                         </PaginationItem>
