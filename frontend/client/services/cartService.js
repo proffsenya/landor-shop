@@ -34,3 +34,38 @@ export async function changeQuantityAPI(variantId, direction, authToken) {
   const res = await fetch(url, { method: "POST", headers });
   return res;
 }
+
+// Добавить в уже имеющийся cartService.js:
+
+export async function addToCart(variantId, quantity, authToken) {
+  const headers = {
+    "Content-Type": "application/json",
+    ...(authToken && authToken !== "guest" ? { Authorization: `Bearer ${authToken}` } : {}),
+  };
+  const res = await fetch("/api/cart", {
+    method: "POST",
+    headers,
+    body: JSON.stringify({ variantId: Number(variantId), quantity }),
+  });
+  if (res.status === 401) throw new Error("UNAUTHORIZED");
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`HTTP ${res.status}: ${text}`);
+  }
+  return true;
+}
+
+export async function removeFromCart(variantId, authToken) {
+  const headers = {
+    "Content-Type": "application/json",
+    ...(authToken && authToken !== "guest" ? { Authorization: `Bearer ${authToken}` } : {}),
+  };
+  const res = await fetch(`/api/cart/${encodeURIComponent(variantId)}`, {
+    method: "DELETE",
+    headers,
+    body: JSON.stringify({ variantId: Number(variantId), quantity: 1 }),
+  });
+  if (res.status === 401) throw new Error("UNAUTHORIZED");
+  if (!res.ok) return false;
+  return true;
+}

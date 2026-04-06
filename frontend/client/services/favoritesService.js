@@ -63,3 +63,38 @@ export async function moveToCart(variantIds, authToken) {
   if (res.status === 401) throw new Error("UNAUTHORIZED");
   return res.ok;
 }
+
+// Добавить в favoritesService.js:
+
+export async function addFavorite(variantId, authToken) {
+  const headers = {
+    "Content-Type": "application/json",
+    ...(authToken && authToken !== "guest" ? { Authorization: `Bearer ${authToken}` } : {}),
+  };
+  const res = await fetch("/api/favorites", {
+    method: "POST",
+    headers,
+    body: JSON.stringify({ variantId: Number(variantId) }),
+  });
+  if (res.status === 401) throw new Error("UNAUTHORIZED");
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return true;
+}
+
+export async function removeFavorite(variantId, authToken) {
+  const headers = authToken && authToken !== "guest" ? { Authorization: `Bearer ${authToken}` } : {};
+  // Попытка 1: DELETE /favorites/:variantId
+  let res = await fetch(`/api/favorites/${encodeURIComponent(variantId)}`, { method: "DELETE", headers });
+  if (res.status === 401) throw new Error("UNAUTHORIZED");
+  if (res.ok) return true;
+  // Попытка 2: DELETE /favorites?variantId=...
+  res = await fetch(`/api/favorites?variantId=${encodeURIComponent(variantId)}`, { method: "DELETE", headers });
+  if (res.ok) return true;
+  // Попытка 3: DELETE /favorites с body
+  res = await fetch("/api/favorites", {
+    method: "DELETE",
+    headers: { ...headers, "Content-Type": "application/json" },
+    body: JSON.stringify({ variantId: Number(variantId) }),
+  });
+  return res.ok;
+}
