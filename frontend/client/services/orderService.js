@@ -21,3 +21,23 @@ export async function createOrderAPI(orderData, authToken) {
 
   return response.json();
 }
+
+export async function fetchUserOrders() {
+  const token = getAuthToken();
+  if (!token || token === "guest") throw new Error("UNAUTHORIZED");
+  const res = await fetch("/api/orders/profile", {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json();
+}
+
+export async function fetchOrderDetails(orderId) {
+  const token = getAuthToken();
+  if (!token || token === "guest") throw new Error("UNAUTHORIZED");
+  const res = await fetch(`/api/orders/${orderId}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json();
+}
